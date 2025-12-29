@@ -146,18 +146,18 @@ innerrightmargin=6pt,innertopmargin=6pt,innerbottommargin=6pt]{mybox}
 
 \begin{onehalfspace}
 \section{Description of the problem}
-The present invention relates to a string-actuated transportation system comprising a carrying string to which cabins (hereinafter referred to as gondolas) are attached. The carrying string is driven by a pulley arrangement including two pulleys, one of which is operatively connected to a motor actuator, see Figures~\ref{model_derivation_1}~and~\ref{string-actuated_iii}.
+Problem involved into the following analysis can be schematized as shown in Figures~\ref{line_sketch_1}. Basically a simple two pulleys system connected by a string, where only one pulley works as driver while the other works as follower.
 
 \begin{figure}[H]
 	\centering
 	\includegraphics[width = 425pt, keepaspectratio]{figures/plant_description/line_sketch_1.eps}
 	\captionsetup{width=0.75\textwidth, font=small}
-	\caption{Draw of the transportation line with description of the electrical equipment: motor and electrical drive.}
+	\caption{Sketch of the system used for the string actuated problem.}
 	\label{line_sketch_1}
 \end{figure}
-The system composed by the permanent magnet synchronous motor (\textbf{psm-moto}r) and the electrical drive (\textbf{LeitDrive}) is hereinafter referred as \textbf{Direct Drive} system.
+Basically the system described by Figures~\ref{line_sketch_1} is just used as example to investigate on control application of PDE-system described.
 
-In some installations the string-actuated line is subjected to oscillations. These oscillation are intrinsically present on all string-actuated system due to its nature, they can be \textbf{dominant} or negligible. Typical dominant oscillations are shown in Figure~\ref{small_oscillation_constraints}. 
+In some installations the string-actuated line. shown in Figures~\ref{line_sketch_1}, can be subjected to oscillations. These oscillation are intrinsically present on all string-actuated system due to its nature, they can be \textbf{dominant} or negligible. Example of dominant oscillations are illustrated in Figure~\ref{small_oscillation_constraints}. 
 \begin{figure}[H]
 	\centering
 	\includegraphics[width = 500pt, keepaspectratio]{figures/plant_description/small_oscillation_constraints.eps}
@@ -165,15 +165,24 @@ In some installations the string-actuated line is subjected to oscillations. The
 	\caption{Possible dominant string oscillations of the transmission line.}
 	\label{small_oscillation_constraints}
 \end{figure}
-Moreover, in some installation the presence of particular disturbances with pulsating nature, and where this pulsation is close to the pulsation of some dominant oscillations could degrade the intrinsically stability of the system.
+
+\noindent\textbf{Remark} - we can also assume the presence of a pulsating disturbance where its frequency is close to the dominant oscillations of the string, see Figure~\ref{trigger_1}.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width = 275pt, keepaspectratio]{figures/plant_description/trigger_1.eps}
+	\captionsetup{width=0.75\textwidth, font=small}
+	\caption{Description of the nature of the external excitation.}
+	\label{trigger_1}
+\end{figure}
 
 \section{Approach to the problem}
 \textbf{Problem description:}
 \begin{myitemize_1}
-	\item[--] the line of a given string-actuated starts oscillating, that means the string moves vertically ($u$-direction) with dominant pulsations;
+	\item[--] the line of a given string-actuated starts oscillating, that means the string moves orthogonally ($u$-direction) with dominant pulsations;
 	\item[--] the string-actuated is actuated through a motor; the motor applies a torque to the pulley, and the pulley drives the string without slipping, hence the pulley exerts a force $f$ on the string as result of the torque of the motor;
-	\item[--] in order to find a control strategy which minimize the vertical oscillations of the string \textbf{a correlation} between linear displacement oscillations (vertical oscillations of the line) and the corresponding torsional displacement oscillations (torsional components acting on the shaft of the motor/pulley) \textbf{shall be derived};
-	\item[--] as first approach the linear displacement oscillations will be analyzed using "small oscillation of a continuous string"; a PDE equation which can describe the vertical oscillations of the string can be assumed of the form
+	\item[--] in order to find a control strategy which minimize the orthogonal oscillations of the string \textbf{a correlation} between linear displacement oscillations (orthogonal oscillations of the line) and the corresponding torsional displacement oscillations (torsional components acting on the shaft of the motor/pulley) \textbf{shall be derived};
+	\item[--] as first approach the linear displacement oscillations will be analyzed using "small oscillation of a continuous string"; a PDE equation which can describe the orthogonal oscillations of the string can be assumed of the form
 	\begin{equation}
 		\frac{\partial^2 u(x,t)}{\partial t^2} = c^2\frac{\partial^2 u(x,t)}{\partial x^2}\quad n = 1,2,\dots;
 	\end{equation}
@@ -212,11 +221,11 @@ Moreover, in some installation the presence of particular disturbances with puls
 \section{Control of String-Actuated}
 This section outlines the foundational principles underlying the \textbf{Control of String-Actuated} strategy. Preliminary assumptions and key concepts are below introduced, with further technical details elaborated in the subsequent sections. \\
 
-\noindent\textbf{Statement} - The string-actuated transmission line is modeled as a oscillating string (in terms of vertical displacements) with fixed-end constraints. \\
+\noindent\textbf{Statement} - The string-actuated transmission line is modeled as a oscillating string (in terms of orthogonal displacements) with fixed-end constraints. \\
 
 \noindent\textbf{Statement} - Based on string theory, string-actuated operational conditions, and experimental measurements, a set of critical frequencies has been identified. From experimental results it is possible to state that the identified critical frequencies correspond to the string oscillation modes (or stationary solution of the fixed string).\\
 
-\noindent\textbf{Statement} - The control problem for attenuating string-actuated line oscillations involves designing a controller capable of damping the vertical oscillations, particularly when they occur at specific critical frequencies. \\
+\noindent\textbf{Statement} - The control problem for attenuating string-actuated line oscillations involves designing a controller capable of damping the orthogonal oscillations, particularly when they occur at specific critical frequencies. \\
 
 \noindent\textbf{Statement} - The concept behind the control architecture for damping string-actuated line oscillations is based on the \textbf{isomorphism} between oscillating string theory and a chain of harmonic oscillators, where the oscillators are modeled as rotational masses coupled with torsional springs. \\
 \begin{figure}[H]
@@ -268,7 +277,7 @@ The internal control layout of the proposed invention is shown in Figure~\ref{co
 %
 \pagebreak
 \section{Model design}
-In this section as well as in the following a technical description of the proposed invention is depicted. As already mentioned the design of a control system which will be able to actively damping the vertical oscillation of the transportation line must be designed upon an \textit{as good as possible} approximated model representative of the line dynamics.
+In this section as well as in the following a technical description of the proposed invention is depicted. As already mentioned the design of a control system which will be able to actively damping the orthogonal oscillation of the transportation line must be designed upon an \textit{as good as possible} approximated model representative of the line dynamics.
 
 The modelization will be outlined as follows:
 \begin{myitemize_1}
@@ -347,13 +356,7 @@ with
 
 \subsection{Linear string displacement model with external input}
 In this subsection the effect of monochromatic input excitation to the line is investigated. Secondary effect of the process of attaching and detaching the gondolas to the string is the generation of a monochromatic trigger, see also Figure~\ref{trigger_1}
-\begin{figure}[H]
-	\centering
-	\includegraphics[width = 225pt, keepaspectratio]{figures/plant_description/trigger_1.eps}
-	\captionsetup{width=0.75\textwidth, font=small}
-	\caption{Description of the nature of the external excitation.}
-	\label{trigger_1}
-\end{figure}
+
 
 \noindent\textbf{Remark} - the process of attaching and detaching the gondolas to the string generates a source of disturbance which is assumed of the form:
 \begin{equation}
