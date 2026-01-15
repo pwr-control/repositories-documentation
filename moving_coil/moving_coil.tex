@@ -1,0 +1,968 @@
+%\documentclass[11pt,a4paper]{article}
+\documentclass[11pt,a4paper]{scrartcl}
+%\documentclass[11pt,a4paper,oneside]{book}
+\usepackage[british,UKenglish,USenglish,english,american]{babel}
+%\usepackage[a4paper, total={16cm, 23cm}]{geometry}
+\usepackage[tmargin = 1.25in,bmargin = 1.25in,lmargin = 0.75in,rmargin = 0.75in]{geometry}
+\usepackage{tikz}
+\usepackage{graphicx}
+\usepackage{pgfplots}
+\pgfplotsset{width=12cm,compat=1.9}
+\usepackage{setspace}
+\usepackage{chemmacros}
+\usepackage{chemfig}
+%\usepackage{ghsystem}
+\usechemmodule{redox}
+%\usepackage{chemnum}
+%\usepackage{bohr}
+%\usepackage{elements}
+%\usepackage{endiagram}
+%\usepackage{modiagram}
+%\usepackage{chemgreek}
+%\usepackage{mhchem}
+\usepackage{esint}
+\usepackage{tabularray}
+
+\usepackage{makeidx}
+\usepackage{epstopdf}
+
+\usepackage{amssymb}
+\usepackage{mathrsfs}
+%\usepackage{minted}
+\usepackage{bm}
+\usepackage{amsmath}
+\usepackage{enumitem}
+\usepackage[english]{varioref}
+\usepackage[english]{babel}
+\usepackage{lipsum}
+\usepackage{fancyhdr}
+\pagestyle{fancy} 
+\usepackage{float}
+\usepackage{empheq}
+\usepackage[framemethod=tikz]{mdframed}
+\usepackage{epstopdf}
+\numberwithin{equation}{section}
+\usepackage{eso-pic}
+\usepackage{calc}
+\usepackage{nccmath}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{gensymb}
+\usepackage{amsfonts,amsthm,epsfig,epstopdf,titling,url,array}
+\usepackage{siunitx}
+\sisetup{input-digits = 0123456789\pi}
+\usepackage[symbol]{footmisc}
+\usepackage{xcolor}
+\usepackage{multicol}
+\usepackage{boondox-cal}
+\DeclareSIUnit\atm{atm}
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{3}
+\usepackage{booktabs}
+\usepackage{blindtext}
+\usepackage{changepage}
+
+% \usepackage{draftwatermark}
+% \SetWatermarkText{DRAFT}
+% \SetWatermarkScale{5}
+
+\DeclareSIUnit\atm{atm}
+
+\pagestyle{fancy} 
+\fancypagestyle{firstpage}{
+\rhead{}
+}
+\fancyhead[L]{\small\slshape\nouppercase{\leftmark}}
+\chead{}
+\rhead{}
+\lfoot{\textit{}}
+\cfoot{-\ \thepage\ -}
+\rfoot{\textit{}}
+
+\DeclareMathOperator{\rank}{rank}
+\DeclareMathOperator{\atantwo}{atan2}
+\DeclareMathOperator{\arctantwo}{arctan2}
+\DeclareMathOperator{\spn}{span}
+
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+\newcommand{\abs}[1]{\left|#1\right|}
+\definecolor{mycolor1}{rgb}{0.97, 0.97, 0.97}
+\definecolor{mycolor2}{rgb}{0.97, 0.97, 0.97}
+\definecolor{tableShade}{gray}{0.9}
+\newcommand{\sign}{\text{sign}}
+\newcommand{\centered}[1]{\begin{tabular}{@{}l@{}} #1 \end{tabular}}
+\theoremstyle{it}
+\newtheorem{defn}{Definition}[section]
+\newtheorem{assumption}{Assumption}[section]
+\newtheorem{thm}{Theorem}[section]
+\newtheorem{lemma}{Lemma}[section]
+\newtheorem{corollary}{Corollary}[section]
+\theoremstyle{definition}
+%\theoremstyle{it}
+\newtheorem{example}{Example}[section]
+\let\eqrefn\eqref
+\renewcommand{\eqref}[1]{Eq.~(\ref{#1})}
+
+\newenvironment{myitemize_1}
+{ \begin{itemize}[topsep=4pt]
+		\setlength{\topsep}{2pt}		
+		\setlength{\itemsep}{2pt}
+		\setlength{\parskip}{2pt}
+		\setlength{\parsep}{2pt}     }
+	{ \end{itemize}                  }
+
+
+\newmdenv[innerlinewidth=0.5pt, roundcorner=4pt,backgroundcolor=mycolor2, 
+linecolor=mycolor1,innerleftmargin=6pt,
+innerrightmargin=6pt,innertopmargin=6pt,innerbottommargin=6pt]{mybox}
+
+\title{\textbf{ 
+	\begin{LARGE}
+		Moving Coil:
+	\end{LARGE} \\[24pt]
+	\begin{Large}
+		Mathematical Model and Control
+	\end{Large}}
+}
+\author{\textbf{Davide Bagnara}}
+
+\begin{document}
+	\thispagestyle{empty}
+	\begin{mybox}
+		\maketitle
+		\vspace{150mm}
+	\end{mybox}
+%	\let\clearpage\relax
+	\newpage
+	\tableofcontents%
+	\listoffigures%
+	\listoftables
+%	\let\clearpage\LaTeXStandardClearpage
+	\newpage
+	
+\begin{onehalfspace}
+	
+	\pagebreak
+\section{Moving Coil: mathematical model}\label{moving_coil_jackson_section}
+The moving coil was already studied at the beginning of this document. Here we 
+want to represent the moving coil model using a different approach, we would 
+like to use a more mathematical (and less physical) approach to show a more 
+formal representation. Most of the following material has been taken from the 
+monumental work of \cite{furlani}.
+
+We define two reference frames: one stationary $\mathcal{O}$ and one which lies 
+on the moving coil $\mathcal{O'}$ and we define the following meaning of the 
+electrical field $\vec{E}$ induced across the coil
+\begin{itemize}
+	\item $\vec{E}'$ is the induced electrical field observed from the moving 
+	reference frame $\mathcal{O'}$.
+	\item $\vec{E}$ is the induced electrical field observed from the 
+	stationary reference frame $\mathcal{O}$.	
+\end{itemize}  
+The Faraday's law applied to such that circuit can be written as follows
+\begin{equation}\label{jackson_1}
+	\oint_\mathcal{C}\vec{E}'\cdot d\vec{l} = -\frac{d}{dt}\int_\mathcal 
+	{S}\vec{B}\cdot\hat{n}\,da
+\end{equation}
+where $\vec{E}'$ is the electrical field applied to the coil respect the moving 
+reference frame. 
+\begin{figure}[H]
+	\centering
+	\includegraphics[width = 300pt, angle = 0, 
+	keepaspectratio]{figures/moving_coil_3.eps}
+	\captionsetup{width=0.75\textwidth}		
+	\caption{Moving coil actuator.}
+	\label{moving_coil_3a}
+\end{figure}
+
+The circuit is moving at a certain speed $\vec{v}$, hence, the total time 
+derivation of the linkage flux at the right hand side of Eq.~\ref{jackson_1} 
+shall take into account that the linkage flux can change due to change of 
+$\vec{B}$ and due to the change of the contour $\mathcal{C}$ (or $\mathcal{S}$) 
+due to the movement of the coil. 
+
+%The total time derivation of the linkage flux at the right hand side of 
+%Eq.~\ref{jackson_1} shall take into account that the linkage flux can change 
+%due to change of $\vec{B}$ and due to the change of the position of the coil. 
+
+The total time derivative\footnote{
+	The concept of the convective derivative can be used \begin{equation*}
+		\frac{d}{dt} = \frac{\partial}{\partial t} + \vec{v}\cdot\vec{\nabla}
+	\end{equation*}
+	we obtain that
+	\begin{equation*}
+		\frac{d\vec{B}}{dt} = \frac{\partial\vec{B}}{\partial t} + 
+		\Big(\vec{v}\cdot\vec{\nabla}\Big)\vec{B} = \frac{\partial 
+			\vec{B}}{\partial 
+			t}+\vec{\nabla}\times\Big(\vec{B}\times\vec{v}\Big)+\vec{v}\Big(\vec{\nabla}\cdot\vec{B}\Big)
+	\end{equation*}
+	where $\vec{v}$ is considered a constant vector. Applying Stokes theorem we 
+	obtain Eq.~\ref{jackson_2}
+} of the flux through the moving coil is (see \cite{p14})
+\begin{equation}\label{jackson_2}
+	\frac{d}{dt}\int_\mathcal{S}\vec{B}\cdot\hat{n}\,da = 
+	\int_\mathcal{S}\frac{\partial\vec{B}}{\partial t}\cdot\hat{n}\,da + 
+	\oint_\mathcal{C}\Big(\vec{B}\times\vec{v}\Big)\cdot d\vec{l}
+\end{equation}
+Hence Eq.~\ref{jackson_1} can now be written in the form
+\begin{equation}\label{jackson_3}
+	\oint_\mathcal{C}\Big[\vec{E}'-\vec{v}\times\vec{B}\Big]\cdot d\vec{l} = 
+	\int_\mathcal{S}\frac{\partial\vec{B}}{\partial t}\cdot\hat{n}\,da
+\end{equation}
+
+Eq.~\ref{jackson_3} can also be obtained as follows (see also 
+Figure~\ref{panofky})
+\begin{equation}\label{silvestrini_1}
+	\oint_\mathcal{C}\vec{E}'\cdot d\vec{l} = -\frac{d}{dt}\int_\mathcal 
+	{S}\vec{B}\cdot\hat{n}\,da = 
+	-\frac{1}{dt}\Bigg[\int_{\mathcal{S}(t+dt)}\vec{B}(t+dt)\cdot\hat{n}\,da-\int_{\mathcal{S}(t)}\vec{B}(t)\cdot\hat{n}\,da\Bigg]
+\end{equation}
+\begin{figure}[H]
+	\centering
+	\includegraphics[width = 150pt, angle = 0, 
+	keepaspectratio]{figures/panofsky.eps}
+	\captionsetup{width=0.75\textwidth}		
+	\caption{Evaluation of the $d\vec{B}/dt$.}
+	\label{panofky}
+\end{figure}
+where 
+\begin{equation}
+	\vec{B}(t+dt)=\vec{B}(t)+\frac{\partial\vec{B}}{\partial t}
+\end{equation}
+The second term of Eq.~\ref{silvestrini_1} become
+\begin{equation}\label{silvestrini_2}
+	\begin{aligned}
+		& 
+		-\frac{1}{dt}\Bigg[\int_{\mathcal{S}(t+dt)} 
+		\Big(\vec{B}(t)+\frac{\partial\vec{B}}{\partial 
+			t}\Big)\cdot\hat{n}\,da-\int_{\mathcal{S}(t)} 
+		\vec{B}(t)\cdot\hat{n}\,da\Bigg] = \\[8pt]
+		& -\frac{1}{dt}\Bigg[\int_{\mathcal{S}(t)} 
+		\vec{B}(t+dt)\cdot\hat{n}\,da 
+		-\int_{\mathcal{S}(t)}\vec{B}(t) 
+		\cdot\hat{n}\,da\Bigg]-\int_{\mathcal{S}(t+dt)} 
+		\frac{\partial\vec{B}}{\partial
+			t}\cdot\hat{n}\,da
+	\end{aligned}
+\end{equation}
+The first term at the right side of the equation represents the variation of 
+the flux of $\vec{B}$ due to the only change of the surface, and we can write
+\begin{equation}\label{silvestrini_3}
+	\begin{aligned}
+		-\frac{1}{dt}\Bigg[\int_{\mathcal{S}(t)}\vec{B}(t+dt)\cdot\hat{n}\,da 
+		-\int_{\mathcal{S}(t)}\vec{B}(t)\cdot\hat{n}\,da\Bigg] = 
+		\oint_\mathcal{C}\Big(\vec{v}\times\vec{B}\Big)\cdot d\vec{l}
+	\end{aligned}
+\end{equation}
+while the second term represent the variation of the flux due to the change of 
+the vector $\vec{B}$
+\begin{equation}\label{silvestrini_4}
+	\begin{aligned}
+		\int_{\mathcal{S}(t+dt)}\frac{\partial\vec{B}}{\partial 
+			t}\cdot\hat{n}\,da = 
+		\int_{\mathcal{S}(t)}\frac{\partial\vec{B}}{\partial 
+			t}\cdot\hat{n}\,da\qquad dt\rightarrow0
+	\end{aligned}
+\end{equation}
+and we obtain the Eq.~\ref{jackson_3}.
+
+Now we apply the Faraday's law to the circuit respect the stationary reference 
+frame $\mathcal{O}$ and by the fact that the circuit $\mathcal{C}$ and the 
+surface $\mathcal{S}$ are fixed respect to the same stationary reference frame 
+$\mathcal{O}$ the Faraday's law can be written in the form
+\begin{equation}\label{jackson_3b}
+	\oint_\mathcal{C}\vec{E}\cdot d\vec{l} = -\int_\mathcal {S}\frac{\partial 
+		\vec{B}}{\partial t}\cdot\hat{n}\,da
+\end{equation}
+Galilean invariance Eq.~\ref{jackson_3} and Eq.~\ref{jackson_3b} must be equal, 
+hence results that the electrical field of the coil measured respect to 
+$\mathcal{O}$ can be expressed as (see also section 
+\ref{moving_reference_section})
+\begin{equation}\label{jackson_4}
+	\boxed{	\vec{E} = \vec{E}'-\vec{v}\times\vec{B}}
+\end{equation}
+Hence the Faraday's law applied to the moving coil 
+\begin{equation}\label{}
+	\boxed{	\begin{aligned}
+			&\oint_\mathcal{C} \vec{E}'\cdot\,d\vec{l}=-\frac{d}{d 
+				t}\int_\mathcal{S}\vec{B}\cdot\hat{n}\,da
+	\end{aligned}}
+\end{equation} 
+where the circuit $\mathcal{C}$ and the surface $\mathcal{S}$ are not 
+considered fixed, can be written in the form
+\begin{equation}\label{jackson_5}
+	\boxed{ \begin{aligned} 
+			\oint_\mathcal{C}\Big[\vec{E}'-\vec{v}\times\vec{B}\Big]\cdot d\vec{l} = 
+			\int_\mathcal{S}\frac{\partial\vec{B}}{\partial t}\cdot\hat{n}\,da
+	\end{aligned}}
+\end{equation}
+where the circuit $\mathcal{C}$ and the surface $\mathcal{S}$ can be considered 
+fixed but where   we already account the speed of the coil.
+
+From another, but equivalent, point of view, we can suppose to freeze, at a 
+certain instant, the circuit and to define the contour $\mathcal{C}$  and its 
+surface $\mathcal{S}$ as fixed respect to the stationary reference frame. Even 
+if the contour $\mathcal{C}$ and the surface $\mathcal{S}$ are fixed in the 
+space, the charge present into the coil is subjected to a vector speed 
+$\vec{v}$ and hence is subjected to a force $\vec{f}= 
+q(\vec{E}+\vec{v}\times\vec{B})$ respect to the reference frame $\mathcal{O}$, 
+from Galilean invariance we can impose that  $\vec{f}=\vec{f}'=q\vec{E}'$ which 
+results in $\vec{E}'=\vec{E}+\vec{v}\times\vec{B}$. That means, the induced 
+electrical field along the coil seen from a stationary reference frame is given 
+by 
+\begin{equation}\label{silvestrini_5}
+	\vec{E}=\vec{E}'-\vec{v}\times\vec{B}
+\end{equation}
+For ideal conductive coil we can write $$\vec{E}=-\vec{v}\times\vec{B}.$$
+\begin{figure}[H]
+	\centering
+	\includegraphics[width = 350pt, angle = 0, 
+	keepaspectratio]{figures/moving_coil_4.eps}
+	\captionsetup{width=0.75\textwidth}		
+	\caption{Lorentz force applied to the coil charge due to effect of the 
+		speed.}
+	\label{moving_coil_4}
+\end{figure}
+
+
+Now we can write the vector $\vec{B}$ as a superposition of two fields:  the 
+$\vec{B}_i$ due to the current $i(t)$ and the external field $\vec{B}^M$ which 
+is supposed to be constant and isotropic, 
+\begin{equation*}
+	\vec{B}(t)=\vec{B}_i(t)+\vec{B}^M
+\end{equation*}
+Therefore, the last term in Eq.~\ref{jackson_5} can be rewritten as
+\begin{equation}\label{jackson_6}
+	\begin{aligned}
+		\int_\mathcal{S}\frac{\partial\vec{B}}{\partial t}\cdot\hat{n}\,da &= 
+		\int_\mathcal{S}\frac{\partial \vec{B}_i}{\partial t}\cdot\hat{n}\, da 
+		+ \int_\mathcal{S}\frac{\partial \vec{B}^M}{\partial t}\cdot\hat{n}\, da
+	\end{aligned}
+\end{equation} 
+where 
+\begin{equation}\label{jackson_6b}
+	\begin{aligned}
+		\frac{\partial \vec{B}^M}{\partial t} = 0
+	\end{aligned}
+\end{equation} 
+\begin{equation}\label{jackson_6c}
+	\begin{aligned}
+		\frac{\partial \vec{B}_i}{\partial t} = \frac{\partial 
+			\vec{B}_i(i)}{\partial i}\,\frac{d i(t)}{dt}
+	\end{aligned}
+\end{equation} 
+Hence Eq.~\ref{jackson_6} can be written as
+\begin{equation}\label{jackson_6d}
+	\begin{aligned}
+		\int_\mathcal{S}\frac{\partial\vec{B}}{\partial t}\cdot\hat{n}\,da = 
+		\int_\mathcal{S}\Big[\frac{\partial \vec{B}_i(i)}{\partial i}\frac{d 
+			i(t)}{dt}\Big]\cdot\hat{n}\,da = \frac{\partial \phi(i)}{\partial i} 
+		\frac{di(t)}{dt} = L\frac{di(t)}{dt}
+	\end{aligned}
+\end{equation} 
+where $\mathcal{S}$ is considered constant and $\partial \phi(i)/\partial i = 
+L$ is the definition of inductance.
+
+Now we apply Eq.~\ref{jackson_5} in clockwise around the contour $\mathcal{C}$ 
+of the Figure~\ref{moving_coil_3a} and we consider the case that the coil is 
+composed of $N_c$ turns
+\begin{equation}\label{}
+	\begin{aligned}
+		&\psi(t) = N_c\phi(t) = N_c \int_{S}^{}\vec{B}\cdot d\vec{s} \\[6pt]
+		&L_c = N_c\,L
+	\end{aligned}
+\end{equation}
+we obtain 
+\begin{equation}\label{jackson_7}
+	\begin{aligned}
+		\underbrace{\int_{(-)}^{(+)}\vec{E}\cdot\,d\vec{l}}_{\text{source}} \, 
+		+ \underbrace{\int\vec{E}\cdot\,d\vec{l}}_{\text{resistor}} \, + 
+		\underbrace{\int\vec{E}'\cdot\,d\vec{l}}_{\text{coil}} = - 
+		\frac{d}{dt}\int_S\vec{B}\cdot\hat{n}\,da.
+	\end{aligned}
+\end{equation} 
+or
+\begin{equation}\label{jackson_8}
+	\begin{aligned}
+		\underbrace{\int_{(-)}^{(+)}\vec{E}\cdot\,d\vec{l}}_{\text{source}} \, 
+		+ \underbrace{\int\vec{E}\cdot\,d\vec{l}}_{\text{resistor}} \, + 
+		\underbrace{\int\Big[\vec{E}' - 
+			\vec{v}_v\times\vec{B}^MN_c\Big]\cdot\,d\vec{l}}_{\text{coil}} = - 
+		L_c\frac{di_c(t)}{dt}.
+	\end{aligned}
+\end{equation} 
+The integrals over the fixed components (source and resistor) follow from 
+Equations
+\begin{equation}\label{jackson_9}
+	-u_c = \underbrace{\int_{(-)}^{(+)}\vec{E}\cdot\, d\vec{l}}_{\text{source}}
+\end{equation} 
+\begin{equation}\label{jackson_9b}
+	i_c\,R_c = \underbrace{\int\vec{E}\cdot\,d\vec{l}}_{\text{resistor}}
+\end{equation} 
+Concerning the coil we consider the case where the whole resistance is 
+accounted in $R_c$ and we set $\vec{E}'= \vec{J}/\sigma = 0$, we obtain
+\begin{equation}\label{jackson_10}
+	\begin{aligned}
+		u_c(t) - i_c(t)\,R_c-L_c 
+		\frac{di_c}{dt}+\int_{\text{coil}}\big(\vec{v}_v\times\vec{B}^MN_c\big)\cdot
+		d\vec{l}=0
+	\end{aligned}
+\end{equation} 
+We are considering the case where $\vec{v}_v=v_v\hat{x}$, 
+$\vec{B}\,^M=-B^M\,\hat{z}$ and $d\vec{l}=dy\hat{y}$. Therefore 
+($\hat{x}\times\hat{z}=-\hat{y}$), 
+\begin{equation}\label{jackson_11}
+	\begin{aligned}
+		\int_{\text{coil}}\big(\vec{v}_v\times\vec{B}^MN_c\big)\cdot d\vec{l} = 
+		\int_{h}^{0}v_v\,B^MN_cdy = -N_cB^Mhv_v(t)
+	\end{aligned}
+\end{equation} 
+we obtain
+\begin{equation}\label{jackson_12}
+	\boxed{	\begin{aligned}
+			u_c(t) - i_c(t)R_c-L_c\frac{di_c(t)}{dt}-N_cB^Mhv_v(t)=0
+	\end{aligned}}
+\end{equation}
+
+To complete the linear pm-actuator model we must add the mechanical equations 
+using the Newton's equation. To apply the Newton's law we first must calculate 
+the corresponding force actuated by the iteration between the current $i_c$ and 
+the magnetic field $\vec{B}^M$.
+
+
+The expression of the force due to the current $i_c$ in the magnetic field 
+$\vec{B}^M$ is evaluated as follows 
+\begin{equation}\label{force}
+	\vec{f}(t) = i(t)\int_{\text{wire}}d\vec{l}\times\vec{B}^{\text{ext}}
+\end{equation}
+where $\vec{B}^{\text{ext}}$ is an external field. Applying the integration of 
+Eq.~\ref{force} it results in the following equation (\textbf{integration path 
+	follows the current direction})
+\begin{equation}\label{linact_8}
+	\begin{aligned}
+		f_v^m(t) = 
+		N_c\,i_c(t)\int_{h}^{0}d\vec{l}\times\vec{B}^M=N_c\,B^M\,h\,i_c(t)\quad 
+		\text{positive x-direction}
+	\end{aligned}
+\end{equation}
+where $N_c$ by the number of turns linkage to the magnetic field.
+The complete set of system equations becomes
+\begin{equation}\label{linact_9}
+	\left\lbrace \begin{aligned}
+		\frac{dx_v(t)}{dt} &= v_v(t) \\[6pt]
+		\frac{dv_v(t)}{dt} &= N_c\frac{B^Mh}{m_v} i_c(t)-\frac{b_v}{m_v} 
+		v_v(t)-\frac{1}{m_v}f^e_v(t) \\[6pt]
+		\frac{di_c(t)}{dt} &= 
+		-\frac{R_c}{L_c}i_c(t)-\frac{1}{L_c}N_cB^Mhv_v(t)+\frac{1}{L_c}u_c(t)
+	\end{aligned}\right. 
+\end{equation}
+the first two equations represent the dynamic motion of the bar where the force 
+$f_v^m(t)=N_cB^Mh\,i(t)$ is generated by the interaction of the current 
+$i_c(t)$ and the magnetic field $\vec{B}^M$. The third equation represents the 
+Kirchhoff's voltage law of the electrical circuit which generates the current 
+$i_c(t)$ by applying the voltage $u_c(t)$. The equivalent auto-inductance $L_c$ 
+and the back-emf term, $N_cB^Mhv_v(t)$ represent the effect of the Faraday's 
+law.
+
+\section{Moving Coil: control system design}
+In the following project we are going to consider a linear actuator consisting 
+of a conductive bar of mass $m$ in sliding contact with a pair of stationary 
+conducting rails as shown in Figure~\ref{figure_moving_coil_1}. The rails are 
+connected to a voltage source $u(t)$. The bar is moving trough a constant 
+uniform $\vec{B}^M$ magnetic field with a time dependent velocity $v(t)$ 
+relative to the rails. We can consider the rails an inertial reference frame. 
+This model could be useful for modeling a plotter or in general a linear 
+actuator.
+\begin{figure}[H]
+	\centering
+	\includegraphics[width = 360pt, 
+	keepaspectratio]{figures/moving_coil_2.eps}
+	\captionsetup{width=0.5\textwidth, font=small}		
+	\caption{Linear actuator.}
+	\label{figure_moving_coil_1}
+\end{figure}
+\subsection{Model Derivation}
+Consider
+\begin{equation}\label{linact_1}
+	\begin{aligned}
+		\psi(t) = \int_{S}^{}\vec{B}\cdot d\vec{s}
+	\end{aligned}
+\end{equation}
+the flux linkage to the circuit. At this point we have to point out that the 
+magnetic field $\vec{B}$ include two main contributes: one constant term which 
+comes from the external permanent magnet $\vec{B}^{\,M}$ and one which is 
+generated by the flowing current $i$, that means 
+$\vec{B}=\vec{B}_i+\vec{B}^{\,M}$.\\\\
+Applying the general Kirchhoff's law we obtain
+\begin{equation}\label{linact_2}
+	\begin{aligned}
+		u(t) - Ri(t)+\frac{d\psi(t)}{dt}=0
+	\end{aligned}
+\end{equation}
+The term ${d\psi(t)/dt}$ represents the voltage induced in the circuit by a 
+time rate of change of magnetic flux through the circuit. The change in flux 
+can be due to a change in circuit current and/or the movement of the bar. 
+Hence, the magnetic flux can be written as function of space and current 
+$\psi(i,x)$
+\begin{equation}\label{linact_3}
+	\begin{aligned}
+		{\psi(t)}=\int_{S}^{}\vec{B}\cdot d\vec{s}=\int_{S}^{}\left( 
+		\vec{B}_i+\vec{B}^M\right) \cdot d\vec{s}=\psi(i,x)
+	\end{aligned}
+\end{equation}
+Hence the total time derivative of $\psi(i,x)$ can be written as follows
+\begin{equation}\label{linact_4}
+	\begin{aligned}
+		\frac{d\psi(i,x)}{dt}= \frac{\partial\psi(i,x)}{\partial i(t)}\frac{d 
+			i(t)}{d t} + \frac{\partial\psi(i,x)}{\partial x(t)}\frac{d x(t)}{d t}
+	\end{aligned}
+\end{equation}
+where $h$ (length of the bar) and ${B}^{\,M}$ (magnitude of the permanent 
+magnet magnetic field) are considered constant parameters
+\begin{equation}\label{linact_5}
+	\begin{aligned}
+		\frac{\partial\psi(i,x)}{\partial x(t)}\frac{d x(t)}{d t} = 
+		\frac{\partial {B}x h}{\partial x} v(t) \approx B^Mhv(t)
+	\end{aligned}
+\end{equation}
+and 
+\begin{equation}\label{linact_6}
+	\begin{aligned}
+		\frac{\partial\psi(i,x)}{\partial i(t)}\frac{d i(t)}{d t} =L(x) 
+		\frac{di}{dt} \approx L\frac{di}{dt}
+	\end{aligned}
+\end{equation}
+Eq. \ref{linact_2} becomes
+\begin{equation}\label{linact_7}
+	\begin{aligned}
+		u(t) - Ri(t)-L\frac{di(t)}{dt}-B^Mhv(t)=0
+	\end{aligned}
+\end{equation}
+The expression of the force due to the current $i$ in the magnetic field 
+$\vec{B}^M$ is given as follows (\textbf{integration path follows the current 
+	direction})
+\begin{equation}\label{linact_8}
+	\begin{aligned}
+		f_m=i(t)\int_{h}^{0}d\vec{l}\times\vec{B}^M=B^Mh\,i(t)\quad 
+		\text{positive x-direction}
+	\end{aligned}
+\end{equation}
+The complete set of system equations becomes
+\begin{equation}\label{linact_9}
+	\left\lbrace \begin{aligned}
+		\frac{dx(t)}{dt} &= v(t) \\[6pt]
+		\frac{dv(t)}{dt} &= \frac{B^Mh}{m} i(t)-\frac{b}{m} 
+		v(t)-\frac{1}{m}f_l(t) \\[6pt]
+		\frac{di(t)}{dt} &= -\frac{R}{L}i(t)-\frac{1}{L}B^Mhv(t)+\frac{1}{L}u(t)
+	\end{aligned}\right. 
+\end{equation}
+the first two equations represent the dynamic motion of the bar where the force 
+$f_m(t)=B^Mh\,i(t)$ is generated by the interaction of the current $i(t)$ and 
+the magnetic field $\vec{B}^M$). The third equation represents the dynamic of 
+the electrical circuit which generates the current $i(t)$ by applying the 
+voltage $u(t)$. The equivalent auto-inductance $L$ represents the effect of the 
+Faraday's law.\\ 
+
+The current $i(t)$ and the position $x(t)$ are measured, hence, the state space 
+representation can be represented as follows
+\begin{mybox}
+	\begin{equation*}
+		\left\lbrace \begin{aligned}
+			\dot{\vec{x}}(t) &= \tilde{\mathbf{A}} \vec{x}(t) + 
+			\tilde{\mathbf{B}}u(t) + \tilde{\mathbf{E}}d(t)\\[6pt]
+			{\vec{y}}(t) &= \tilde{\mathbf{C}} \vec{x}(t)
+		\end{aligned}\right. 
+	\end{equation*}\\
+	\begin{equation*}
+		\left[ 
+		\begin{matrix}
+			\frac{dx(t)}{dt} \\[6pt]
+			\frac{dv(t)}{dt} \\[6pt]
+			\frac{di(t)}{dt}
+		\end{matrix} \right] = \left[ 
+		\begin{matrix}
+			0 & 1 & 0\\[6pt]
+			0 & -\frac{b}{m} & \frac{B^{M}h}{m}\\[6pt]
+			0 & -\frac{B^{M}h}{L} & -\frac{R}{L}
+		\end{matrix} \right] \left[ 
+		\begin{matrix}
+			x(t) \\[6pt]
+			v(t)\\[6pt]
+			i(t)
+		\end{matrix} \right] + 
+		\left[ 
+		\begin{matrix}
+			0 \\[6pt]
+			0 \\[6pt]
+			\frac{1}{L}
+		\end{matrix} \right] \ u(t) + 
+		\left[ 
+		\begin{matrix}
+			0 \\[6pt]
+			-\frac{1}{m} \\[6pt]
+			0
+		\end{matrix} \right] \ f_l(t)
+	\end{equation*}\\
+	\begin{equation*}
+		\begin{aligned}
+			\tilde{\mathbf{A}} &= \begin{bmatrix}
+				0 & 1 & 0\\[6pt]
+				0 & -\frac{b}{m} & \frac{B^{M}h}{m}\\[6pt]
+				0 & -\frac{B^{M}h}{L} & -\frac{R}{L}
+			\end{bmatrix}, 
+			\quad 
+			\tilde{\mathbf{B}} = \begin{bmatrix}
+				0 \\[6pt]
+				0 \\[6pt]
+				\frac{1}{L}
+			\end{bmatrix} \\[6pt]
+			\tilde{\mathbf{E}} &= \begin{bmatrix}
+				0 \\[6pt]
+				-\frac{1}{m} \\[6pt]
+				0
+			\end{bmatrix}, \quad \tilde{\mathbf{C}} = 
+			\begin{bmatrix}
+				1 & 0 & 0 \\[6pt]
+				0 & 0 & 1
+			\end{bmatrix}
+		\end{aligned}
+	\end{equation*}
+\end{mybox}
+\subsection{Control Problem}
+Given the following data: 
+\begin{enumerate}
+	\item Rails friction $b=\SI{20}{\newton\second\per\meter}$
+	\item Length of the bar $h=\SI{0.2}{\meter}$	
+	\item Mass of the bar $m=\SI{0.03}{\kilogram}$
+	\item Magnitude of the permanent magnet magnetic field 
+	$B^M=\SI{1.2}{\tesla}$
+	\item Equivalent circuit inductance $L=\SI{1}{\milli\henry}$
+	\item Equivalent circuit resistance $R=\SI{1}{\ohm}$
+	\item $f_l(t)=b_2v(t)$ is an unmodelized viscosity, where 
+	$b_2=\SI{0.1}{\newton\second\per\meter}$ for case (1) and 
+	$b_2~=~\SI{1}{\newton\second\per\meter}$ for case (2)
+\end{enumerate}
+we want to design a controller which is able to position the bar (plotter head) 
+from a initial point to a given final point without any residual error.
+\subsection{Control Design without Load Estimator}
+To meet the control requirements a possible implementation is a state feedback 
+control with integrator. Obviously the full state is not measurable, hence a 
+full state observer will be also implemented.
+
+The selected control  layout is reported in Figure~\ref{figure_ctrl_coil_1}. To 
+implement the control structure we have to calculate the state feedback vector 
+which includes the gain corresponding to the integral block 
+$\begin{bmatrix}\mathbf{K}_x&k_i\end{bmatrix}$ and a state observer. For both 
+purposes we have to calculate the corresponding $\mathbf{A}$ and $\mathbf{B}$ 
+matrices in discrete time domain as follows
+\begin{equation}
+	\mathbf{A} = \mathbf{I} + \tilde{\mathbf{A}} \ t_s
+\end{equation}
+\begin{equation}
+	\mathbf{B} = \tilde{\mathbf{B}} \ t_s
+\end{equation}
+\begin{figure}[H]
+	\centering
+	\includegraphics[width = 460pt, angle = 0, 
+	keepaspectratio]{figures/servo_linear_actuator_1.eps}
+	\captionsetup{width=0.5\textwidth, font=small}		
+	\caption{Control architecture.}
+	\label{figure_ctrl_coil_1}
+\end{figure}
+Once the matrices $\mathbf{A}$ and $\mathbf{B}$ are obtained we can proceed 
+implementing the extended system to calculate 
+$\begin{bmatrix}K_I&\mathbf{K}_x\end{bmatrix}$ as follows
+\begin{equation*}
+	\begin{aligned}
+		\mathbf{A'} &= 
+		\begin{bmatrix}
+			\mathbf{A} & \mathbf{B} \\[6pt]  
+			\mathbf{0} & 0
+		\end{bmatrix} = \text{$(n+1)\times(n+1)$ matrix} \\[6pt]
+		\mathbf{B'} &= 
+		\begin{bmatrix}
+			\mathbf{0} \\[6pt]  
+			1
+		\end{bmatrix}= \text{$(n+1)$ column vector }
+	\end{aligned}
+\end{equation*}
+Obtained $\mathbf{A'}$ and $\mathbf{B'}$ we can proceed calculating the state 
+feedback vector $\mathbf{K'}$ from the Ackermann's formula
+\begin{equation*}
+	\begin{aligned}
+		\mathbf{K'} &= \begin{bmatrix} 0&0&...&0&1 \end{bmatrix} 
+		\mathbf{M'}^{-1}q(\mathbf{A'})
+	\end{aligned}
+\end{equation*}
+where $\mathbf{M'} = \begin{bmatrix} 
+	\mathbf{B'}&\mathbf{A'}\mathbf{B'}&...&\left( \mathbf{A'}\right) 
+	^{n+m-1}\mathbf{B'} \end{bmatrix}$. Ackermann's formula uses the 
+\textbf{Cayley–Hamilton} theorem and $q(z)$ is the desired final polynomial 
+characteristics.
+
+The \textbf{Cayley-Hamilton} theorem states that $\mathbf{A'}$ satisfies its 
+own characteristic equation, hence
+\begin{equation} \label{eq:13}
+	q(\mathbf{A'}) = 
+	\mathbf{A'}^{\,n}+\alpha_1\mathbf{A'}^{\,n-1}+...+\alpha_{n-1}\mathbf{A'}+\alpha_n\mathbf{I}
+	= \mathbf{0}
+\end{equation}
+Once obtained the matrix $\mathbf{K'}$ we can use the formula
+\begin{equation}
+	\begin{aligned}
+		\begin{bmatrix} 
+			\mathbf{K}_x & k_i
+		\end{bmatrix} = \left\lbrace \mathbf{K'}+
+		\begin{bmatrix} 
+			0&0&0&1
+		\end{bmatrix}\right\rbrace 
+		\begin{bmatrix} 
+			\mathbf{A}-\mathbf{I}_4 & \mathbf{B}  \\[6pt] 
+			\mathbf{C}\mathbf{A} & \mathbf{C}\mathbf{B} 
+		\end{bmatrix}^{-1}
+	\end{aligned}
+\end{equation}
+to obtain the state feedback gains 
+$\begin{bmatrix}\mathbf{K}_x&k_i\end{bmatrix}$.
+
+Regarding the state observer we have just to calculate the matrix $\mathbf{L}$. 
+In this case the system is SIMO because the output vector $\vec{y}$ and 
+obviously $\hat{\vec{y}}$ have dimension two and we have to use the Matlab 
+command \texttt{place()}. The observer block becomes
+\begin{equation}
+	\begin{aligned}
+		\hat{\vec{x}}(k+1)  &= {\mathbf{A}} \,\hat{\vec{x}}(k) +{\mathbf{B}} 
+		\,u(k)+{\mathbf{L}} \left( \vec{y}(k) - \hat{\vec{y}}(k) \right)  
+		\\[6pt]
+		\hat{\vec{y}}(k)  &= \mathbf{C} \,\hat{\vec{x}}(k)
+	\end{aligned}
+\end{equation}
+as reported in Figure~\ref{figure_ctrl_coil_1}
+\subsubsection{Simulation results}
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{.5\textwidth}
+		\centering
+		\includegraphics[width = 225pt, angle = 0, 
+		keepaspectratio]{figures/track_x_1.eps}
+		\captionsetup{width=0.75\textwidth}
+		\caption{Tracking performance for a given position set-point. The 
+			position reference $x^{ref}$ is in dashed. Case (1).}
+		\label{figure_ctrl_coil_sim_results_1}
+	\end{subfigure}%
+	\begin{subfigure}{.5\textwidth}
+		\centering
+		\includegraphics[width = 250pt, angle = 0, 
+		keepaspectratio]{figures/observer_1.eps}
+		\captionsetup{width=0.75\textwidth}
+		\caption{Observer performance. Case (1).}
+		\label{figure_ctrl_coil_sim_results_2}
+	\end{subfigure}
+	\caption{Simulation results.}
+	\label{}
+\end{figure}
+\textbf{Limits of the model} - 
+The observer we have implemented presents some limits in particular in case (2) 
+where unmodeled friction becomes relevant the estimation of the speed ($v(t)$) 
+accumulate an error as function of the load as reported in 
+Figure~\ref{figure_ctrl_coil_sim_results_4} where also the tracking performance 
+are affected as shown in Figure~\ref{figure_ctrl_coil_sim_results_3}
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{.5\textwidth}
+		\centering
+		\includegraphics[width = 225pt, angle = 0, 
+		keepaspectratio]{figures/track_x_2.eps}
+		\captionsetup{width=0.75\textwidth}
+		\caption{Tracking performance for a given position set-point. The 
+			position reference $x^{ref}$ is in dashed. Case (2).}
+		\label{figure_ctrl_coil_sim_results_3}
+	\end{subfigure}%
+	\begin{subfigure}{.5\textwidth}
+		\centering
+		\includegraphics[width = 250pt, angle = 0, 
+		keepaspectratio]{figures/observer_2.eps}
+		\captionsetup{width=0.75\textwidth}
+		\caption{Observer performance in case of high level of load force. Note 
+			the residual error in the estimation of the load force. Case (2).}
+		\label{figure_ctrl_coil_sim_results_4}
+	\end{subfigure}
+	\caption{Simulation results.}
+	\label{}
+\end{figure}
+
+To avoid this degradation if the performance we would like to extend our state 
+observer including an approximation of the dynamic of the load.
+
+\subsection{Control Design with Load Estimator}
+In this section we want to extend the observer including the dynamic of the 
+load and try to increase the robustness against friction degradation of the 
+rails. Let's start with a possible load model.
+
+We can suppose a load of the form (the nature of the load force is friction, 
+which means, a force which depends by speed):
+\begin{equation*}
+	\begin{aligned}
+		{f}_l(t)  = {v}(t)
+	\end{aligned}
+\end{equation*}
+where its dynamic can be expressed as
+\begin{equation*}
+	\begin{aligned}
+		\dot{f}_l(t)  = \dot{v}(t)
+	\end{aligned}
+\end{equation*}
+From Eq.~\ref{linact_9} we can write 
+\begin{equation*}
+	\begin{aligned}
+		\dot{f}_l(t)  = \dot{v}(t) = \frac{B^Mh}{m} i(t)-\frac{b}{m} 
+		v(t)-\frac{1}{m}f_l(t) 
+	\end{aligned}
+\end{equation*}
+\begin{figure}[H]
+	\centering
+	\includegraphics[width = 460pt, angle = 0, 
+	keepaspectratio]{figures/servo_linear_actuator_2.eps}
+	\captionsetup{width=0.5\textwidth, font=small}		
+	\caption{Control architecture with load estimator.}
+	\label{ctrl_coil_2}
+\end{figure}
+
+The extended (open loop) observer model can be described as follows
+\begin{equation}\label{extended_1}
+	\begin{bmatrix}
+		\frac{d\hat{x}(t)}{dt} \\[6pt]
+		\frac{d\hat{v}(t)}{dt} \\[6pt]
+		\frac{d\hat{i}(t)}{dt} \\[6pt]
+		\frac{d\hat{f}_l(t)}{dt} 
+	\end{bmatrix} = 
+	\begin{bmatrix}
+		0 & 1 & 0 & 0\\[6pt]
+		0 & -\frac{b}{m} & \frac{B^{M}h}{m} & -\frac{1}{m} \\[6pt]
+		0 & -\frac{B^{M}h}{L} & -\frac{R}{L} & 0 \\[6pt]
+		0 & -\frac{b}{m} & \frac{B^{M}h}{m} & -\frac{1}{m}
+	\end{bmatrix}
+	\begin{bmatrix}
+		{\hat{x}(t)} \\[6pt]
+		{\hat{v}(t)} \\[6pt]
+		{\hat{i}(t)} \\[6pt]
+		\hat{f}_l(t) 
+	\end{bmatrix} + 
+	\begin{bmatrix}
+		0 \\[6pt]
+		0 \\[6pt]
+		\frac{1}{L} \\[6pt]
+		0
+	\end{bmatrix} u(t)
+\end{equation}
+where the closed loop form is
+\begin{equation}
+	\begin{aligned}
+		\hat{\vec{x}}_{le}(t)  &= \tilde{\mathbf{A}}_{le} 
+		\,\hat{\vec{x}}_{le}(t) +\tilde{\mathbf{B}}_{le} 
+		\,\tau_1(t)+\tilde{\mathbf{L}}_{le} \left( \vec{y}(t) - 
+		\hat{\vec{y}}(t) \right)  \\[6pt]
+		\hat{\vec{y}}(t)  &= \mathbf{C}_{le} \,\hat{\vec{x}}_{le}(t)
+	\end{aligned}
+\end{equation}
+where $\vec{x}_{le} = \begin{bmatrix} x(t) & v(t) & i(t) & f_l(t) 
+\end{bmatrix}^T$, $\mathbf{C}_{le} = \begin{bmatrix} 1 & 0 & 0 & 0 \\ 0 & 0 & 1 
+	& 0 \end{bmatrix}$
+\begin{equation}
+	\tilde{\mathbf{A}}_{le} = 
+	\begin{bmatrix}
+		0 & 1 & 0 & 0\\[6pt]
+		0 & -\frac{b}{m} & \frac{B^{M}h}{m} & -\frac{1}{m} \\[6pt]
+		0 & -\frac{B^{M}h}{L} & -\frac{R}{L} & 0 \\[6pt]
+		0 & -\frac{b}{m} & \frac{B^{M}h}{m} & -\frac{1}{m}
+	\end{bmatrix}
+\end{equation}
+The system $(\mathbf{A}_{le},\mathbf{C}_{le})$ is fully observable.
+After the discretization 
+\begin{equation}
+	\begin{aligned}
+		\tilde{\mathbf{A}}_{le} &\rightarrow {\mathbf{A}}_{le} \\[6pt]
+		\tilde{\mathbf{B}}_{le} &\rightarrow {\mathbf{B}}_{le}
+	\end{aligned}
+\end{equation}
+\begin{equation}
+	\mathbf{A}_{le} = \mathbf{I} + \tilde{\mathbf{A}}_{le} \ t_s
+\end{equation}
+or
+\begin{equation}
+	\mathbf{B}_{le} = \tilde{\mathbf{B}}_{le} \ t_s
+\end{equation}
+we obtain the following state observer system
+\begin{equation}
+	\begin{aligned}
+		\hat{\vec{x}}_{le}(k+1)  &= {\mathbf{A}}_{le} \,\hat{\vec{x}}_{le}(k) 
+		+{\mathbf{B}}_{le} \,\tau_1(t)+{\mathbf{L}}_{le} \left( \vec{y}(k) - 
+		\hat{\vec{y}}(k) \right)  \\[6pt]
+		\hat{\vec{y}}(k)  &= \mathbf{C}_{le} \,\hat{\vec{x}}_{le}(k)
+	\end{aligned}
+\end{equation}
+Where matrix $\mathbf{L}_{le}$ is calculated applying \texttt{place()} formula 
+considering the system $(\mathbf{A}_{le},\mathbf{C}_{le})$.
+\subsubsection{Simulation Results}
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{.5\textwidth}
+		\centering
+		\includegraphics[width = 245pt, angle = 0, 
+		keepaspectratio]{figures/track_x_3.eps}
+		\captionsetup{width=0.75\textwidth}
+		\caption{Tracking performance for a given position set-point. The 
+			position reference $x^{ref}$ is in dashed. Case (2).}
+		\label{figure_moving_coil_2}
+	\end{subfigure}%
+	\begin{subfigure}{.5\textwidth}
+		\centering
+		\includegraphics[width = 250pt, angle = 0, 
+		keepaspectratio]{figures/observer_3.eps}
+		\captionsetup{width=0.75\textwidth}
+		\caption{Observer performance in case of high level of load force. Note 
+			the residual error in the estimation of the load force. Case (2).}
+		\label{figure_moving_coil_3}
+	\end{subfigure}
+	\caption{Simulation results.}
+	\label{}
+\end{figure}
+\textbf{Summary} - In this example we have seen an application of the state 
+feedback with integral control. This kind of approach is useful when it is 
+necessary to achieve a zero error steady state tracking from a constant 
+reference and the plant doesn't contain an integrator. In additional, we have 
+implemented a state observer, at first glance, without including the dynamic of 
+the load, which is here considered as a disturbance or plant parameter 
+deviation (like ageing in the rails viscosity). We have seen that this plant 
+deviation can degrade the performance of the servo and increasing the time to 
+set, because the load enter in the system like a disturbance and the controller 
+has to compensate it, spending \textquotedblleft time\textquotedblright  and 
+\textquotedblleft energy\textquotedblright  which results in a modification of 
+the global dynamics.
+
+In the second part we tried to modelize the load dynamics supposing it comes from 
+a not modelized viscosity of the rails. Increasing the observer (in terms of states elements), namely, including the 
+dynamics of the load, we were able to estimate the load and to reduce, at least 
+partially, the degradation of the tracking performance. 
+
+	\newpage
+	\begin{thebibliography}{9}
+	\bibitem{furlani} 
+	Edward P. Furlani, \emph{Permanent magnet and electromagnetical devices}. Academic Press 
+	2001.
+	\bibitem{woodson1} 
+	H.H. Woodson, J.R. Melcher, \emph{Electromechanical Dynamics, Part I: Discrete Systems}. John Wiley 1968.
+	\bibitem{ogata_1} 
+	K. Ogata, \emph{Modern Control Engineering}. Pearson 2009.	
+	\bibitem{ogata_2} 
+	K. Ogata, \emph{Discrete-time Control Systems}. Prentice-Hall 1987.
+	\end{thebibliography}
+	
+	%*********************************************************
+	% Print bibliography (If bibliography is empty nothing happens)
+	%*********************************************************
+	%\newpage
+	%\printbibliography[heading=bibintoc]
+\end{onehalfspace}
+\end{document} 
