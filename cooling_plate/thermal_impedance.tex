@@ -1,0 +1,400 @@
+\documentclass[a4paper,11pt]{article}
+
+%% -------------------------------------------------------
+%%  Pacchetti
+%% -------------------------------------------------------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[italian]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{siunitx}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usepackage{circuitikz}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{caption}
+\usepackage{float}
+
+\geometry{margin=25mm}
+
+\sisetup{
+  output-decimal-marker = {,},
+  group-separator       = {\,},
+  per-mode              = symbol
+}
+
+\hypersetup{
+  colorlinks = true,
+  linkcolor  = blue!60!black,
+  urlcolor   = blue!60!black
+}
+
+%% -------------------------------------------------------
+%%  Intestazione
+%% -------------------------------------------------------
+\title{\textbf{Calcolo dell'Impedenza Termica:\\
+Piastra in Alluminio con Raffreddamento a Liquido}}
+\author{Davide}
+\date{\today}
+
+%% -------------------------------------------------------
+\begin{document}
+\maketitle
+\tableofcontents
+\bigskip
+
+%% =======================================================
+\section{Introduzione e modello fisico}
+%% =======================================================
+
+L'impedenza termica $Z_{\mathrm{th}}$ (o, in regime stazionario, la resistenza termica
+$R_{\mathrm{th}}$) descrive la caduta di temperatura per unità di potenza dissipata lungo
+un percorso termico. Per un sistema lineare e stazionario:
+
+\begin{equation}
+  \Delta T = R_{\mathrm{th}}\, P
+  \qquad\left[\si{\kelvin\per\watt}\right]
+\end{equation}
+
+dove $\Delta T$ è la differenza di temperatura tra la sorgente di calore e il riferimento
+(in questo caso il fluido refrigerante), e $P$ è la potenza dissipata in watt.
+
+Il sistema in esame è composto da:
+\begin{enumerate}
+  \item una \textbf{piastra in alluminio} di dimensioni
+        $\SI{40}{mm}\times\SI{160}{mm}\times\SI{5}{mm}$
+        (lo spessore di \SI{5}{mm} è lungo l'asse verticale del flusso di calore);
+  \item un \textbf{flusso di acqua con glicole etilenico al 30\%} in volume
+        sulla faccia inferiore della piastra, con portata volumetrica
+        $\dot{V}=\SI{24}{l/min}$.
+\end{enumerate}
+
+Il flusso di calore è monodimensionale e verticale, dalla sorgente (superiore)
+verso il fluido (inferiore). La resistenza totale è la serie di due contributi:
+
+\begin{equation}
+  \boxed{R_{\mathrm{th,tot}} = R_{\mathrm{cond}} + R_{\mathrm{conv}}}
+\end{equation}
+
+Il circuito analogico elettro-termico è rappresentato in Figura~\ref{fig:circuit}.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[font=\small]
+  % Nodi
+  \node[circle, fill=red!20, draw, minimum size=8mm] (Ts) at (0,0) {$T_s$};
+  \node[circle, fill=orange!20, draw, minimum size=8mm] (Tc) at (4,0) {$T_c$};
+  \node[circle, fill=blue!20, draw, minimum size=8mm] (Tf) at (8,0) {$T_f$};
+  % Resistenze
+  \draw[thick] (Ts) -- node[above]{$R_{\mathrm{cond}}$} (Tc);
+  \draw[thick] (Tc) -- node[above]{$R_{\mathrm{conv}}$} (Tf);
+  % Freccia potenza
+  \draw[->, thick, red!60!black] (-1.5,0) -- node[above]{$P$} (Ts);
+  % Etichette nodi
+  \node[below=3mm] at (Ts) {sorgente};
+  \node[below=3mm] at (Tc) {case};
+  \node[below=3mm] at (Tf) {fluido};
+\end{tikzpicture}
+\caption{Schema circuito termico equivalente. $T_s$ = temperatura sorgente,
+         $T_c$ = temperatura sulla faccia inferiore della piastra,
+         $T_f$ = temperatura del fluido.}
+\label{fig:circuit}
+\end{figure}
+
+%% =======================================================
+\section{Geometria e dati di ingresso}
+%% =======================================================
+
+\begin{table}[H]
+\centering
+\caption{Dati geometrici della piastra.}
+\begin{tabular}{llll}
+\toprule
+Simbolo & Grandezza & Valore & Unità \\
+\midrule
+$L$  & Lunghezza piastra         & 160   & \si{mm} \\
+$W$  & Larghezza piastra         & 40    & \si{mm} \\
+$t$  & Spessore piastra (asse~z) & 5     & \si{mm} \\
+$A$  & Area superficiale ($L\times W$) & 64 & \si{cm^2} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+L'area della superficie attiva:
+\begin{equation}
+  A = L \times W = \SI{0.160}{m} \times \SI{0.040}{m} = \SI{6.4e-3}{m^2}
+\end{equation}
+
+%% =======================================================
+\section{Resistenza termica di conduzione}
+%% =======================================================
+
+Il trasferimento di calore per conduzione stazionaria attraverso una parete piana
+è governato dalla legge di Fourier:
+
+\begin{equation}
+  q = -k \frac{\mathrm{d}T}{\mathrm{d}z}
+\end{equation}
+
+dove $q\,[\si{W/m^2}]$ è il flusso di calore e $k\,[\si{W/(m\cdot K)}]$ è la
+conducibilità termica del materiale. Per una geometria planare con spessore $t$,
+area $A$ e potenza $P = q\cdot A$, la resistenza termica di conduzione è:
+
+\begin{equation}
+  \boxed{R_{\mathrm{cond}} = \frac{t}{k\,A}}
+  \qquad \left[\si{K/W}\right]
+\end{equation}
+
+Per l'alluminio generico (serie 6xxx) si assume $k_{\mathrm{Al}} = \SI{160}{W/(m\cdot K)}$.
+
+\begin{equation}
+  R_{\mathrm{cond}} = \frac{\SI{5e-3}{m}}{\SI{160}{W/(m\cdot K)} \times \SI{6.4e-3}{m^2}}
+  = \SI{4.88e-3}{K/W} \approx \SI{4.88}{mK/W}
+\end{equation}
+
+\noindent\textbf{Nota:} questo valore è molto piccolo rispetto alla resistenza convettiva,
+a conferma che l'alluminio è un ottimo conduttore termico per questa geometria.
+
+%% =======================================================
+\section{Resistenza termica di convezione}
+%% =======================================================
+
+\subsection{Proprietà del fluido}
+
+Il fluido refrigerante è acqua con glicole etilenico al 30\% in volume.
+Le proprietà fisiche a temperatura operativa tipica ($\approx\SI{50}{\celsius}$) sono:
+
+\begin{table}[H]
+\centering
+\caption{Proprietà termofisiche del fluido (EG 30\% vol., $T\approx\SI{50}{\celsius}$).}
+\begin{tabular}{llll}
+\toprule
+Simbolo & Proprietà & Valore & Unità \\
+\midrule
+$\rho$  & Densità                  & 1040  & \si{kg/m^3}       \\
+$c_p$   & Calore specifico         & 3800  & \si{J/(kg\cdot K)} \\
+$\mu$   & Viscosità dinamica       & 0.82  & \si{mPa\cdot s}   \\
+$k_f$   & Conducibilità termica    & 0.45  & \si{W/(m\cdot K)} \\
+$\Pr$   & Numero di Prandtl        & 6.92  & --                \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Il numero di Prandtl è calcolato come:
+\begin{equation}
+  \Pr = \frac{\mu\, c_p}{k_f}
+      = \frac{\SI{8.2e-4}{Pa\cdot s} \times \SI{3800}{J/(kg\cdot K)}}{\SI{0.45}{W/(m\cdot K)}}
+      \approx 6.92
+\end{equation}
+
+\subsection{Portata e velocità media}
+
+La portata volumetrica è:
+\begin{equation}
+  \dot{V} = \SI{24}{l/min} = \frac{24}{60\times 1000}\,\si{m^3/s}
+          = \SI{4.0e-4}{m^3/s}
+\end{equation}
+
+Il canale di raffreddamento ha sezione rettangolare coincidente con la base della piastra
+($h_c = \SI{5}{mm}$, $w_c = \SI{40}{mm}$):
+\begin{equation}
+  A_c = h_c \times w_c = \SI{5e-3}{m} \times \SI{0.040}{m} = \SI{2.0e-4}{m^2}
+\end{equation}
+
+La velocità media del fluido nel canale:
+\begin{equation}
+  \bar{v} = \frac{\dot{V}}{A_c} = \frac{\SI{4.0e-4}{m^3/s}}{\SI{2.0e-4}{m^2}}
+          = \SI{2.0}{m/s}
+\end{equation}
+
+\subsection{Diametro idraulico}
+
+Per un canale rettangolare con altezza $h_c$ e larghezza $w_c$:
+\begin{equation}
+  D_h = \frac{4\,A_c}{P_b} = \frac{4\,h_c\,w_c}{2\,(h_c+w_c)}
+      = \frac{4\times\SI{5e-3}{m}\times\SI{0.040}{m}}{2\,(\SI{5e-3}{m}+\SI{0.040}{m})}
+      \approx \SI{8.89}{mm}
+\end{equation}
+
+dove $P_b$ è il perimetro bagnato della sezione.
+
+\subsection{Numero di Reynolds}
+
+\begin{equation}
+  \Rey = \frac{\rho\,\bar{v}\,D_h}{\mu}
+       = \frac{1040 \times 2.0 \times \SI{8.89e-3}{}}{8.2\times10^{-4}}
+       \approx 22\,547
+\end{equation}
+
+Poiché $\Rey \gg 4000$, il regime è \textbf{turbolento pienamente sviluppato}.
+
+\subsection{Correlazioni per il numero di Nusselt}
+
+\subsubsection{Correlazione di Dittus-Boelter}
+
+Per fluido riscaldato ($n=0.4$), valida per $\Rey > 10^4$, $0.7 < \Pr < 160$,
+$L/D_h > 60$:
+\begin{equation}
+  \Nu_{\mathrm{DB}} = 0.023\,\Rey^{0.8}\,\Pr^{0.4}
+                    = 0.023 \times 22547^{0.8} \times 6.92^{0.4}
+                    \approx 151.5
+\end{equation}
+
+\subsubsection{Correlazione di Gnielinski (consigliata)}
+
+Più accurata nel range $3000 < \Rey < 5\times10^6$, $0.5 < \Pr < 2000$:
+
+\begin{equation}
+  f = \bigl(0.790\ln\Rey - 1.64\bigr)^{-2}
+    = \bigl(0.790\times\ln 22547 - 1.64\bigr)^{-2}
+    \approx 0.02537
+\end{equation}
+
+\begin{equation}
+  \Nu_{\mathrm{G}} = \frac{(f/8)\,(\Rey-1000)\,\Pr}
+                         {1 + 12.7\sqrt{f/8}\,(\Pr^{2/3}-1)}
+                  = \frac{(0.02537/8)\times 21547 \times 6.92}
+                         {1 + 12.7\sqrt{0.02537/8}\,(6.92^{2/3}-1)}
+                  \approx 164.1
+\end{equation}
+
+\subsection{Coefficiente convettivo e resistenza}
+
+Con la correlazione di Gnielinski (più conservativa e accurata):
+\begin{equation}
+  h_{\mathrm{conv}} = \frac{\Nu_{\mathrm{G}}\,k_f}{D_h}
+                    = \frac{164.1 \times \SI{0.45}{W/(m\cdot K)}}{\SI{8.89e-3}{m}}
+                    \approx \SI{8308}{W/(m^2\cdot K)}
+\end{equation}
+
+La resistenza termica convettiva riferita all'intera superficie $A$:
+\begin{equation}
+  \boxed{R_{\mathrm{conv}} = \frac{1}{h_{\mathrm{conv}}\,A}
+                            = \frac{1}{\SI{8308}{W/(m^2\cdot K)}\times\SI{6.4e-3}{m^2}}
+                            \approx \SI{18.8}{mK/W}}
+\end{equation}
+
+%% =======================================================
+\section{Resistenza termica totale e risultati}
+%% =======================================================
+
+I due contributi sono in serie:
+\begin{equation}
+  R_{\mathrm{th,tot}} = R_{\mathrm{cond}} + R_{\mathrm{conv}}
+                      = \SI{4.88}{mK/W} + \SI{18.8}{mK/W}
+                      \approx \SI{23.7}{mK/W}
+\end{equation}
+
+\begin{table}[H]
+\centering
+\caption{Riepilogo dei contributi alla resistenza termica totale.}
+\begin{tabular}{llcc}
+\toprule
+Contributo & Espressione & Valore [\si{mK/W}] & \% totale \\
+\midrule
+Conduzione alluminio & $t/(k_{\mathrm{Al}}\,A)$         & 4.88  & 20.6\% \\
+Convezione (Gnielinski) & $1/(h_{\mathrm{conv}}\,A)$     & 18.8  & 79.4\% \\
+\midrule
+\textbf{Totale} & $R_{\mathrm{cond}}+R_{\mathrm{conv}}$ & \textbf{23.7} & 100\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+La temperatura della sorgente termica rispetto al fluido vale quindi:
+\begin{equation}
+  \Delta T = R_{\mathrm{th,tot}}\times P
+           \approx \SI{23.7e-3}{K/W} \times P
+\end{equation}
+
+Ad esempio, per una potenza $P = \SI{1000}{W}$:
+\begin{equation}
+  \Delta T \approx \SI{23.7e-3}{K/W} \times \SI{1000}{W} = \SI{23.7}{K}
+\end{equation}
+
+%% =======================================================
+\section{Validità del modello e ipotesi}
+%% =======================================================
+
+\begin{enumerate}
+  \item \textbf{Regime stazionario.} L'analisi fornisce la resistenza termica $R_{\mathrm{th}}$,
+        non l'impedenza termica dinamica $Z_{\mathrm{th}}(t)$. Per i transitori è necessario
+        includere la capacità termica $C_{\mathrm{th}} = \rho\,c_p\,V_{\mathrm{Al}}$
+        e modellare il sistema con un circuito RC equivalente (modello di Foster o Cauer).
+
+  \item \textbf{Flusso di calore monodimensionale.} Valido se la distribuzione di potenza
+        sulla superficie è uniforme. In presenza di sorgenti puntiformi (es.\ chip IGBT),
+        la resistenza di spreading aggiunge un contributo non trascurabile.
+
+  \item \textbf{Canale a parete liscia.} La correlazione di Gnielinski si applica a canali
+        a parete liscia. Strutture \textit{pin-fin} o corrugazioni migliorano
+        significativamente $h_{\mathrm{conv}}$.
+
+  \item \textbf{Proprietà del fluido costanti.} Le proprietà termofisiche del glicole
+        variano con la temperatura; per analisi più accurate si dovrebbe iterare sulla
+        temperatura media del film.
+
+  \item \textbf{Resistenza di contatto.} Non è inclusa la resistenza di contatto
+        tra la piastra e la struttura del canale ($R_{\mathrm{contact}}$), che in
+        pratica dipende dalla rugosità superficiale e dall'eventuale strato di
+        pasta termica.
+\end{enumerate}
+
+%% =======================================================
+\section{Impedenza termica dinamica (schema RC)}
+%% =======================================================
+
+In regime dinamico, la risposta termica è modellata da una rete RC equivalente.
+Per una singola massa termica (piastra in alluminio):
+
+\begin{equation}
+  C_{\mathrm{th}} = \rho_{\mathrm{Al}}\,c_{p,\mathrm{Al}}\,V_{\mathrm{Al}}
+\end{equation}
+
+Con $\rho_{\mathrm{Al}} = \SI{2700}{kg/m^3}$, $c_{p,\mathrm{Al}} = \SI{900}{J/(kg\cdot K)}$,
+$V_{\mathrm{Al}} = L\times W\times t = \SI{3.2e-5}{m^3}$:
+
+\begin{equation}
+  C_{\mathrm{th}} = 2700 \times 900 \times \SI{3.2e-5}{m^3}
+                  \approx \SI{77.8}{J/K}
+\end{equation}
+
+La costante di tempo termica associata alla conduzione:
+\begin{equation}
+  \tau = R_{\mathrm{cond}}\times C_{\mathrm{th}}
+       = \SI{4.88e-3}{K/W} \times \SI{77.8}{J/K}
+       \approx \SI{0.38}{s}
+\end{equation}
+
+L'impedenza termica nel dominio della frequenza (modello di Foster a un polo):
+\begin{equation}
+  Z_{\mathrm{th}}(j\omega) = \frac{R_{\mathrm{th,tot}}}{1 + j\omega\tau}
+\end{equation}
+
+Per pulse di potenza con durata $t_p$, la temperatura di picco si stima con
+il fattore di forma dalla curva $Z_{\mathrm{th}}(t)$:
+\begin{equation}
+  \Delta T_{\mathrm{peak}} = Z_{\mathrm{th}}(t_p)\times P_{\mathrm{peak}}
+\end{equation}
+
+%% =======================================================
+\section{Conclusioni}
+%% =======================================================
+
+La resistenza termica stazionaria del sistema piastra-alluminio con raffreddamento
+a glicole è:
+
+\begin{equation}
+  R_{\mathrm{th,tot}} \approx \SI{23.7}{mK/W}
+\end{equation}
+
+Il contributo dominante (\SI{\approx 80}{\percent}) è la resistenza convettiva.
+La resistenza di conduzione attraverso i \SI{5}{mm} di alluminio è trascurabile
+(\SI{\approx 5}{mK/W}), confermando che l'alluminio non è il collo di bottiglia
+termico. Per migliorare le prestazioni occorre agire sul lato convettivo:
+aumentare la portata, ridurre il diametro idraulico con strutture \textit{pin-fin},
+oppure utilizzare acqua pura (migliore conducibilità rispetto al glicole).
+
+\end{document}
