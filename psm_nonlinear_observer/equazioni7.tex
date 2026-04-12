@@ -47,22 +47,26 @@ e per determinarne le prestazioni.
 		L_\text{s} \frac{\text{d}}{\text{d}t}\hat{i}_\text{sd} &= -R_\text{s} \hat{i}_\text{sd}+\left( \omega_0-\hat{\omega}\right)L_\text{s}i_\text{sq} + 
 		p \hat{\omega}\hat{\psi}_\text{sq}+u_\text{sd}+\eta_\text{d} \\[6pt]
 		L_\text{s} \frac{\text{d}}{\text{d}t}\hat{i}_\text{sq} &= -R_\text{s} \hat{i}_\text{sq}-\left( \omega_0-\hat{\omega}\right)L_\text{s}i_\text{sd} - 
-		\hat{\omega}\hat{\psi}_\text{sd}+u_\text{sq}+\eta_\text{q} \\[6pt]
+		\hat{\omega}\hat{\psi}_\text{sd}+u_\text{sq}+\eta_\text{q} \\[6pt]	
 		\frac{\text{d}}{\text{d}t}\hat{\psi}_\text{sd} &= -R_\text{s} i_\text{sd} + \omega_0\hat{\psi}_\text{sq} + u_\text{sd} + \xi_\text{sd}  \\[6pt]
 		\frac{\text{d}}{\text{d}t}\hat{\psi}_\text{sq} &= -R_\text{s} i_\text{sq} - \omega_0\hat{\psi}_\text{sd} + u_\text{sq} + \xi_\text{sq}  \\[6pt]
-		\frac{\text{d}}{\text{d}t}\hat{\chi}_\text{d} &= \omega_0\hat{\chi}_\text{q} - k_\text{i}\tilde{i}_\text{sq}  \\[6pt]
-		\frac{\text{d}}{\text{d}t}\hat{\chi}_\text{q} &= -\omega_0\hat{\chi}_\text{d} + k_\text{i}\tilde{i}_\text{sd}  \\[6pt]
-		\frac{\text{d}}{\text{d}t}\hat{\omega} &= -\frac{1}{\gamma}\big[\big(\hat{\psi}_\text{sq} -L_\text{s}\hat{i}_\text{sq}\big)\tilde{i}_\text{sd} - \big(\hat{\psi}_\text{sd} -L_\text{s}\hat{i}_\text{sd}\big)\tilde{i}_\text{sq}\big]  \\[6pt]
+		\frac{\text{d}}{\text{d}t}\hat{\omega} &= -\frac{1}{\gamma}\big[\big(\hat{\psi}_\text{sq} -L_\text{s}\hat{i}_\text{sq}\big)\tilde{i}_\text{sd} - \big(\hat{\psi}_\text{sd} -L_\text{s}\hat{i}_\text{sd}\big)\tilde{i}_\text{sq}\big]
+	\end{aligned}\right. 
+\end{equation}
+
+\begin{equation}
+	\label{nlobs_pu_1}\left\lbrace 
+	\begin{aligned}
 		\eta_\text{d} &= k_\text{p}\tilde{i}_\text{sd} + \hat{\chi}_\text{q} \\[6pt]
 		\eta_\text{q} &= k_\text{p}\tilde{i}_\text{sq} - \hat{\chi}_\text{d} \\[6pt]
+		\frac{\text{d}}{\text{d}t}\hat{\chi}_\text{d} &= \omega_0\hat{\chi}_\text{q} - 	k_\text{i}\tilde{i}_\text{sq}  \\[6pt]
+		\frac{\text{d}}{\text{d}t}\hat{\chi}_\text{q} &= -\omega_0\hat{\chi}_\text{d} + 	k_\text{i}\tilde{i}_\text{sd}  \\[6pt]	
 		\xi_\text{sd} &= -k_{\psi}\big(\hat{\psi}_\text{sd} - \psi_\text{sd}^\text{*}\big) \\[6pt]
 		\xi_\text{sq} &= -k_{\psi}\big(\hat{\psi}_\text{sq} - \psi_\text{sq}^\text{*}\big) \\[6pt]
 		\psi_\text{sd}^\text{*} &= \varphi_\text{m} + L_\text{s}i_\text{sd}^\text{*} \\[6pt]
 		\psi_\text{sq}^\text{*} &= L_\text{s}i_\text{sq}^\text{*}
 	\end{aligned}\right. 
 \end{equation}
-
-
 
 
 
