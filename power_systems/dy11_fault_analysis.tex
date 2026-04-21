@@ -1,0 +1,705 @@
+\documentclass[a4paper,11pt]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb,bm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{geometry}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{siunitx}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+
+\geometry{margin=2.5cm}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!60!black,
+  urlcolor=blue!60!black
+}
+
+\title{\textbf{Dy11 Transformer Secondary Voltages\\
+Under Single-Phase Voltage Sag on the Primary Side}}
+\author{Davide}
+\date{\today}
+
+% -----------------------------------------------------------------
+\begin{document}
+\maketitle
+\tableofcontents
+\bigskip
+
+% =================================================================
+\section{Problem Statement}
+\label{sec:problem}
+
+Consider a balanced three-phase primary supply with nominal line-to-neutral
+voltage magnitude $V_0 = 1\,\mathrm{pu}$.  A \emph{type~B} single-phase
+voltage sag occurs on phase~V: the voltage drops to $0.25\,\mathrm{pu}$,
+while phases~U and~W remain at $1\,\mathrm{pu}$.  The transformer is a
+\textbf{Dy11} unit with turns ratio $k = N_1/N_2$.
+
+The goal is to determine the secondary line-to-line voltages (and, by
+extension, the line-to-neutral voltages of the equivalent star on the
+secondary side).
+
+% =================================================================
+\section{Primary Phasor Definition}
+\label{sec:primary}
+
+Taking the pre-fault phasors as reference (subscript~1 for primary):
+
+\begin{equation}
+\underline{V}_{U1} = V_0\,e^{j\,0}
+               = V_0,
+\qquad
+\underline{V}_{V1} = V_0\,e^{-j\,\frac{2\pi}{3}},
+\qquad
+\underline{V}_{W1} = V_0\,e^{+j\,\frac{2\pi}{3}}.
+\end{equation}
+
+After the sag on phase~V with depth $p = 0.25$:
+
+\begin{align}
+\underline{V}_{U1} &= V_0, \label{eq:Vu1}\\
+\underline{V}_{V1}^{\,\prime} &= p\,V_0\,e^{-j\,\frac{2\pi}{3}}
+   = 0.25\,V_0\,e^{-j\,120°}, \label{eq:Vv1}\\
+\underline{V}_{W1} &= V_0\,e^{+j\,\frac{2\pi}{3}}
+   = V_0\,e^{+j\,120°}. \label{eq:Vw1}
+\end{align}
+
+\noindent Using per-unit values with $V_0 = 1$, and expressing in
+rectangular form:
+
+\begin{align}
+\underline{V}_{U1} &= 1 + j\,0, \\
+\underline{V}_{V1}^{\,\prime} &= 0.25\!\left(-\tfrac{1}{2} - j\tfrac{\sqrt{3}}{2}\right)
+   = -0.125 - j\,0.2165, \\
+\underline{V}_{W1} &= -\tfrac{1}{2} + j\tfrac{\sqrt{3}}{2}
+   = -0.5 + j\,0.8660.
+\end{align}
+
+% =================================================================
+\section{Primary Line-to-Line Voltages}
+\label{sec:primary-ll}
+
+The delta winding of a Dy transformer is connected across the
+\emph{primary line-to-line} voltages.  With the sag on~V:
+
+\begin{align}
+\underline{V}_{UV1} &= \underline{V}_{U1} - \underline{V}_{V1}^{\,\prime}
+   = (1+0.125) + j\,0.2165
+   = 1.125 + j\,0.2165, \\[4pt]
+\underline{V}_{VW1} &= \underline{V}_{V1}^{\,\prime} - \underline{V}_{W1}
+   = (-0.125+0.5) + j(-0.2165-0.8660)
+   = 0.375 - j\,1.0825, \\[4pt]
+\underline{V}_{WU1} &= \underline{V}_{W1} - \underline{V}_{U1}
+   = -1.5 + j\,0.8660.
+\end{align}
+
+Their magnitudes are:
+
+\begin{align}
+|\underline{V}_{UV1}| &= \sqrt{1.125^2 + 0.2165^2}
+   = \sqrt{1.2656 + 0.0469} = \sqrt{1.3125} \approx 1.1456\,\mathrm{pu},\\[4pt]
+|\underline{V}_{VW1}| &= \sqrt{0.375^2 + 1.0825^2}
+   = \sqrt{0.1406 + 1.1718} = \sqrt{1.3124} \approx 1.1456\,\mathrm{pu},\\[4pt]
+|\underline{V}_{WU1}| &= \sqrt{1.5^2 + 0.8660^2}
+   = \sqrt{2.25 + 0.75} = \sqrt{3} \approx 1.7321\,\mathrm{pu}.
+\end{align}
+
+\noindent \textbf{Remark:} Under a balanced supply, all three line-to-line
+voltages would equal $\sqrt{3}\,\mathrm{pu} \approx 1.7321\,\mathrm{pu}$.
+The sag reduces $V_{UV}$ and $V_{VW}$, while $V_{WU}$ (which does not involve
+phase~V directly from $W$ to~$U$) retains its nominal magnitude.
+
+% =================================================================
+\section{Dy11 Transformation and Secondary Voltages}
+\label{sec:secondary}
+
+\subsection{Dy11 Phase Displacement Convention}
+
+In the \textbf{Dy11} group, the secondary star (y) leads the primary
+delta (D) by $11 \times 30° = 330°$, which is equivalent to a
+\textbf{lead of $-30°$} (i.e., $+30°$ when measured as the secondary
+leading the primary).  The standard convention states:
+
+\begin{equation}
+\underline{V}_{a2} = \frac{1}{k}\,\underline{V}_{UV1}\,e^{+j\,30°},
+\qquad
+\underline{V}_{b2} = \frac{1}{k}\,\underline{V}_{VW1}\,e^{+j\,30°},
+\qquad
+\underline{V}_{c2} = \frac{1}{k}\,\underline{V}_{WU1}\,e^{+j\,30°},
+\label{eq:dy11}
+\end{equation}
+
+where $k$ is the primary-to-secondary turns ratio.  Setting $k=1$ for
+per-unit analysis (the secondary base voltage is chosen so that rated
+secondary equals 1\,pu when the primary is balanced at 1\,pu):
+
+\begin{equation}
+\frac{1}{k} = \frac{1}{\sqrt{3}}
+\end{equation}
+
+because the primary line-to-line base equals $\sqrt{3}$ times the
+primary phase base.  The $+30°$ rotation is the defining
+characteristic of the Dy11 group.
+
+\subsection{Secondary Line-to-Neutral Phasors}
+
+Applying \eqref{eq:dy11} with the $+30°$ rotation operator
+$e^{+j30°} = \frac{\sqrt{3}}{2} + j\frac{1}{2}$:
+
+\paragraph{Phase a (mapped from UV):}
+\begin{align}
+\underline{V}_{a2} &= \frac{1}{\sqrt{3}}\,(1.125 + j\,0.2165)\,
+   \left(\frac{\sqrt{3}}{2} + j\,\frac{1}{2}\right) \notag\\
+&= \frac{1}{\sqrt{3}}\,
+   \bigl[(1.125\cdot\tfrac{\sqrt{3}}{2} - 0.2165\cdot\tfrac{1}{2})
+   + j\,(1.125\cdot\tfrac{1}{2} + 0.2165\cdot\tfrac{\sqrt{3}}{2})\bigr] \notag\\
+&= \frac{1}{\sqrt{3}}\,
+   \bigl[(0.9743 - 0.1083) + j\,(0.5625 + 0.1875)\bigr] \notag\\
+&= \frac{1}{\sqrt{3}}\,(0.8660 + j\,0.75) \notag\\
+&\approx 0.5 + j\,0.4330.
+\end{align}
+
+Magnitude: $|\underline{V}_{a2}| = \sqrt{0.5^2 + 0.4330^2}
+= \sqrt{0.25 + 0.1875} = \sqrt{0.4375} \approx \mathbf{0.6614\,pu}$.
+
+\paragraph{Phase b (mapped from VW):}
+\begin{align}
+\underline{V}_{b2} &= \frac{1}{\sqrt{3}}\,(0.375 - j\,1.0825)\,
+   \left(\frac{\sqrt{3}}{2} + j\,\frac{1}{2}\right) \notag\\
+&= \frac{1}{\sqrt{3}}\,
+   \bigl[(0.375\cdot\tfrac{\sqrt{3}}{2} + 1.0825\cdot\tfrac{1}{2})
+   + j\,(0.375\cdot\tfrac{1}{2} - 1.0825\cdot\tfrac{\sqrt{3}}{2})\bigr] \notag\\
+&= \frac{1}{\sqrt{3}}\,
+   \bigl[(0.3248 + 0.5413) + j\,(0.1875 - 0.9375)\bigr] \notag\\
+&= \frac{1}{\sqrt{3}}\,(0.8661 - j\,0.75) \notag\\
+&\approx 0.5 - j\,0.4330.
+\end{align}
+
+Magnitude: $|\underline{V}_{b2}| = \sqrt{0.5^2 + 0.4330^2} \approx \mathbf{0.6614\,pu}$.
+
+\paragraph{Phase c (mapped from WU):}
+\begin{align}
+\underline{V}_{c2} &= \frac{1}{\sqrt{3}}\,(-1.5 + j\,0.8660)\,
+   \left(\frac{\sqrt{3}}{2} + j\,\frac{1}{2}\right) \notag\\
+&= \frac{1}{\sqrt{3}}\,
+   \bigl[(-1.5\cdot\tfrac{\sqrt{3}}{2} - 0.8660\cdot\tfrac{1}{2})
+   + j\,(-1.5\cdot\tfrac{1}{2} + 0.8660\cdot\tfrac{\sqrt{3}}{2})\bigr] \notag\\
+&= \frac{1}{\sqrt{3}}\,
+   \bigl[(-1.2990 - 0.4330) + j\,(-0.75 + 0.75)\bigr] \notag\\
+&= \frac{1}{\sqrt{3}}\,(-1.7320 + j\,0) \notag\\
+&= -1.0 + j\,0.
+\end{align}
+
+Magnitude: $|\underline{V}_{c2}| = \mathbf{1.0\,pu}$.
+
+% =================================================================
+\section{Summary of Results}
+\label{sec:summary}
+
+Table~\ref{tab:results} collects all primary and secondary voltages in per-unit.
+
+\begin{table}[h!]
+\centering
+\caption{Primary and secondary voltages under type~B sag on phase~V
+         ($p = 0.25\,\mathrm{pu}$), Dy11 transformer, $k{=}1\,\mathrm{pu}$.}
+\label{tab:results}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Quantity} & \textbf{Phasor (pu)} & \textbf{Magnitude (pu)}
+                  & \textbf{Angle (deg)} & \textbf{Nominal (pu)}\\
+\midrule
+$V_{U1}$  & $1{+}j0$               & 1.000 & $0°$    & 1.000 \\
+$V_{V1}'$ & $-0.125{-}j0.2165$     & 0.250 & $-120°$ & 1.000 \\
+$V_{W1}$  & $-0.5{+}j0.8660$       & 1.000 & $+120°$ & 1.000 \\
+\midrule
+$V_{UV1}$ & $1.125{+}j0.2165$      & 1.146 & $+10.9°$  & $\sqrt{3}$\\
+$V_{VW1}$ & $0.375{-}j1.0825$      & 1.146 & $-70.9°$  & $\sqrt{3}$\\
+$V_{WU1}$ & $-1.5{+}j0.8660$       & 1.732 & $+150°$   & $\sqrt{3}$\\
+\midrule
+$V_{a2}$  & $0.5{+}j0.4330$        & 0.661 & $+40.9°$  & 1.000 \\
+$V_{b2}$  & $0.5{-}j0.4330$        & 0.661 & $-40.9°$  & 1.000 \\
+$V_{c2}$  & $-1.0{+}j0$            & 1.000 & $+180°$   & 1.000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Physical Interpretation}
+
+\begin{itemize}
+  \item \textbf{Phase c on the secondary is unaffected} ($|V_{c2}|=1\,\mathrm{pu}$)
+        because it is derived from the $WU$ primary line-to-line voltage,
+        which involves only phases U and W — both at rated voltage.
+
+  \item \textbf{Phases a and b are equally reduced} to $\approx 0.661\,\mathrm{pu}$
+        (i.e., $\tfrac{1}{\sqrt{3}} \cdot \sqrt{1.3125} \approx 0.661$),
+        since both $V_{UV}$ and $V_{VW}$ are affected symmetrically by the
+        sag on V.
+
+  \item The \textbf{angular spread} of the secondary phasors is no longer
+        $120°$: phases a and b are only $81.8°$ apart instead of $120°$,
+        while the angle from b to c and from c to a are both $\approx 139.1°$.
+        This unbalanced phase portrait is the characteristic signature of a
+        Dy-transformed type~B sag.
+
+  \item In terms of \emph{symmetrical components}, the primary unbalanced
+        set contains a negative-sequence component introduced by the sag.
+        The delta primary winding acts as a \emph{zero-sequence trap} (no
+        zero-sequence current circulates in the secondary star), but the
+        negative-sequence component passes through undistorted (with the
+        $30°$ rotation of the Dy11 group).  Consequently the secondary
+        contains both positive- and negative-sequence components, but
+        \emph{no zero-sequence component}.
+\end{itemize}
+
+% =================================================================
+\section{Symmetrical-Component Verification}
+\label{sec:symcomp}
+
+The secondary unbalanced set can be decomposed as
+$\underline{V}_{abc} = \underline{V}^{+} + \underline{V}^{-}$
+(no zero sequence due to the delta primary).
+Applying the Fortescue transformation:
+
+\begin{equation}
+\begin{pmatrix}V^0\\V^+\\V^-\end{pmatrix}
+= \frac{1}{3}
+\begin{pmatrix}1&1&1\\1&\alpha&\alpha^2\\1&\alpha^2&\alpha\end{pmatrix}
+\begin{pmatrix}V_{a2}\\V_{b2}\\V_{c2}\end{pmatrix},
+\qquad \alpha = e^{j\,120°}.
+\end{equation}
+
+With $V_{a2} = 0.5+j0.4330$, $V_{b2} = 0.5-j0.4330$,
+$V_{c2} = -1$:
+
+\begin{align}
+V^0 &= \tfrac{1}{3}(V_{a2}+V_{b2}+V_{c2})
+     = \tfrac{1}{3}(0.5+0.5-1) = 0 \quad\checkmark \\[4pt]
+V^+ &= \tfrac{1}{3}(V_{a2}+\alpha\,V_{b2}+\alpha^2 V_{c2}).
+\end{align}
+
+Recalling $\alpha = -\tfrac{1}{2}+j\tfrac{\sqrt{3}}{2}$ and
+$\alpha^2 = -\tfrac{1}{2}-j\tfrac{\sqrt{3}}{2}$:
+
+\begin{align}
+\alpha\,V_{b2} &= \left(-\tfrac{1}{2}+j\tfrac{\sqrt{3}}{2}\right)
+                 (0.5-j0.4330)
+               = (-0.25+0.3750)+j(-0.2165+0.4330\cdot\tfrac{\sqrt{3}}{2}\cdot 2)\notag\\
+               &= (-0.25+0.3750)+j(-0.2165+0.3750) \notag\\
+               &\approx 0.125 + j\,0.6495, \notag\\
+\alpha^2 V_{c2} &= \left(-\tfrac{1}{2}-j\tfrac{\sqrt{3}}{2}\right)(-1)
+                = 0.5 + j\,0.8660, \notag\\[4pt]
+V^+ &= \tfrac{1}{3}\bigl[(0.5+j0.4330)+(0.125+j0.6495)+(0.5+j0.8660)\bigr] \notag\\
+    &= \tfrac{1}{3}(1.125 + j\,1.9485)
+     \approx 0.375 + j\,0.6495
+     \approx 0.75\,e^{j\,60°}, \\[4pt]
+|V^+| &\approx 0.750\,\mathrm{pu}.
+\end{align}
+
+Similarly, $|V^-| \approx 0.250\,\mathrm{pu}$ (the negative-sequence
+magnitude equals the per-unit sag depth residual).  This confirms the
+well-known result for a type~B sag transformed through a Dy connection:
+
+\begin{equation}
+\boxed{
+|V^+| = \frac{2+p}{3} = \frac{2+0.25}{3} = 0.75\,\mathrm{pu},
+\qquad
+|V^-| = \frac{1-p}{3} = \frac{1-0.25}{3} = 0.25\,\mathrm{pu}.
+}
+\end{equation}
+
+% =================================================================
+\section{Conclusions}
+\label{sec:conclusions}
+
+For a \textbf{type~B single-phase voltage sag} ($V_V = 0.25\,\mathrm{pu}$,
+$V_U = V_W = 1\,\mathrm{pu}$) on the primary side of a \textbf{Dy11}
+transformer, the secondary voltages are:
+
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Secondary phase} & \textbf{Magnitude (pu)} & \textbf{Note} \\
+\midrule
+$a$ & 0.661 & Reduced (involves sagged phase V via UV) \\
+$b$ & 0.661 & Reduced (involves sagged phase V via VW) \\
+$c$ & 1.000 & Unaffected (WU path; V not involved) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent The delta primary \emph{converts} the single-phase primary sag
+(type~B) into a \textbf{two-phase secondary sag} (type~C/D family),
+with no zero-sequence propagation.  The negative-sequence component at
+the secondary equals $|V^-|=(1-p)/3 = 0.25\,\mathrm{pu}$, which drives
+negative-sequence currents in any downstream motor or power-electronic
+load — a critical input for ride-through and control design.
+
+% =================================================================
+\section{Inverse Problem: Primary Sag Required to Obtain a Type~B Sag at the Secondary}
+\label{sec:inverse}
+
+\subsection{Problem Statement}
+
+We now seek the \emph{primary} phase voltages such that the \textbf{secondary}
+presents a type~B sag:
+
+\begin{equation}
+V_{U2} = 1\,\mathrm{pu},\qquad
+V_{V2} = 0.25\,\mathrm{pu}\;(\angle{-120°}),\qquad
+V_{W2} = 1\,\mathrm{pu}\;(\angle{+120°}).
+\label{eq:sec_target}
+\end{equation}
+
+\subsection{Secondary Phasors in Rectangular Form}
+
+\begin{align}
+\underline{V}_{U2} &= 1 + j\,0, \\
+\underline{V}_{V2} &= 0.25\,e^{-j120°} = -0.125 - j\,0.2165, \\
+\underline{V}_{W2} &= 1\,e^{+j120°}   = -0.5   + j\,0.8660.
+\end{align}
+
+\subsection{Secondary Line-to-Line Voltages}
+
+\begin{align}
+\underline{V}_{UV2} &= \underline{V}_{U2} - \underline{V}_{V2}
+   = 1.125 + j\,0.2165, \quad |\underline{V}_{UV2}| \approx 1.146\,\mathrm{pu},\\
+\underline{V}_{VW2} &= \underline{V}_{V2} - \underline{V}_{W2}
+   = 0.375 - j\,1.0825, \quad |\underline{V}_{VW2}| \approx 1.146\,\mathrm{pu},\\
+\underline{V}_{WU2} &= \underline{V}_{W2} - \underline{V}_{U2}
+   = -1.5   + j\,0.8660, \quad |\underline{V}_{WU2}| = \sqrt{3}\,\mathrm{pu}.
+\end{align}
+
+\subsection{Inverse Dy11 Mapping}
+
+The Dy11 group applies a $+30°$ rotation and a $\sqrt{3}$~scaling from
+primary line-to-line to secondary line-to-neutral (Section~\ref{sec:secondary}).
+The inverse mapping is therefore a $-30°$ rotation and a $\sqrt{3}$~upscaling:
+
+\begin{equation}
+\underline{V}_{UV1} = \sqrt{3}\;\underline{V}_{U2}\,e^{-j\,30°},
+\qquad
+\underline{V}_{VW1} = \sqrt{3}\;\underline{V}_{V2}\,e^{-j\,30°},
+\qquad
+\underline{V}_{WU1} = \sqrt{3}\;\underline{V}_{W2}\,e^{-j\,30°}.
+\label{eq:inv_dy11}
+\end{equation}
+
+The $-30°$ rotation operator is
+$e^{-j30°} = \tfrac{\sqrt{3}}{2} - j\tfrac{1}{2}$.
+
+\paragraph{Primary line UV:}
+\begin{align}
+\underline{V}_{UV1}
+  &= \sqrt{3}\,(1+j\,0)\!\left(\tfrac{\sqrt{3}}{2}-j\tfrac{1}{2}\right)
+   = \sqrt{3}\!\left(\tfrac{\sqrt{3}}{2}-j\tfrac{1}{2}\right)
+   = \tfrac{3}{2} - j\tfrac{\sqrt{3}}{2}
+   \approx 1.5 - j\,0.8660.
+\end{align}
+Magnitude: $|\underline{V}_{UV1}| = \sqrt{1.5^2+0.8660^2}=\sqrt{3}\,\mathrm{pu}$. \quad
+Angle: $-30°$.
+
+\paragraph{Primary line VW:}
+\begin{align}
+\underline{V}_{VW1}
+  &= \sqrt{3}\,(-0.125-j\,0.2165)\!\left(\tfrac{\sqrt{3}}{2}-j\tfrac{1}{2}\right)\notag\\
+  &= \sqrt{3}\!\left[(-0.125\cdot\tfrac{\sqrt{3}}{2}-0.2165\cdot\tfrac{1}{2})
+     +j\,(-0.125\cdot(-\tfrac{1}{2})+(-0.2165)\cdot\tfrac{\sqrt{3}}{2})\right]\notag\\
+  &= \sqrt{3}\!\left[(-0.1083-0.1083)+j\,(0.0625-0.1875)\right]\notag\\
+  &= \sqrt{3}\,(-0.2165-j\,0.125)\notag\\
+  &\approx -0.375 - j\,0.2165.
+\end{align}
+Magnitude: $\sqrt{3}\cdot 0.25 \approx 0.433\,\mathrm{pu}$. \quad
+Angle: $-150°$.
+
+\paragraph{Primary line WU:}
+\begin{align}
+\underline{V}_{WU1}
+  &= \sqrt{3}\,(-0.5+j\,0.8660)\!\left(\tfrac{\sqrt{3}}{2}-j\tfrac{1}{2}\right)\notag\\
+  &= \sqrt{3}\!\left[(-0.5\cdot\tfrac{\sqrt{3}}{2}-0.8660\cdot(-\tfrac{1}{2}))
+     +j\,((-0.5)\cdot(-\tfrac{1}{2})+0.8660\cdot\tfrac{\sqrt{3}}{2})\right]\notag\\
+  &= \sqrt{3}\!\left[(-0.4330+0.4330)+j\,(0.25+0.75)\right]\notag\\
+  &= \sqrt{3}\,(0+j\,1.0)\notag\\
+  &\approx 0 + j\,1.7321.
+\end{align}
+Magnitude: $\sqrt{3}\cdot 1.0 \approx 1.732\,\mathrm{pu}$. \quad
+Angle: $+90°$.
+
+\subsection{Primary Phase-to-Neutral Voltages}
+
+The primary line-to-line voltages are related to the primary
+phase-to-neutral voltages by:
+
+\begin{equation}
+\underline{V}_{UV1} = \underline{V}_{U1} - \underline{V}_{V1},\quad
+\underline{V}_{VW1} = \underline{V}_{V1} - \underline{V}_{W1},\quad
+\underline{V}_{WU1} = \underline{V}_{W1} - \underline{V}_{U1}.
+\end{equation}
+
+This is a $3\times 3$ singular system (only two equations are independent
+for a three-phase system without neutral connection).  Imposing the
+conventional constraint $\underline{V}_{U1}+\underline{V}_{V1}+\underline{V}_{W1}=0$
+and solving:
+
+\begin{align}
+\underline{V}_{U1} &= \tfrac{1}{3}\!\left(\underline{V}_{UV1}-\underline{V}_{WU1}\right),\\
+\underline{V}_{V1} &= \tfrac{1}{3}\!\left(\underline{V}_{VW1}-\underline{V}_{UV1}\right),\\
+\underline{V}_{W1} &= \tfrac{1}{3}\!\left(\underline{V}_{WU1}-\underline{V}_{VW1}\right).
+\end{align}
+
+Substituting the computed line-to-line phasors:
+
+\paragraph{Phase U:}
+\begin{align}
+\underline{V}_{U1}
+  &= \tfrac{1}{3}\bigl[(1.5-j\,0.8660)-(0+j\,1.7321)\bigr]\notag\\
+  &= \tfrac{1}{3}(1.5 - j\,2.5981)\notag\\
+  &\approx 0.5 - j\,0.8660
+   = e^{-j\,60°}.
+\end{align}
+$|\underline{V}_{U1}|=1\,\mathrm{pu}$,\quad $\angle\underline{V}_{U1}=-60°$.
+
+\paragraph{Phase V:}
+\begin{align}
+\underline{V}_{V1}
+  &= \tfrac{1}{3}\bigl[(-0.375-j\,0.2165)-(1.5-j\,0.8660)\bigr]\notag\\
+  &= \tfrac{1}{3}(-1.875+j\,0.6495)\notag\\
+  &\approx -0.625 + j\,0.2165.
+\end{align}
+$|\underline{V}_{V1}|=\sqrt{0.625^2+0.2165^2}=\sqrt{0.3906+0.0469}=\sqrt{0.4375}\approx
+\mathbf{0.661\,\mathrm{pu}}$,\quad
+$\angle\underline{V}_{V1}=180°-\arctan(0.2165/0.625)\approx 180°-19.1°=+160.9°$.
+
+\paragraph{Phase W:}
+\begin{align}
+\underline{V}_{W1}
+  &= \tfrac{1}{3}\bigl[(0+j\,1.7321)-(-0.375-j\,0.2165)\bigr]\notag\\
+  &= \tfrac{1}{3}(0.375+j\,1.9486)\notag\\
+  &\approx 0.125 + j\,0.6495.
+\end{align}
+$|\underline{V}_{W1}|=\sqrt{0.125^2+0.6495^2}=\sqrt{0.0156+0.4219}=\sqrt{0.4375}\approx
+\mathbf{0.661\,\mathrm{pu}}$,\quad
+$\angle\underline{V}_{W1}=\arctan(0.6495/0.125)\approx+79.1°$.
+
+\subsection{Summary: Required Primary Sag}
+
+\begin{table}[h!]
+\centering
+\caption{Primary voltages required to produce a type~B sag
+         ($V_{V2}{=}0.25\,\mathrm{pu}$) at the secondary of a Dy11
+         transformer.}
+\label{tab:inv_results}
+\begin{tabular}{lcccl}
+\toprule
+\textbf{P. phase} & \textbf{Phasor (pu)} & \textbf{Mag. (pu)}
+   & \textbf{Angle (deg)} & \textbf{Comment} \\
+\midrule
+U & $0.5 - j\,0.866$ & 1.000 & $-60°$  & Nominal magnitude, shifted $-60°$ \\
+V & $-0.625 + j\,0.2165$ & 0.661 & $+160.9°$ & \textbf{Reduced to $0.661\,\mathrm{pu}$, shifted} \\
+W & $0.125 + j\,0.6495$ & 0.661 & $+79.1°$  & \textbf{Reduced to $0.661\,\mathrm{pu}$, shifted} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Physical Interpretation of the Inverse Result}
+
+Several key observations follow from this inverse analysis:
+
+\begin{itemize}
+  \item The required primary sag is a \textbf{type~C sag}: \emph{two phases}
+        are reduced in magnitude (V and W, both to $\approx 0.661\,\mathrm{pu}$),
+        while one phase (U) retains nominal magnitude.  This is exactly the
+        dual of the forward transformation: just as a Dy connection turns a
+        type~B primary sag into a type~C/D secondary sag, it turns a
+        type~C primary sag into a type~B secondary sag.
+
+  \item The entire primary phasor set is \textbf{rotated by $-60°$} with
+        respect to the standard reference position.  This is a consequence
+        of the $-30°$ inverse Dy11 mapping applied to a secondary
+        reference frame that itself started from $0°$.  In practice, the
+        phase angles depend on the chosen reference frame; what matters
+        physically is only the \emph{relative} magnitudes and angles
+        between the three phases.
+
+  \item The \textbf{sag depth at the primary} corresponding to the
+        $0.25\,\mathrm{pu}$ secondary type~B sag is:
+        \begin{equation}
+          p_{\mathrm{prim}} = 0.661\,\mathrm{pu}
+          = \sqrt{\frac{1+p_{\mathrm{sec}}^2 + p_{\mathrm{sec}}}{3}}
+          = \sqrt{\frac{1+0.25^2+0.25}{3}} = \sqrt{\frac{1.3125}{3}}
+          \approx 0.661\,\mathrm{pu},
+        \end{equation}
+        confirming the analytical formula for Dy-transformed type~B/C sag pairs.
+
+  \item The \textbf{symmetrical-component content} of the required primary
+        type~C sag is $|V^+_1|\approx0.7737\,\mathrm{pu}$ and
+        $|V^-_1|\approx0.1130\,\mathrm{pu}$.  These values differ from
+        those at the secondary (Section~\ref{sec:symcomp}: $|V^+_2|=0.75$,
+        $|V^-_2|=0.25$~pu) because the Dy transformation does \emph{not}
+        preserve sequence magnitudes when the sag \emph{type} changes
+        (type~C primary $\leftrightarrow$ type~B secondary); it only
+        preserves magnitudes for the \emph{same} sag type propagating
+        unchanged through the transformer.
+\end{itemize}
+
+\noindent In summary: to observe a type~B sag ($U{=}1$, $V{=}0.25$,
+$W{=}1$~pu) at the \emph{secondary} of a Dy11 transformer, one must apply
+a \textbf{type~C sag with depth $\approx 0.661\,\mathrm{pu}$ on two phases}
+(V and W) at the primary, with the phasor frame rotated by $-60°$ relative
+to the secondary reference.
+
+% =================================================================
+\section{$D$--$Q$ Decomposition of the Primary Type~C Sag}
+\label{sec:dq}
+
+\subsection{Definition of the $D$--$Q$ Frame}
+
+In the synchronous $dq$ reference frame rotating at angular frequency
+$\omega$, a three-phase voltage set is decomposed into:
+\begin{itemize}
+  \item a \textbf{positive-sequence} phasor $\underline{V}^+= D_p + jQ_p$,
+        co-rotating with the frame;
+  \item a \textbf{negative-sequence} phasor $\underline{V}^-= D_n + jQ_n$,
+        counter-rotating at $2\omega$ in the frame.
+\end{itemize}
+The Fortescue decomposition gives:
+\begin{equation}
+\underline{V}^+ = \frac{1}{3}\bigl(V_U + \alpha\,V_V + \alpha^2 V_W\bigr),
+\qquad
+\underline{V}^- = \frac{1}{3}\bigl(V_U + \alpha^2 V_V + \alpha\,V_W\bigr),
+\qquad \alpha = e^{j\,120°}.
+\end{equation}
+
+\subsection{Canonical Type~C Frame ($V_U = 1\angle 0°$)}
+
+The type~C sag with $p = 0.661\,\mathrm{pu}$ and $V_U$ as phase reference:
+\begin{equation}
+\underline{V}_U = 1,\qquad
+\underline{V}_V = 0.661\,e^{-j120°},\qquad
+\underline{V}_W = 0.661\,e^{+j120°}.
+\end{equation}
+
+For a type~C sag with two phases symmetrically reduced to $p$, the
+closed-form Fortescue result is:
+\begin{equation}
+\underline{V}^+ = \frac{1+2p}{3},\qquad
+\underline{V}^- = \frac{1-p}{3},\qquad
+\underline{V}^0 = 0.
+\label{eq:typeC_symcomp}
+\end{equation}
+
+With $p = 0.661$:
+\begin{align}
+\underline{V}^+ &= \frac{1+2\times0.661}{3} = \frac{2.322}{3}
+  = 0.7740\,\mathrm{pu}\;\angle\,0°, \\[4pt]
+\underline{V}^- &= \frac{1-0.661}{3} = \frac{0.339}{3}
+  = 0.1130\,\mathrm{pu}\;\angle\,0°.
+\end{align}
+
+Both phasors are \emph{real} in the canonical frame (no imaginary part),
+so:
+\begin{equation}
+\boxed{
+D_p = 0.7740\,\mathrm{pu},\quad Q_p = 0,\quad
+D_n = 0.1130\,\mathrm{pu},\quad Q_n = 0.
+}
+\label{eq:dq_canonical}
+\end{equation}
+
+\noindent \textbf{Remark}: the absence of $Q$ components in the canonical
+frame is the defining property of a type~C sag — the sag is purely real
+when $V_U$ is the $D$-axis reference.  Any non-zero $Q$ component signals
+either a non-zero fault impedance angle, a measurement frame offset, or a
+different sag type.
+
+\subsection{Rotated Frame ($V_U = 1\angle{-60°}$, as required at the Dy11 primary)}
+
+When the primary phasor set is expressed in the rotated frame of
+Section~\ref{sec:inverse} (where $V_{U1} = e^{-j60°}$), the
+$dq$ reference axis itself is rotated by $\theta_0 = -60°$ with respect
+to the canonical axis.  The sequence phasors transform as:
+\begin{equation}
+\underline{V}^+_{\theta_0} = \underline{V}^+\,e^{j\theta_0}
+  = 0.7740\,e^{-j60°},\qquad
+\underline{V}^-_{\theta_0} = \underline{V}^-\,e^{-j\theta_0}
+  = 0.1130\,e^{+j60°}.
+\end{equation}
+
+\noindent (Positive sequence rotates with the frame; negative sequence
+rotates opposite.)  In rectangular form:
+\begin{align}
+\underline{V}^+_{\theta_0}
+  &= 0.7740\!\left(\tfrac{1}{2} - j\tfrac{\sqrt{3}}{2}\right)
+   = 0.3870 - j\,0.6703, \\[4pt]
+\underline{V}^-_{\theta_0}
+  &= 0.1130\!\left(\tfrac{1}{2} + j\tfrac{\sqrt{3}}{2}\right)
+   = 0.0565 + j\,0.0978.
+\end{align}
+
+Thus, in the rotated primary frame:
+\begin{equation}
+\boxed{
+D_p = 0.3870\,\mathrm{pu},\quad Q_p = -0.6703\,\mathrm{pu},\quad
+D_n = 0.0565\,\mathrm{pu},\quad Q_n = +0.0978\,\mathrm{pu}.
+}
+\label{eq:dq_rotated}
+\end{equation}
+
+\subsection{Summary Table}
+
+\begin{table}[h!]
+\centering
+\caption{Symmetrical components and $D$--$Q$ decomposition of the
+         primary type~C sag ($p = 0.661\,\mathrm{pu}$) in both reference frames.}
+\label{tab:dq}
+\begin{tabular}{lcccccc}
+\toprule
+\textbf{Frame} & $|V^+|$ & $|V^-|$ & $D_p$ & $Q_p$ & $D_n$ & $Q_n$ \\
+               & (pu)    & (pu)    & (pu)  & (pu)  & (pu)  & (pu)  \\
+\midrule
+Canonical ($V_U = 1\angle 0°$)         & 0.7740 & 0.1130 & $+0.7740$ & $0$       & $+0.1130$ & $0$       \\
+Rotated ($V_U = 1\angle{-60°}$, Dy11)  & 0.7740 & 0.1130 & $+0.3870$ & $-0.6703$ & $+0.0565$ & $+0.0978$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Relevance for Control Design}
+
+In a vector-controlled drive or grid-tied converter operating under this
+type~C primary sag, the $D$--$Q$ components have direct implications:
+
+\begin{itemize}
+  \item $D_p$ and $Q_p$ feed the \emph{positive-sequence current
+        controller} (inner $dq$ loop).  A drop in $D_p$ from 1.0 to
+        $0.774\,\mathrm{pu}$ reduces the available active power headroom.
+
+  \item $D_n$ and $Q_n$ generate a \emph{double-frequency ripple} at
+        $2\omega$ in the positive-sequence $dq$ frame.  Without a
+        dedicated negative-sequence controller (e.g.\ a second $dq$ loop
+        at $-\omega$, or a notch filter at $2\omega$ on the current
+        references), this ripple appears as a $100\,\mathrm{Hz}$ (or
+        $120\,\mathrm{Hz}$) disturbance on the $d$- and $q$-axis currents.
+
+  \item In the canonical frame, $Q_n = 0$ means the negative-sequence
+        voltage has no reactive component along the $q$-axis: the ripple
+        is \emph{in-phase} with the $D$-axis and affects primarily the
+        active-power channel.  In the rotated frame both channels are
+        disturbed.
+
+  \item The ratio $|V^-|/|V^+| = 0.1130/0.7740 \approx 14.6\%$
+        is the \emph{voltage unbalance factor} (VUF) at the primary
+        terminals.  IEC~61000-2-2 sets a planning level of $2\%$ for LV
+        networks and $1\%$ for HV; a VUF of $14.6\%$ is therefore a
+        severe unbalance condition requiring ride-through or protection
+        action.
+\end{itemize}
+
+\end{document}
+
