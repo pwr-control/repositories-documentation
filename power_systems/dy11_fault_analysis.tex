@@ -701,5 +701,129 @@ type~C primary sag, the $D$--$Q$ components have direct implications:
         action.
 \end{itemize}
 
+
+% ============================================================
+% AFE grid-connection voltage constraint: locus in the (id, iq) plane
+% ============================================================
+
+\section{Grid-Voltage Constraint for AFE Operation}
+
+Consider an Active Front-End (AFE) converter connected to a stiff grid
+through a line inductance $L$, with line resistance neglected.
+Let $V_s$ denote the (constant) upstream line-to-neutral RMS voltage,
+$\omega$ the fundamental angular frequency, and $X_L = \omega L$ the
+line reactance.
+Define the synchronous $dq$-frame with the $d$-axis aligned to the
+terminal voltage phasor $\overrightarrow{V}_\mathrm{AFE}$.
+
+\subsection{Phasor Balance at the PCC}
+
+The phasor Kirchhoff equation at the Point of Common Coupling (PCC) is
+%
+\begin{equation}
+	\overrightarrow{V}_s
+	= \overrightarrow{V}_\mathrm{AFE}
+	+ jX_L\,\overrightarrow{I},
+	\label{eq:phasor_kvl}
+\end{equation}
+%
+where $\overrightarrow{I} = i_d - ji_q$ in the adopted convention
+($i_q > 0$ for capacitive/leading reactive power injection).
+
+\subsection{Component-wise Decomposition}
+
+Separating real and imaginary parts of \eqref{eq:phasor_kvl}:
+%
+\begin{align}
+	V_{s,d} &= V_\mathrm{AFE} + X_L\,i_q,  \label{eq:Vd}\\
+	V_{s,q} &= -X_L\,i_d.                   \label{eq:Vq}
+\end{align}
+%
+Because the $d$-axis is locked to $\overrightarrow{V}_\mathrm{AFE}$,
+we have $V_{s,q} = 0$ only at the AFE terminals; the upstream
+components are non-zero and encode the reactive loading.
+
+\subsection{Voltage Magnitude Constraint}
+
+The upstream grid magnitude must satisfy
+%
+\begin{equation}
+	|\overrightarrow{V}_s|^2 = V_{s,d}^2 + V_{s,q}^2 = V_s^2.
+	\label{eq:Vs_mag}
+\end{equation}
+%
+Substituting \eqref{eq:Vd}--\eqref{eq:Vq} into \eqref{eq:Vs_mag}:
+%
+\begin{equation}
+	\bigl(V_\mathrm{AFE} + X_L\,i_q\bigr)^2
+	+ \bigl(X_L\,i_d\bigr)^2
+	= V_s^2.
+	\label{eq:constraint_raw}
+\end{equation}
+
+\subsection{Locus in the \texorpdfstring{$(i_d,\,i_q)$}{(id, iq)} Plane}
+
+Equation \eqref{eq:constraint_raw} defines an implicit relationship
+between $i_d$, $i_q$, and the AFE terminal voltage $V_\mathrm{AFE}$.
+For a fixed modulation index the AFE output voltage is bounded:
+%
+\begin{equation}
+	V_\mathrm{AFE} \leq V_\mathrm{AFE,max}
+	= \frac{m_a\,V_\mathrm{dc}}{2},
+	\label{eq:Vmax}
+\end{equation}
+%
+where $m_a \leq 1$ is the modulation index and $V_\mathrm{dc}$ is the
+DC-link voltage.  Substituting $V_\mathrm{AFE} = V_\mathrm{AFE,max}$
+into \eqref{eq:constraint_raw} yields the \emph{boundary locus}:
+%
+\begin{equation}
+	\boxed{
+		X_L^2\,i_d^2
+		+ \bigl(X_L\,i_q + V_\mathrm{AFE,max}\bigr)^2
+		= V_s^2
+	}
+	\label{eq:locus}
+\end{equation}
+%
+Equation \eqref{eq:locus} is the equation of a \textbf{circle} in the
+$(i_d,\,i_q)$ plane with:
+%
+\begin{align}
+	\text{centre:} \quad
+	& \left(0,\;-\frac{V_\mathrm{AFE,max}}{X_L}\right),
+	\label{eq:centre}\\
+	\text{radius:} \quad
+	& r = \frac{V_s}{X_L}.
+	\label{eq:radius}
+\end{align}
+%
+The AFE can remain grid-connected (i.e.\ maintain $|\overrightarrow{V}_s|
+= V_s$) only for operating points $(i_d,\,i_q)$ that lie \emph{on or
+	inside} this circle.
+
+\subsection{Physical Interpretation}
+
+\begin{itemize}
+	\item The circle is centred on the negative $i_q$-axis at a distance
+	$V_\mathrm{AFE,max}/X_L$; it is therefore \emph{not} centred at
+	the origin, reflecting the non-zero baseline reactive current
+	needed to sustain $V_\mathrm{AFE,max}$ across $X_L$.
+	\item A larger $X_L$ (weaker grid) shrinks both the radius $r$ and
+	shifts the centre further into the inductive quadrant, tightening
+	the reactive-current margin.
+	\item At unity power factor ($i_q = 0$), the maximum active current
+	is recovered from \eqref{eq:locus}:
+	%
+	\begin{equation}
+		i_{d,\max}\big|_{i_q=0}
+		= \frac{1}{X_L}
+		\sqrt{V_s^2 - V_\mathrm{AFE,max}^2}.
+		\label{eq:idmax}
+	\end{equation}
+	\item For a stiff grid ($X_L \to 0$), $r \to \infty$ and the
+	constraint becomes inactive, recovering the ideal voltage-source
+	assumption.
+\end{itemize}
 \end{document}
 
