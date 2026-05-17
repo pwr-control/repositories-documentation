@@ -65,9 +65,7 @@ compliance verification: nominal load cold (\emph{NLC}) and nominal load hot (\e
 Section~\ref{sec:topology} presents the selected topology and justifies the design choices
 with respect to efficiency, current ripple, and controllability.
 The converter design — including transformer architecture, switching-stage sizing, and
-output filter — is detailed in Section~\ref{sec:design}. Control strategy and
-measurement chain accuracy are addressed in Section~\ref{sec:control}, and thermal
-management is discussed in Section~\ref{sec:thermal}.
+output filter — is detailed in Section~\ref{sec:design}. Simulation results are shown in Section~\ref{sec:sim}.
 
 \section{Power Supply Specification}\label{sec:specs}
 In this section a list of requirements and constraints which the power supply shall satisfy is reported. 
@@ -174,7 +172,7 @@ List of the power supply components and related sizing. Motivation will follow a
 		\midrule
 		AFE $L_\text{Fu}$ & $L_\text{Fu} = \SI{330}{\micro\henry}$ & $I_\text{nom} = \SI{450}{\ampere}$ rms & liquid cooled \\	
 		\midrule	
-		AFE $C_\text{Fu}$ & $C_\text{Fu} = \SI{200}{\micro\farad}$ & $U_\text{nom} = \SI{285}{\volt}$ rms & film capacitor \\		
+		AFE $C_\text{Fu}$ & $C_\text{Fu} = \SI{200}{\micro\farad}$ & $U_\text{nom} = \SI{285}{\volt}$ rms, $I_\text{nom} = \SI{44}{\ampere}$ rms & film capacitor \\		
 		\midrule
 		AFE $R_\text{CFu}$ & $R_\text{CFu} = \SI{50}{\milli\ohm}$ & $P_\text{nom} = \SI{50}{\watt}$ & low inductance resistors \\
 		\midrule
@@ -186,13 +184,21 @@ List of the power supply components and related sizing. Motivation will follow a
 		\midrule
 		FBC Input Capacitor & $C_\text{dc}^\text{dc1} = \SI{1.2}{\milli\farad}$ & $U_\text{nom} = \SI{900}{\volt}$  & film capacitor \\
 		\midrule
-		FBC IGBT module power losses & FF900R12IE4, $R_g = \SI{1.15}{\ohm}$, $f_\text{pwm} = \SI{4}{\kilo\hertz}$ & $p_\text{loss} = \SI{1200}{\watt}$  & liquid cooled \\
+		FBC IGBT module power losses & FF900R12IE4, $R_g = \SI{1.15}{\ohm}$, $f_\text{pwm} = \SI{4}{\kilo\hertz}$ & $P_\text{loss} = \SI{1200}{\watt}$  & liquid cooled \\
 		\midrule
 		HF Trafo series inductance & $L_s = \SI{30}{\micro\henry}$ per TR & center tapped transformer, $f_\text{pwm} = \SI{4}{\kilo\hertz}$ & special solution for parallelization shall be investigated \\
 		\midrule
+		HF Trafo Primary Current & $I_1 = \SI{370}{\ampere}$ per TR &  & RMS value for sizing  \\		
+		\midrule
+		HF Trafo Primary Voltage & $U_1 = \SI{750}{\volt}$ per TR &  &  RMS value for sizing \\		
+		\midrule
+		HF Trafo Secondary Current & $I_2 = \SI{4200}{\ampere}$ per system &  & RMS value for sizing \\
+		\midrule
+		HF Trafo Secondary Voltage & $U_2 = \SI{47}{\volt}$ per system &  & RMS value for sizing \\
+		\midrule
 		Diode Rectifier Power losses & D053-7100-4-N &   $P_\text{loss} =  \SI{3000}{\watt}$, $I_d^m = \SI{3500}{\ampere}$ & Clamped plate and Snubbers \\
 		\midrule
-		FBC $L_\text{dc}^\text{dc2}$ & $L_\text{dc}^\text{dc2} = \SI{1.2}{\micro\henry}$ & $I_\text{nom} = \SI{12}{\kilo\ampere}$ & in air, maybe from bus bar partial loop inductance \\
+		FBC $L_\text{dc}^\text{dc2}$ & $L_\text{dc}^\text{dc2} = \SI{2}{\micro\henry}$ & $I_\text{nom} = \SI{12}{\kilo\ampere}$ & in air, maybe from bus bar partial loop inductance \\
 		\midrule
 		FBC $C_\text{dc}^\text{dc2}$ & $C_\text{dc}^\text{dc2} = \SI{50}{\milli\farad}$ & $I_\text{nom} = \SI{200}{\ampere}$ rms & film (mandatory) \\
 		\bottomrule
@@ -268,6 +274,248 @@ Infineon FF900R12IE4 or the FF1200R12IE5 module. Both are
 maximum junction temperature $T_j^\text{max} = \SI{175}{\celsius}$. Simulation results show, under the condition of $T_H = \SI{65}{\celsius}$ a maximum junction temperature lower than $T_j^\text{design} = \SI{100}{\celsius}$.
 
 \section{Simulation Results}
+Simulations have been performed at two working condition
+\begin{itemize}
+	\item[--] NLC: $u_\text{dc}^\text{out} = \SI{25}{\volt}$ and $i_\text{dc}^\text{out} = \SI{12}{\kilo\ampere}$;
+	\item[--] NLH: $u_\text{dc}^\text{out} = \SI{10}{\volt}$ and $i_\text{dc}^\text{out} = \SI{12}{\kilo\ampere}$;
+\end{itemize}
+
+\subsection{Case scenario NLC}\label{sec:sim}
+This subsection presents the simulation results for the NLC case. The simulations report the voltages and currents of the main passive and active components, as well as the corresponding losses.
+
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{0.5\textwidth}
+		\centering
+		\includegraphics[width =225pt, angle = 0, 
+		keepaspectratio]{figures/sim_results_7/grid_quantities.eps}
+		\captionsetup{width=0.95\textwidth, font=footnotesize}	
+		\caption{Grid current waveform (top), and Grid current waveform (bottom).}
+		\label{}
+	\end{subfigure}%
+	\begin{subfigure}{0.5\textwidth}
+		\centering
+		\includegraphics[width =225pt, angle = 0, 
+		keepaspectratio]{figures/sim_results_7/afe_stack_quantities.eps}
+		\captionsetup{width=0.75\textwidth, font=footnotesize}	
+		\caption{AFE-Stack current waveform (top), and AFE-DClink Voltage waveform (bottom).}
+		\label{}
+	\end{subfigure}
+	\captionsetup{width=0.65\textwidth, font=small}	
+	\caption{Grid and AFE stack quantities - case scenario NLC.}
+	\label{}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{0.5\textwidth}
+		\centering
+		\includegraphics[width = 225pt, angle = 0, 
+		keepaspectratio]{figures/sim_results_7/fbc_quantities_1.eps}
+		\captionsetup{width=0.95\textwidth, font=footnotesize}	
+		\caption{Full Bridge output current (top), and output voltage (bottom).}
+		\label{}
+	\end{subfigure}%
+	\begin{subfigure}{0.5\textwidth}
+		\centering
+		\includegraphics[width = 225pt, angle = 0, 
+		keepaspectratio]{figures/sim_results_7/fbc_quantities_2.eps}
+		\captionsetup{width=0.75\textwidth, font=footnotesize}	
+		\caption{HF-TR secondary current (top), and voltage (bottom).}
+		\label{}
+	\end{subfigure}
+	\captionsetup{width=0.65\textwidth, font=small}	
+	\caption{Full Bridge Converter quantities - case scenario NLC.}
+	\label{}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{0.5\textwidth}
+		\centering
+		\includegraphics[width = 225pt, angle = 0, 
+		keepaspectratio]{figures/sim_results_7/output_quantities.eps}
+		\captionsetup{width=0.5\textwidth, font=footnotesize}	
+		\caption{Output current (top), and output voltage (bottom).}
+		\label{}
+	\end{subfigure}%
+	\begin{subfigure}{0.5\textwidth}
+		\centering
+		\includegraphics[width = 225pt, angle = 0, 
+		keepaspectratio]{figures/sim_results_7/capacitors_currents.eps}
+		\captionsetup{width=0.95\textwidth, font=footnotesize}	
+		\caption{Output filter capacitor current (top), and AFE grid filter capacitor current (bottom).}
+		\label{}
+	\end{subfigure}
+	\captionsetup{width=0.65\textwidth, font=small}	
+	\caption{Output quantities and capacitor filter currents - case scenario NLC.}
+	\label{}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{0.5\textwidth}
+		\centering
+		\includegraphics[width = 225pt, angle = 0, 
+		keepaspectratio]{figures/sim_results_7/diode_rectifier.eps}
+		\captionsetup{width=0.75\textwidth, font=footnotesize}	
+		\caption{Diode rectifier current (top), and (bottom).}
+		\label{}
+	\end{subfigure}%
+	\begin{subfigure}{0.5\textwidth}
+		\centering
+		\includegraphics[width = 225pt, angle = 0, 
+		keepaspectratio]{figures/sim_results_7/full_bridge_devices_quantities.eps}
+		\captionsetup{width=0.75\textwidth, font=footnotesize}	
+		\caption{Full Bridge devices current (top), and (bottom).}
+		\label{}
+	\end{subfigure}
+	\captionsetup{width=0.65\textwidth, font=small}	
+	\caption{Full bridge devices current and diode rectifiers current - case scenario NLC.}
+	\label{}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{0.5\textwidth}
+		\centering
+		\includegraphics[width = 225pt, angle = 0, 
+		keepaspectratio]{figures/sim_results_7/full_bridge_devices_power_losses_1.eps}
+		\captionsetup{width=0.75\textwidth, font=footnotesize}	
+		\caption{Full Bridge device power losses (top), and (bottom).}
+		\label{}
+	\end{subfigure}%
+	\begin{subfigure}{0.5\textwidth}
+		\centering
+		\includegraphics[width = 225pt, angle = 0, 
+		keepaspectratio]{figures/sim_results_7/full_bridge_devices_power_losses_2.eps}
+		\captionsetup{width=0.75\textwidth, font=footnotesize}	
+		\caption{Full Bridge device power losses (top), and (bottom).}
+		\label{}
+	\end{subfigure}
+	\captionsetup{width=0.65\textwidth, font=small}	
+	\caption{Full bridge device power losses - case scenario NLC.}
+	\label{}
+\end{figure}
+
+
+\subsection{Case scenario NLH}
+This subsection presents the simulation results for the NLH case. The simulations report the voltages and currents of the main passive and active components, as well as the corresponding losses.
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{0.5\textwidth}
+		\centering
+		\includegraphics[width =225pt, angle = 0, 
+		keepaspectratio]{figures/sim_results_8/grid_quantities.eps}
+		\captionsetup{width=0.95\textwidth, font=footnotesize}	
+		\caption{Grid current waveform (top), and Grid current waveform (bottom).}
+		\label{}
+	\end{subfigure}%
+	\begin{subfigure}{0.5\textwidth}
+		\centering
+		\includegraphics[width =225pt, angle = 0, 
+		keepaspectratio]{figures/sim_results_8/afe_stack_quantities.eps}
+		\captionsetup{width=0.75\textwidth, font=footnotesize}	
+		\caption{AFE-Stack current waveform (top), and AFE-DClink Voltage waveform (bottom).}
+		\label{}
+	\end{subfigure}
+	\captionsetup{width=0.65\textwidth, font=small}	
+	\caption{Grid and AFE stack quantities - case scenario NLH.}
+	\label{}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{0.5\textwidth}
+		\centering
+		\includegraphics[width = 225pt, angle = 0, 
+		keepaspectratio]{figures/sim_results_8/fbc_quantities_1.eps}
+		\captionsetup{width=0.95\textwidth, font=footnotesize}	
+		\caption{Full Bridge output current (top), and output voltage (bottom).}
+		\label{}
+	\end{subfigure}%
+	\begin{subfigure}{0.5\textwidth}
+		\centering
+		\includegraphics[width = 225pt, angle = 0, 
+		keepaspectratio]{figures/sim_results_8/fbc_quantities_2.eps}
+		\captionsetup{width=0.75\textwidth, font=footnotesize}	
+		\caption{HF-TR secondary current (top), and voltage (bottom).}
+		\label{}
+	\end{subfigure}
+	\captionsetup{width=0.65\textwidth, font=small}	
+	\caption{Full Bridge Converter quantities - case scenario NLH.}
+	\label{}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{0.5\textwidth}
+		\centering
+		\includegraphics[width = 225pt, angle = 0, 
+		keepaspectratio]{figures/sim_results_8/output_quantities.eps}
+		\captionsetup{width=0.5\textwidth, font=footnotesize}	
+		\caption{Output current (top), and output voltage (bottom).}
+		\label{}
+	\end{subfigure}%
+	\begin{subfigure}{0.5\textwidth}
+		\centering
+		\includegraphics[width = 225pt, angle = 0, 
+		keepaspectratio]{figures/sim_results_8/capacitors_currents.eps}
+		\captionsetup{width=0.95\textwidth, font=footnotesize}	
+		\caption{Output filter capacitor current (top), and AFE grid filter capacitor current (bottom).}
+		\label{}
+	\end{subfigure}
+	\captionsetup{width=0.65\textwidth, font=small}	
+	\caption{Output quantities and capacitor filter currents - case scenario NLH.}
+	\label{}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{0.5\textwidth}
+		\centering
+		\includegraphics[width = 225pt, angle = 0, 
+		keepaspectratio]{figures/sim_results_8/diode_rectifier.eps}
+		\captionsetup{width=0.75\textwidth, font=footnotesize}	
+		\caption{Diode rectifier current (top), and (bottom).}
+		\label{}
+	\end{subfigure}%
+	\begin{subfigure}{0.5\textwidth}
+		\centering
+		\includegraphics[width = 225pt, angle = 0, 
+		keepaspectratio]{figures/sim_results_8/full_bridge_devices_quantities.eps}
+		\captionsetup{width=0.75\textwidth, font=footnotesize}	
+		\caption{Full Bridge devices current (top), and (bottom).}
+		\label{}
+	\end{subfigure}
+	\captionsetup{width=0.65\textwidth, font=small}	
+	\caption{Full bridge devices current and diode rectifiers current - case scenario NLH.}
+	\label{}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{0.5\textwidth}
+		\centering
+		\includegraphics[width = 225pt, angle = 0, 
+		keepaspectratio]{figures/sim_results_8/full_bridge_devices_power_losses_1.eps}
+		\captionsetup{width=0.75\textwidth, font=footnotesize}	
+		\caption{Full Bridge device power losses (top), and (bottom).}
+		\label{}
+	\end{subfigure}%
+	\begin{subfigure}{0.5\textwidth}
+		\centering
+		\includegraphics[width = 225pt, angle = 0, 
+		keepaspectratio]{figures/sim_results_8/full_bridge_devices_power_losses_2.eps}
+		\captionsetup{width=0.75\textwidth, font=footnotesize}	
+		\caption{Full Bridge device power losses (top), and (bottom).}
+		\label{}
+	\end{subfigure}
+	\captionsetup{width=0.65\textwidth, font=small}	
+	\caption{Full bridge device power losses - case scenario NLH.}
+	\label{}
+\end{figure}
+
 
 %\begin{thebibliography}{99}
 %	% power electronics
