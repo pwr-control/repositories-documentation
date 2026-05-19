@@ -62,7 +62,7 @@ corresponding to a rated power of \SI{300}{\kilo\watt}, from a three-phase \SI{4
 
 The document is structured as follows. Section~\ref{sec:specs} summarises the electrical
 and thermal specifications together with the two operating conditions defined for
-compliance verification: nominal load cold (\emph{NLC}) and nominal load hot (\emph{NLH}).
+compliance verification: nominal load cold (\textbf{NLC}) and nominal load hot (\textbf{NLH}).
 Section~\ref{sec:topology} presents the selected topology and justifies the design choices
 with respect to efficiency, current ripple, and controllability.
 The converter design — including transformer architecture, switching-stage sizing, and
@@ -122,7 +122,7 @@ two-stage solution described hereafter, comprising an AFE stage
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width = 525pt, 
+	\includegraphics[width = 500pt, 
 	keepaspectratio]{figures/arc/afe.eps}
 	\captionsetup{width=.75\textwidth}
 	\caption{Active Front End stage with LC filter layout.}
@@ -131,21 +131,21 @@ two-stage solution described hereafter, comprising an AFE stage
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width = 475pt, 
-	keepaspectratio]{figures/arc/phase_shifted_full_bridge_converter_1.eps}
+	\includegraphics[width = 500pt, 
+	keepaspectratio]{figures/arc/phase_shifted_full_bridge_converter_2.eps}
 	\captionsetup{width=.75\textwidth}
-	\caption{Full Bridge Converter layout with D053-7100-4-N diode rectifiers.}
+	\caption{Full Bridge Converter layout.}
 	\label{fig:psfbc} 
 \end{figure}
 
-\begin{figure}[H]
-	\centering
-	\includegraphics[width = 325pt, 
-	keepaspectratio]{figures/arc/HF-TR.eps}
-	\captionsetup{width=.75\textwidth}
-	\caption{Details of the high frequency transformer with shared output inductance.}
-	\label{fig:hftr} 
-\end{figure}
+%\begin{figure}[H]
+%	\centering
+%	\includegraphics[width = 325pt, 
+%	keepaspectratio]{figures/arc/HF-TR.eps}
+%	\captionsetup{width=.75\textwidth}
+%	\caption{Details of the high frequency transformer with shared output inductance.}
+%	\label{fig:hftr} 
+%\end{figure}
 
 The source inductance $L_\text{grid}$, determined by the grid short-circuit capacity
 at the point of common coupling (\SI{15}{\kilo\ampere}), represents the
@@ -181,21 +181,21 @@ List of the power supply components and related sizing. Motivation will follow a
 		\midrule
 		AFE $L_\text{Fu}$ & $L_\text{Fu} = \SI{330}{\micro\henry}$ & $I_\text{nom} = \SI{450}{\ampere}$ rms & liquid cooled \\	
 		\midrule	
-		AFE $C_\text{Fu}$ & $C_\text{Fu} = \SI{200}{\micro\farad}$ & $U_\text{nom} = \SI{285}{\volt}$ rms, $I_\text{nom} = \SI{44}{\ampere}$ rms & film capacitor \\		
+		AFE $C_\text{Fu}$ & $C_\text{Fu} = \SI{200}{\micro\farad}-\SI{360}{\micro\farad}$ & $U_\text{nom} = \SI{285}{\volt}$ rms, $I_\text{nom} = \SI{44}{\ampere}$ rms & film capacitor \\		
 		\midrule
 		AFE $R_\text{CFu}$ & $R_\text{CFu} = \SI{50}{\milli\ohm}$ & $P_\text{nom} = \SI{50}{\watt}$ & low inductance resistors \\
 		\midrule
 		AFE $L_\text{grid}$ & $L_\text{grid} = \SI{50}{\micro\henry}$ &  & from grid \\
 		\midrule
-		AFE IGBT module power losses & FF900R12IE4, $R_g = \SI{1.15}{\ohm}$, $f_\text{pwm} = \SI{4}{\kilo\hertz}$ & $P_\text{loss} = \SI{1200}{\watt}$ per module under worst condition  & liquid cooled \\
+		AFE IGBT module power losses & CM1200DW-24T, $R_g = \SI{1.15}{\ohm}$, $f_\text{pwm} = \SI{4}{\kilo\hertz}$ & $P_\text{loss} = \SI{1200}{\watt}$ per module under worst condition  & liquid cooled \\
 		\midrule
 		AFE DClink Capacitor & $C_\text{Fi} = \SI{2.4}{\milli\farad}$ & $U_\text{nom} = \SI{900}{\volt}$  & film capacitor \\
 		\midrule
 		FBC Input Capacitor & $C_\text{dc}^\text{dc1} = \SI{1.2}{\milli\farad}$ & $U_\text{nom} = \SI{900}{\volt}$  & film capacitor \\
 		\midrule
-		FBC IGBT module power losses & FF900R12IE4, $R_g = \SI{1.15}{\ohm}$, $f_\text{pwm} = \SI{4}{\kilo\hertz}$ & $P_\text{loss} = \SI{1500}{\watt}$ per module under worst condition & liquid cooled \\
+		FBC IGBT module power losses & CM1200DW-24T, $t_{dt} = \SI{3}{\micro\second}$, $f_\text{pwm} = \SI{10}{\kilo\hertz}$ & $P_\text{loss} = \SI{1200}{\watt}$ per module under worst condition & liquid cooled \\
 		\midrule
-		HF Trafo series inductance & $L_s = \SI{30}{\micro\henry}$ per TR & center tapped transformer, $f_\text{pwm} = \SI{4}{\kilo\hertz}$ & special solution for parallelization shall be investigated \\
+		HF Trafo series inductance & $L_s = \SI{8}{\micro\henry}$ & center tapped transformer, $f_\text{pwm} = \SI{10}{\kilo\hertz}$ & \\
 		\midrule
 		HF Trafo Primary Current & $I_1 = \SI{370}{\ampere}$ per TR &  & RMS value for sizing  \\		
 		\midrule
@@ -404,7 +404,7 @@ This subsection presents the simulation results for the NLC case. The simulation
 		\includegraphics[width = 225pt, angle = 0, 
 		keepaspectratio]{figures/sim_results_7/diode_rectifier.eps}
 		\captionsetup{width=0.75\textwidth, font=footnotesize}	
-		\caption{Diode rectifier current (top), and (bottom).}
+		\caption{Diode rectifiers current (top), and diode rectifiers voltage (bottom).}
 		\label{}
 	\end{subfigure}%
 	\begin{subfigure}{0.5\textwidth}
@@ -412,7 +412,7 @@ This subsection presents the simulation results for the NLC case. The simulation
 		\includegraphics[width = 225pt, angle = 0, 
 		keepaspectratio]{figures/sim_results_7/full_bridge_devices_quantities.eps}
 		\captionsetup{width=0.75\textwidth, font=footnotesize}	
-		\caption{Full Bridge devices current (top), and (bottom).}
+		\caption{Full Bridge devices current first leg (top), and second leg (bottom).}
 		\label{}
 	\end{subfigure}
 	\captionsetup{width=0.65\textwidth, font=small}	
