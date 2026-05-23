@@ -1,5 +1,5 @@
 % ===================== PACKAGES =====================
-\usepackage[british,UKenglish,USenglish,english,american]{babel}
+\usepackage[british]{babel}
 \usepackage[tmargin=1in, bmargin=1in, lmargin=0.75in, rmargin=0.75in]{geometry}
 \usepackage{tikz}
 \usepackage{graphicx}
@@ -44,21 +44,22 @@
 \usepackage{blindtext}
 \usepackage{changepage}
 \usepackage{nomencl}
-
+\usepackage{hyperref}
+\usepackage{ragged2e}
 % ===================== SI UNITS =====================
 \DeclareSIUnit\atm{atm}
 
 % ===================== PAGE STYLE =====================
-\pagestyle{fancy}
-\fancypagestyle{firstpage}{\rhead{}}
-\fancyhead[L]{\slshape\nouppercase{\leftmark}}
-\chead{}
-\rhead{}
-\lfoot{\textit{}}
-\cfoot{-\ \thepage\ -}
-\rfoot{\textit{}}
-\renewcommand{\headrulewidth}{0.4pt}
-\renewcommand{\footrulewidth}{0.4pt}
+%\pagestyle{fancy}
+%\fancypagestyle{firstpage}{\rhead{}}
+%\fancyhead[L]{\slshape\nouppercase{\leftmark}}
+%\chead{}
+%\rhead{}
+%\lfoot{\textit{}}
+%\cfoot{-\ \thepage\ -}
+%\rfoot{\textit{}}
+%\renewcommand{\headrulewidth}{0.4pt}
+%\renewcommand{\footrulewidth}{0.4pt}
 
 % ===================== MATH OPERATORS =====================
 \DeclareMathOperator{\rank}{rank}
