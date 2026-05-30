@@ -1,158 +1,142 @@
 %\documentclass[11pt,a4paper]{article}
-\documentclass[11pt,a4paper]{scrartcl}
+\documentclass[12pt,a4paper]{scrartcl}
 %\documentclass[11pt,a4paper,oneside]{book}
-\usepackage[british,UKenglish,USenglish,english,american]{babel}
-%\usepackage[a4paper, total={16cm, 23cm}]{geometry}
-\usepackage[tmargin = 1.25in,bmargin = 1.25in,lmargin = 0.75in,rmargin = 0.75in]{geometry}
-\usepackage{tikz}
-\usepackage{graphicx}
-\usepackage{pgfplots}
-\pgfplotsset{width=12cm,compat=1.9}
-\usepackage{setspace}
-\usepackage{chemmacros}
-\usepackage{chemfig}
-%\usepackage{ghsystem}
-%\usechemmodule{redox}
-%\usepackage{chemnum}
-%\usepackage{bohr}
-%\usepackage{elements}
-%\usepackage{endiagram}
-%\usepackage{modiagram}
-%\usepackage{chemgreek}
-%\usepackage{mhchem}
-\usepackage{esint}
-\usepackage{tabularray}
+\input{../AAA_template_latex_settings/settings}
 
-\usepackage{makeidx}
-\usepackage{epstopdf}
-
-\usepackage{amssymb}
-\usepackage{mathrsfs}
-%\usepackage{minted}
-\usepackage{bm}
-\usepackage{amsmath}
-\usepackage{enumitem}
-\usepackage[english]{varioref}
-\usepackage[english]{babel}
-\usepackage{lipsum}
-\usepackage{fancyhdr}
-\pagestyle{fancy} 
-\usepackage{float}
-\usepackage{empheq}
-\usepackage[framemethod=tikz]{mdframed}
-\usepackage{epstopdf}
-\numberwithin{equation}{section}
-\usepackage{eso-pic}
-\usepackage{calc}
-\usepackage{nccmath}
-\usepackage{caption}
-\usepackage{subcaption}
-\usepackage{gensymb}
-\usepackage{amsfonts,amsthm,epsfig,epstopdf,titling,url,array}
-\usepackage{siunitx}
-\sisetup{input-digits = 0123456789\pi}
-\usepackage[symbol]{footmisc}
-\usepackage{xcolor}
-\usepackage{multicol}
-\usepackage{boondox-cal}
-\DeclareSIUnit\atm{atm}
-\setcounter{secnumdepth}{3}
-\setcounter{tocdepth}{3}
-\usepackage{booktabs}
-\usepackage{blindtext}
-\usepackage{changepage}
-\usepackage{longtable}
-
-% \usepackage{draftwatermark}
-% \SetWatermarkText{DRAFT}
-% \SetWatermarkScale{5}
-
-\DeclareSIUnit\atm{atm}
-
-\pagestyle{fancy} 
-\fancypagestyle{firstpage}{
-	\rhead{\includegraphics[height=0.75cm]{figures/pwr-control_logo_doc.png}
-	}
+\geometry{
+	a4paper,
+	top    = 3.0cm,
+	bottom = 3.0cm,
+	left   = 2.5cm,
+	right  = 2.5cm
 }
-\fancyhead[L]{\small\slshape\nouppercase{\leftmark}}
-\chead{}
-\rhead{\includegraphics[height=0.75cm]{figures/pwr-control_logo_doc.png}
+
+\hypersetup{
+	colorlinks = true,
+	urlcolor   = blue,
+	linkcolor  = black,
+	citecolor  = black
 }
-\lfoot{\textit{}}
-\cfoot{-\ \thepage\ -}
-\rfoot{\textit{}}
 
-\DeclareMathOperator{\rank}{rank}
-\DeclareMathOperator{\atantwo}{atan2}
-\DeclareMathOperator{\arctantwo}{arctan2}
-\DeclareMathOperator{\spn}{span}
+\pagenumbering{gobble}
 
-\renewcommand{\headrulewidth}{0.4pt}
-\renewcommand{\footrulewidth}{0.4pt}
-\newcommand{\abs}[1]{\left|#1\right|}
-\definecolor{mycolor1}{rgb}{0.97, 0.97, 0.97}
-\definecolor{mycolor2}{rgb}{0.97, 0.97, 0.97}
-\definecolor{tableShade}{gray}{0.9}
-\newcommand{\sign}{\text{sign}}
-\newcommand{\centered}[1]{\begin{tabular}{@{}l@{}} #1 \end{tabular}}
-\theoremstyle{it}
-\newtheorem{defn}{Definition}[section]
-\newtheorem{assumption}{Assumption}[section]
-\newtheorem{thm}{Theorem}[section]
-\newtheorem{lemma}{Lemma}[section]
-\newtheorem{corollary}{Corollary}[section]
-\theoremstyle{definition}
-%\theoremstyle{it}
-\newtheorem{example}{Example}[section]
-\let\eqrefn\eqref
-\renewcommand{\eqref}[1]{Eq.~(\ref{#1})}
+% =============================================================
+%  
+% =============================================================
 
-\newenvironment{myitemize_1}
-{ \begin{itemize}[topsep=4pt]
-		\setlength{\topsep}{2pt}		
-		\setlength{\itemsep}{2pt}
-		\setlength{\parskip}{2pt}
-		\setlength{\parsep}{2pt}    }
-{ \end{itemize}                  	}
+\newcommand{\DocCategory}{Technical Research Report}
+\newcommand{\DocField}{Power Electronics and Control Systems}
 
-\newenvironment{myitemize_2}
-{ \begin{itemize}[topsep=4pt]
-		\setlength{\topsep}{2pt}		
-		\setlength{\itemsep}{2pt}
-		\setlength{\parskip}{2pt}
-		\setlength{\parsep}{2pt}    }
-{ \end{itemize}   					}
-
-
-\newmdenv[innerlinewidth=0.5pt, roundcorner=4pt,backgroundcolor=mycolor2, 
-linecolor=mycolor1,innerleftmargin=6pt,
-innerrightmargin=6pt,innertopmargin=6pt,innerbottommargin=6pt]{mybox}
-
-\title{\textbf{ 
-		\begin{LARGE}
-			Modularity:
-		\end{LARGE} \\[24pt]
-		\begin{Large}
-			model and control architecture
-	\end{Large}}
+\newcommand{\DocTitle}{%
+	Modularity in Power Electronics: \\[12pt]
+	Impact on Power Quality
 }
-\author{\textbf{Davide Bagnara}}
+\newcommand{\DocSubtitle}{%
+	Investigation of power electronics modularity into power quality 
+}
 
+\newcommand{\DocAuthor}{Davide Bagnara}
+\newcommand{\DocDate}{May 2021}
+
+\newcommand{\DocAbstract}{%
+	This paper investigates the impact of parallelising multiple variable-speed electrical drives on the power quality of a medium-voltage grid in wind power generation applications. Each drive unit consists of an Active Front End (AFE) rectifier and a two-level voltage source inverter (VSI) coupled to a permanent magnet synchronous machine (PMSM), operating under closed-loop vector control. When two to four such drive systems share a common point of coupling, the superposition of their switching harmonics and low-order current distortion components gives rise to a cumulative degradation of the grid current waveform, whose severity depends on the drive operating point, the PWM carrier frequency, and the grid impedance at the point of common coupling (PCC). An analytical harmonic model of the parallel AFE arrangement is derived and used to quantify the total harmonic distortion (THD) of the grid current as a function of the number of active units. To mitigate the identified distortion, an LCL filter is designed for each drive input stage, with corner frequency and damping ratio optimised to attenuate the dominant switching-frequency harmonics while preserving dynamic current control bandwidth. Simulation results, obtained in a MATLAB/Simscape environment, demonstrate that the proposed filtering solution brings the harmonic current emissions into compliance with the limits set forth by IEC 61000-3-12 and EN 50160, across the full operating range of the drive fleet. The results provide quantitative design guidelines for the harmonic filter dimensioning in multi-drive renewable energy conversion systems connected to weak or stiff grids.
+}
+
+% Tre righe metadati in fondo (label small caps + valore)
+\newcommand{\MetaLabelA}{Project Repository}
+\newcommand{\MetaValueA}{https://github.com/pwr-control/modelization-and-control.git}
+
+\newcommand{\MetaLabelB}{Framework}
+\newcommand{\MetaValueB}{MATLAB/Simulink/Simscape}
+
+\newcommand{\MetaLabelC}{Architecture}
+\newcommand{\MetaValueC}{SiC, EiceDRIVER, Customized Power Supplies}
+
+% =============================================================
+%  FRONTESPIZIO
+% =============================================================
 \begin{document}
-	\thispagestyle{empty}
-	\begin{mybox}
-		\maketitle
-		\vspace{100mm}
-	\end{mybox}
-	%	\let\clearpage\relax
+	\titlepage
+	% ---- Intestazione centrata ----
+	\begin{center}
+		{\Large\scshape \DocCategory}\\[8pt]
+		{\large\scshape \DocField}
+	\end{center}
+	
+	\vspace{36pt}
+	\noindent\rule{\linewidth}{0.8pt}
+	
+	% ---- Titolo ----
+	%\vspace{28pt}
+	\begin{center}
+		{\fontsize{30}{30}\selectfont\bfseries \DocTitle}
+	\end{center}
+	
+	\vspace{4pt}
+	\noindent\rule{\linewidth}{2.2pt}
+	
+	% ---- Sottotitolo ----
+	%\vspace{14pt}
+	\begin{center}
+		\begin{onehalfspace}
+			{\large\itshape \DocSubtitle}
+		\end{onehalfspace}
+	\end{center}
+	
+	% ---- Spazio prima di Autore/Data ----
+	\vspace{36pt}
+	
+	% ---- Author / Date su due colonne ----
+	\begin{minipage}{0.92\linewidth}
+		\noindent
+		\begin{minipage}[t]{0.48\linewidth}
+			\textbf{Author:}\\[2pt]
+			\DocAuthor
+		\end{minipage}%
+		\hfill
+		\begin{minipage}[t]{0.48\linewidth}
+			\raggedleft
+			\textbf{Date:}\\[2pt]
+			\DocDate
+		\end{minipage}
+	\end{minipage}
+	% ---- Spazio prima dell'abstract ----
+	\vspace{36pt}
+	
+	% ---- Abstract indentato ----
+	\begin{center}
+		\begin{minipage}{0.85\linewidth}
+			%    \small
+			\footnotesize 
+			\begin{onehalfspace}
+				\textbf{Abstract:} \DocAbstract
+			\end{onehalfspace}
+		\end{minipage}
+	\end{center}
+	
+	% ---- Spazio prima dei metadati ----
+	\vfill
+	
+	% ---- Metadati in fondo ----
+	\noindent
+	\begin{tabular}{@{} r @{\quad} l @{}}
+		\textsc{\small\MetaLabelA:} & {\small\url{\MetaValueA}} \\[3pt]
+		\textsc{\small\MetaLabelB:} & {\small\MetaValueB}       \\[3pt]
+		%		\textsc{\small\MetaLabelC:} & {\small\MetaValueC}       \\
+	\end{tabular}
+	
+	% =============================================================
+	%  Fine frontespizio
+	% =============================================================
 	\newpage
-	\tableofcontents%
-	\listoffigures%
+	\pagenumbering{arabic}
+	\setcounter{page}{1}
+	\tableofcontents
+	\listoffigures	
 	\listoftables
-	%	\let\clearpage\LaTeXStandardClearpage
 	\newpage
 	
-\begin{onehalfspace}
+\begin{onehalfspace}	
 \section{Introduction}	
 To introduce the work described along the document, it could be useful to start from a generic configuration which the \textit{ElectricalDrive} are subjected, as shown in Figure~\ref{ElectricalDrive_connection_figure_1b}.
 \begin{figure}[H]
@@ -239,9 +223,9 @@ Here the list of variables and parameters used along the document.\\
 
 \noindent\textbf{Remark} - the main variables which are deputed to describe and influence the resulting grid power quality are the one which are correlated to the \textit{grid} and \textit{line} as well as the quantities involve the MV/LV transformer as well as the number of the \textit{ElectricalDrive}, as follows.
  
-\begin{myitemize_1}
+\begin{itemize}
 	\item[--] Parameters, variables and attributes:
-	\begin{myitemize_2}
+	\begin{itemize}
 		\item[--] $P_n\quad\Big[\SI{}{\kilo{\volt\ampere}}\Big]$: nominal apparent power of the MV/LV transformer;	
 		\item[--] $U_{2}\quad\Big[\SI{}{\volt}\Big]$: nominal secondary side of the MV/LV main transformer. $U_{2} = \SI{690}{\volt}$ is the nominal voltage of the LV side grid as well as of the \textit{ElectricalDrive} used along this document;			
 		\item[--] $i_{cc}\quad\Big[\SI{}{\ampere}\Big]$: nominal short-circuit current at the secondary output of the MV/LV transformer;	the expected short circuit current at the secondary output of the MV/LV transformer is in general designed in order to have a value lower than $\SI{21}{\kilo\ampere}$;
@@ -265,9 +249,9 @@ Here the list of variables and parameters used along the document.\\
 		\item[--] the total residual current distortion is $\textit{THD}_i$: total harmonic current distortion;
 		\item[--] $h$: harmonic order;
 		\item[--] \textit{stack}: the term \textit{stack} is used to reference quantities which are close or belong to the semiconductor components;
-	\end{myitemize_2}
+	\end{itemize}
 	\item[--] Nominal values for a single \textit{ElectricalDrive}:
-	\begin{myitemize_2}
+	\begin{itemize}
 		\item[--] $U_{grid}^{nom} = \SI{400}{\volt}$ [RMS] - nominal per phase in rms at \textit{AFE/Grid} stage;		
 		\item[--] $I_{afe}^{nom} = \SI{270}{\ampere}$ [RMS] - nominal current in rms at \textit{AFE/Grid} stage;		
 		\item[--] $U_{inv}^{nom} = \SI{400}{\volt}$ [RMS] - nominal per phase in rms at \textit{INVERTER} stage;				\item[--] $I_{inv}^{nom} = \SI{370}{\ampere}$ [RMS] - nominal current in rms at \textit{INVERTER} stage;
@@ -278,8 +262,8 @@ Here the list of variables and parameters used along the document.\\
 		\item[--] $R_{Fu} = \SI{50}{\milli\ohm}$ - nominal value of the grid filter damping resistor; 
 		\item[--] $L_{Fi}\Big|_p = \SI{230}{\micro\henry}$: nominal value of the inverter output $dv/dt$ inductance filter (positive sequence);
 		\item[--] $L_{Fi}\Big|_0 = \SI{15}{\micro\henry}$: nominal value of the inverter output $dv/dt$ inductance filter (zero sequence);
-	\end{myitemize_2}
-\end{myitemize_1}
+	\end{itemize}
+\end{itemize}
 
 \section{Grid output filter VERSUS number of parallelized systems}
 In this section the output filter stage and its relation with the parallelization of \textit{n} modules will be investigated. The analysis consists of the evaluation of the transfer function between the current $i_g(t)$ and any source of disturbance like $u_{line}(t)$, $u_s(t)$ and $i_s(t)$; where
@@ -692,7 +676,7 @@ Additional constraints are below reported
 		\centering
 		\includegraphics[width =225pt, angle = 0, 
 		keepaspectratio]{figures/sim_results/benchmark_case_3/inverter_flux_observer.eps}
-		\captionsetup{width=0.5\textwidth, font=footnotesize}	
+		\captionsetup{width=0.85\textwidth, font=footnotesize}	
 		\caption{machine rotor flux (dark gray) and estimated (light gray) - $\alpha$-component (top), $\beta$-component (bottom).}
 		\label{}
 	\end{subfigure}%
@@ -769,7 +753,7 @@ In the following subsection the effects of the grid (line) impedance on grid cur
 		\centering
 		\includegraphics[width =225pt, angle = 0, 
 		keepaspectratio]{figures/sim_results/benchmark_case_1/igrid_spectrum_figure1.eps}
-		\captionsetup{width=0.65\textwidth, font=footnotesize}	
+		\captionsetup{width=0.75\textwidth, font=footnotesize}	
 		\caption{grid phase current (top); grid phase current spectrum (bottom); components at $\SI{43.6}{\hertz}$ and $\SI{143.6}{\hertz}$ are coupled to the fifth harmonic component of the PSM back EMF; component at $\SI{250}{\hertz}$ is coupled to the homologous grid voltage harmonic component.}
 		\label{}
 	\end{subfigure}%
@@ -1036,12 +1020,12 @@ as well as the term $i_6^\xi(t)\cos(6\vartheta)\sin(\vartheta_g)$ can be decompo
 
 \section{Case scenario analysis}	
 In this section overall case scenario, concerning the \textit{ElectricalDrive} configuration will be investigated. Below a list of all cases is shown:
-\begin{myitemize_2}
+\begin{itemize}
 	\item[--] \textbf{case scenario 1} - $P_n = \SI{1150}{\kilo{\volt\ampere}}$  - four \textit{ElectricalDrive} connected to four, galvanically isolated PSM three phase system, as per Figure~\ref{ElectricalDrive_connection_figure_1b};
 	\item[--] \textbf{case scenario 2} - $P_n = \SI{1670}{\kilo{\volt\ampere}}$  - two, galvanically isolated PSM three phase system, connected, each one, to three hard-parallelized \textit{ElectricalDrive}, as per Figure~\ref{ElectricalDrive_connection_figure_2b};
 	\item[--] \textbf{case scenario 3} - $2\ \times \ P_n = \SI{1150}{\kilo{\volt\ampere}}$  - two power system connected to the same PCC which each one consists of four \textit{ElectricalDrive} connected to four, galvanically isolated PSM three phase system, as per Figure~\ref{ElectricalDrive_connection_figure_3b};
 	\item[--] \textbf{case scenario 4} - $\ P_n = \SI{1850}{\kilo{\volt\ampere}}$  - eight \textit{ElectricalDrive} connected to eight, galvanically isolated PSM three phase system, as per Figure~\ref{ElectricalDrive_connection_figure_6};
-\end{myitemize_2}
+\end{itemize}
 
 \subsection{Case scenario 1 - four galvanically isolated systems ($\mathbf{P_{plant} = \SI{1150}{\kilo{\volt\ampere}}}$)}	
 This subsection shows the simulation results for the following case scenario

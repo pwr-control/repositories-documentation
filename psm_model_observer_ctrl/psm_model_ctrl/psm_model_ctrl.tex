@@ -1,141 +1,158 @@
-\documentclass[11pt,a4paper]{article}
-%\documentclass[11pt,a4paper]{scrartcl}
+%\documentclass[11pt,a4paper]{article}
+\documentclass[12pt,a4paper]{scrartcl}
 %\documentclass[11pt,a4paper,oneside]{book}
-\usepackage[british,UKenglish,USenglish,english,american]{babel}
-%\usepackage[a4paper, total={16cm, 23cm}]{geometry}
-\usepackage[tmargin = 1.25in,bmargin = 1.25in,lmargin = 1in,rmargin = 
-1in]{geometry}
-\usepackage{tikz}
-\usepackage{graphicx}
-\usepackage{pgfplots}
-\pgfplotsset{width=12cm,compat=1.9}
-\usepackage{setspace}
+\input{../../AAA_template_latex_settings/settings}
 
-\usepackage{tabularray}
-
-\usepackage{makeidx}
-\usepackage{epstopdf}
-
-\usepackage{amssymb}
-\usepackage{mathrsfs}
-\usepackage{bm}
-\usepackage{amsmath}
-\usepackage{enumitem}
-\usepackage[english]{varioref}
-\usepackage[english]{babel}
-\usepackage{lipsum}
-\usepackage{fancyhdr}
-\pagestyle{fancy} 
-\usepackage{float}
-\usepackage{empheq}
-\usepackage[framemethod=tikz]{mdframed}
-\usepackage{epstopdf}
-\numberwithin{equation}{section}
-\usepackage{eso-pic}
-\usepackage{calc}
-\usepackage{nccmath}
-\usepackage{caption}
-\usepackage{subcaption}
-\usepackage{gensymb}
-\usepackage{amsfonts,amsthm,epsfig,epstopdf,titling,url,array}
-\usepackage{siunitx}
-\sisetup{input-digits = 0123456789\pi}
-\usepackage[symbol]{footmisc}
-\usepackage{xcolor}
-\usepackage{multicol}
-\usepackage{boondox-cal}
-\DeclareSIUnit\atm{atm}
-\setcounter{secnumdepth}{3}
-\setcounter{tocdepth}{3}
-\usepackage{booktabs}
-\usepackage{blindtext}
-\usepackage{changepage}
-
-% \usepackage{draftwatermark}
-% \SetWatermarkText{DRAFT}
-% \SetWatermarkScale{5}
-
-\DeclareSIUnit\atm{atm}
-
-\fancypagestyle{firstpage}{
-	\rhead{
-\includegraphics[height=0.75cm]{figures/pwr-control_logo_doc.png}
-	}
+\geometry{
+	a4paper,
+	top    = 3.0cm,
+	bottom = 3.0cm,
+	left   = 2.5cm,
+	right  = 2.5cm
 }
-\fancyhead[L]{\slshape\nouppercase{\leftmark}}
-\chead{}
-\rhead{
-\includegraphics[height=0.75cm]{figures/pwr-control_logo_doc.png}
+
+\hypersetup{
+	colorlinks = true,
+	urlcolor   = blue,
+	linkcolor  = black,
+	citecolor  = black
 }
-\lfoot{\textit{}}
-\cfoot{-\ \thepage\ -}
-\rfoot{\textit{}}
-\renewcommand{\headrulewidth}{0.4pt}
-\renewcommand{\footrulewidth}{0.4pt}
-\newcommand{\abs}[1]{\left|#1\right|}
-\definecolor{mycolor1}{rgb}{0.95, 0.95, 0.95}
-\definecolor{mycolor2}{rgb}{0.95, 0.95, 0.95}
-\definecolor{tableShade}{gray}{0.9}
-\newcommand{\sign}{\text{sign}}
-\newcommand{\centered}[1]{\begin{tabular}{@{}l@{}} #1 \end{tabular}}
-\theoremstyle{it}
-\newtheorem{defn}{Definition}[section]
-\newtheorem{thm}{Theorem}[section]
-\theoremstyle{definition}
-\newtheorem{example}{Example}[section]
 
-\newenvironment{myitemize_1}
-{ \begin{itemize}[topsep=0pt]
-		\setlength{\topsep}{2pt}		
-		\setlength{\itemsep}{2pt}
-		\setlength{\parskip}{2pt}
-		\setlength{\parsep}{2pt}     }
-	{ \end{itemize}                  }
+\pagenumbering{gobble}
 
+% =============================================================
+%  
+% =============================================================
 
-\newmdenv[innerlinewidth=0.5pt, roundcorner=4pt,backgroundcolor=mycolor2, linecolor=mycolor1,innerleftmargin=6pt,
-innerrightmargin=6pt,innertopmargin=6pt,innerbottommargin=6pt]{mybox}
+\newcommand{\DocCategory}{Technical Research Report}
+\newcommand{\DocField}{Power Electronics and Control Systems}
 
-\title{\textbf{ 
-		\begin{LARGE}
-			Permanent Magnet Synchronous Machine
-		\end{LARGE} \\[24pt]
-		\begin{Large}
-			Model and Control Strategies  
-	\end{Large}}
+\newcommand{\DocTitle}{%
+	Permanent Magnet Synchronous Machine: \\[12pt]
+	Modelization and Control
 }
-\author{\textbf{Davide Bagnara}}
+\newcommand{\DocSubtitle}{%
+	Derivation of the mathematical model of a permanent magnet synchronous motor. 
+}
 
+\newcommand{\DocAuthor}{Davide Bagnara}
+\newcommand{\DocDate}{May 2021}
+
+\newcommand{\DocAbstract}{%
+	In this document, the permanent magnet synchronous machine (pmsm) and its generic vector control are shown. The pmsm, implemented into the \textit{Simscape} model, has been presented in machine variables (uvw). The following document will cover either representations $\alpha\beta$ (stationary) and dq (rotating) which are extensively used as model base for control and state observers design. Additional topics like MTPA (max torque per ampere), FW (field weakening) and per unit normalization will be taken into account. 
+}
+
+% Tre righe metadati in fondo (label small caps + valore)
+\newcommand{\MetaLabelA}{Project Repository}
+\newcommand{\MetaValueA}{https://github.com/pwr-control/modelization-and-control.git}
+
+\newcommand{\MetaLabelB}{Framework}
+\newcommand{\MetaValueB}{MATLAB/Simulink/Simscape}
+
+\newcommand{\MetaLabelC}{Architecture}
+\newcommand{\MetaValueC}{SiC, EiceDRIVER, Customized Power Supplies}
+
+% =============================================================
+%  FRONTESPIZIO
+% =============================================================
 \begin{document}
+\titlepage
+% ---- Intestazione centrata ----
+\begin{center}
+	{\Large\scshape \DocCategory}\\[8pt]
+	{\large\scshape \DocField}
+\end{center}
+
+\vspace{36pt}
+\noindent\rule{\linewidth}{0.8pt}
+
+% ---- Titolo ----
+%\vspace{28pt}
+\begin{center}
+	{\fontsize{30}{30}\selectfont\bfseries \DocTitle}
+\end{center}
+
+\vspace{4pt}
+\noindent\rule{\linewidth}{2.2pt}
+
+% ---- Sottotitolo ----
+%\vspace{14pt}
+\begin{center}
 	\begin{onehalfspace}
-	\thispagestyle{firstpage}
-	\begin{mybox}
-		\maketitle
-		\vspace{125mm}
-	\end{mybox}
-	\newpage
-	\tableofcontents
-	\listoffigures	
-	\listoftables
-	\newpage
-	
-	{In this document, the permanent magnet synchronous machine (pmsm) and its generic vector control are shown. The pmsm, implemented into the \textit{Simscape} model, has been presented in machine variables (uvw). The following document will cover either representations $\alpha\beta$ (stationary) and dq (rotating) which are extensively used as model base for control and state observers design. Additional topics like MTPA (max torque per ampere), FW (field weakening) and per unit normalization will be taken into account. 
-		
-	\noindent The following arguments will be presented:
+		{\large\itshape \DocSubtitle}
+	\end{onehalfspace}
+\end{center}
+
+% ---- Spazio prima di Autore/Data ----
+\vspace{36pt}
+
+% ---- Author / Date su due colonne ----
+\begin{minipage}{0.92\linewidth}
+	\noindent
+	\begin{minipage}[t]{0.48\linewidth}
+		\textbf{Author:}\\[2pt]
+		\DocAuthor
+	\end{minipage}%
+	\hfill
+	\begin{minipage}[t]{0.48\linewidth}
+		\raggedleft
+		\textbf{Date:}\\[2pt]
+		\DocDate
+	\end{minipage}
+\end{minipage}
+% ---- Spazio prima dell'abstract ----
+\vspace{36pt}
+
+% ---- Abstract indentato ----
+\begin{center}
+	\begin{minipage}{0.85\linewidth}
+		%    \small
+		\footnotesize 
+		\begin{onehalfspace}
+			\textbf{Abstract:} \DocAbstract
+		\end{onehalfspace}
+	\end{minipage}
+\end{center}
+
+% ---- Spazio prima dei metadati ----
+\vfill
+
+% ---- Metadati in fondo ----
+\noindent
+\begin{tabular}{@{} r @{\quad} l @{}}
+	\textsc{\small\MetaLabelA:} & {\small\url{\MetaValueA}} \\[3pt]
+	\textsc{\small\MetaLabelB:} & {\small\MetaValueB}       \\[3pt]
+	%		\textsc{\small\MetaLabelC:} & {\small\MetaValueC}       \\
+\end{tabular}
+
+% =============================================================
+%  Fine frontespizio
+% =============================================================
+\newpage
+\pagenumbering{arabic}
+\setcounter{page}{1}
+\tableofcontents
+\listoffigures	
+\listoftables
+\newpage
+
+\begin{onehalfspace}		
+
+\noindent The following arguments will be presented:
+\begin{itemize}
+	\item[$-$] \textbf{PMSM model derivation for different reference frames and machine variables representation.}
+	\item[$-$] \textbf{Basic vector control description.}
 	\begin{itemize}
-		\item[$-$] \textbf{PMSM model derivation for different reference frames and machine variables representation.}
-		\item[$-$] \textbf{Basic vector control description.}
-		\begin{itemize}
-			\item[$-$] Normalization of the motor quantities.
-			\item[$-$] Speed control.
-			\item[$-$] Torque (vector current) control.
-			\item[$-$] Max torque per ampere.
-			\item[$-$] Field weakening.
-		\end{itemize}
-		\item[$-$] \textbf{Parameters identification from common data-sheet.}
-		\item[$-$] \textbf{Parameters setting.}
-		\item[$-$] \textbf{Model output variables.}
-\end{itemize}}
+		\item[$-$] Normalization of the motor quantities.
+		\item[$-$] Speed control.
+		\item[$-$] Torque (vector current) control.
+		\item[$-$] Max torque per ampere.
+		\item[$-$] Field weakening.
+	\end{itemize}
+	\item[$-$] \textbf{Parameters identification from common data-sheet.}
+	\item[$-$] \textbf{Parameters setting.}
+	\item[$-$] \textbf{Model output variables.}
+\end{itemize}
 
 
 \section{PMSM machine based model derivation}

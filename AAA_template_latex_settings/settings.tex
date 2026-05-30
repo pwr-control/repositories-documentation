@@ -46,20 +46,13 @@
 \usepackage{nomencl}
 \usepackage{hyperref}
 \usepackage{ragged2e}
+\usepackage[version=4]{mhchem}  % ← conflitto di opzioni
+\usepackage{longtable}
+
 % ===================== SI UNITS =====================
 \DeclareSIUnit\atm{atm}
 
-% ===================== PAGE STYLE =====================
-%\pagestyle{fancy}
-%\fancypagestyle{firstpage}{\rhead{}}
-%\fancyhead[L]{\slshape\nouppercase{\leftmark}}
-%\chead{}
-%\rhead{}
-%\lfoot{\textit{}}
-%\cfoot{-\ \thepage\ -}
-%\rfoot{\textit{}}
-%\renewcommand{\headrulewidth}{0.4pt}
-%\renewcommand{\footrulewidth}{0.4pt}
+
 
 % ===================== MATH OPERATORS =====================
 \DeclareMathOperator{\rank}{rank}
@@ -114,3 +107,15 @@ innerbottommargin=6pt
 % ===================== SECTION DEPTH =====================
 \setcounter{secnumdepth}{3}
 \setcounter{tocdepth}{3}
+
+% ===================== PAGE STYLE =====================
+\pagestyle{fancy}
+\fancypagestyle{firstpage}{\rhead{}}
+\fancyhead[L]{\slshape\nouppercase{\leftmark}}
+\chead{}
+\rhead{}
+\lfoot{\textit{pwr-control}}
+\cfoot{-\ \thepage\ -}
+\rfoot{\textit{}}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
