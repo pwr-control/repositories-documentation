@@ -1,106 +1,143 @@
 %\documentclass[11pt,a4paper]{article}
-\documentclass[11pt,a4paper]{scrartcl}
+\documentclass[12pt,a4paper]{scrartcl}
 %\documentclass[11pt,a4paper,oneside]{book}
-\usepackage[table]{xcolor}
-\usepackage{colortbl}
-\usepackage{tabularray}
-\usepackage{pgfplots}
-\usepackage[british,UKenglish,USenglish,english,american]{babel}
-%\usepackage[a4paper, total={16cm, 23cm}]{geometry}
-\usepackage[tmargin = 1.25in,bmargin = 1.25in,lmargin = 1in,rmargin = 1in]{geometry}
-\usepackage{tikz}
-\usepackage{graphicx}
-\usepackage[version=4]{mhchem}
-\usepackage{chemformula}
+\input{../AAA_template_latex_settings/settings}
 
-\usepackage{enumitem}
-\usepackage{makeidx}
-\usepackage{epstopdf}
-\usepackage{amssymb}
-\usepackage{mathrsfs}
-\usepackage{amsmath}
+\geometry{
+	a4paper,
+	top    = 3.0cm,
+	bottom = 3.0cm,
+	left   = 2.5cm,
+	right  = 2.5cm
+}
 
-\usepackage[english]{varioref}
-\usepackage[english]{babel}
-\usepackage{lipsum}
-\usepackage{fancyhdr}
-\pagestyle{fancy} 
-\usepackage{float}
-\usepackage{empheq}
-\usepackage[framemethod=tikz]{mdframed}
-\usepackage{epstopdf}
-\numberwithin{equation}{section}
-\usepackage{eso-pic}
-\usepackage{calc}
-\usepackage{nccmath}
-\usepackage{caption}
-\usepackage{subcaption}
-\usepackage{gensymb}
-\usepackage{amsfonts,amsthm,epsfig,epstopdf,titling,url,array}
-\usepackage{siunitx}
-\usepackage{xcolor}
-\usepackage{multicol}
-\usepackage{boondox-cal}
-\usepackage{tabularray}
+\hypersetup{
+	colorlinks = true,
+	urlcolor   = blue,
+	linkcolor  = black,
+	citecolor  = black
+}
 
+\pagenumbering{gobble}
 
-\setcounter{secnumdepth}{3}
-\setcounter{tocdepth}{3}
-\usepackage{booktabs}
+% =============================================================
+%  
+% =============================================================
 
-\DeclareSIUnit\atm{atm}
+\newcommand{\DocCategory}{Technical Research Report}
+\newcommand{\DocField}{Power Electronics and Control Systems}
 
-\fancypagestyle{firstpage}{}
-\fancyhead[L]{\slshape\nouppercase{\leftmark}}
-\chead{}
-\rhead{\includegraphics[height=0.75cm]{figures/pwr-control_logo_doc.png}}
-\lfoot{\textit{}}
-\cfoot{-\ \thepage\ -}
-\rfoot{\textit{}}
-\renewcommand{\headrulewidth}{0.4pt}
-\renewcommand{\footrulewidth}{0.4pt}
-\newcommand{\abs}[1]{\left|#1\right|}
-\definecolor{mycolor1}{rgb}{0.95, 0.95, 0.95}
-\definecolor{mycolor2}{rgb}{0.95, 0.95, 0.95}
-\definecolor{tableShade}{gray}{0.9}
-\newcommand{\sign}{\text{sign}}
-\newcommand{\centered}[1]{\begin{tabular}{@{}l@{}} #1 \end{tabular}}
-\theoremstyle{it}
-\newtheorem{defn}{Definition}[section]
-\newtheorem{thm}{Theorem}[section]
-\theoremstyle{definition}
-\newtheorem{example}{Example}[section]
+\newcommand{\DocTitle}{%
+	Flexible Shaft: \\[12pt]
+	Simscape Model Description
+}
+\newcommand{\DocSubtitle}{%
+	Mechanical model for Simscape implementation
+}
 
-\newenvironment{myitemize_1}
-{ \begin{itemize}[topsep=0pt]
-		\setlength{\topsep}{2pt}		
-		\setlength{\itemsep}{2pt}
-		\setlength{\parskip}{2pt}
-		\setlength{\parsep}{2pt}     }
-	{ \end{itemize}                  }
+\newcommand{\DocAuthor}{Davide Bagnara}
+\newcommand{\DocDate}{May 2021}
 
+\newcommand{\DocAbstract}{%
+	The two-mass torsional model is a standard lumped-parameter representation of a flexible shaft coupling a driving inertia to a load. Two rotational masses connected by a torsional spring and damper give rise to a single resonant mode whose frequency and damping ratio are determined by the shaft stiffness and the inertia ratio. The model is derived from Newton's second law and expressed in state-space form, yielding a fourth-order plant with a pair of lightly damped poles and a transmission zero that produces an anti-resonance in the load-side torque response.
+	The transfer function from drive torque to load speed is analysed in the frequency domain, and the sensitivity of the resonance frequency to shaft geometry and material properties is examined. The model serves as the basis for active damping control design, where feedback of the torsional velocity difference between the two masses is shown to increase effective damping without affecting the rigid-body gain. Application contexts include variable-speed electric drives, hydrostatic transmissions, and any powertrain in which shaft compliance interacts with the closed-loop bandwidth of the speed or torque regulator.
+}
 
-\newmdenv[innerlinewidth=0.5pt, roundcorner=4pt, backgroundcolor = {mycolor1}, linecolor = {mycolor1}, innerleftmargin=6pt,
-innerrightmargin=6pt,innertopmargin=6pt,innerbottommargin=6pt]{mybox}
+% Tre righe metadati in fondo (label small caps + valore)
+\newcommand{\MetaLabelA}{Project Repository}
+\newcommand{\MetaValueA}{https://github.com/pwr-control/library.git}
 
-\title{\textbf{Flexible Shaft Model}}
-\author{Davide Bagnara}
+\newcommand{\MetaLabelB}{Framework}
+\newcommand{\MetaValueB}{MATLAB/Simulink/Simscape}
 
+\newcommand{\MetaLabelC}{Architecture}
+\newcommand{\MetaValueC}{SiC, EiceDRIVER, Customized Power Supplies}
+
+% =============================================================
+%  FRONTESPIZIO
+% =============================================================
 \begin{document}
-	\thispagestyle{firstpage}
-	\begin{mybox}
-		\maketitle
-		\vspace{125mm}
-	\end{mybox}
+	\titlepage
+	% ---- Intestazione centrata ----
+	\begin{center}
+		{\Large\scshape \DocCategory}\\[8pt]
+		{\large\scshape \DocField}
+	\end{center}
+	
+	\vspace{36pt}
+	\noindent\rule{\linewidth}{0.8pt}
+	
+	% ---- Titolo ----
+	%\vspace{28pt}
+	\begin{center}
+		{\fontsize{30}{30}\selectfont\bfseries \DocTitle}
+	\end{center}
+	
+	\vspace{4pt}
+	\noindent\rule{\linewidth}{2.2pt}
+	
+	% ---- Sottotitolo ----
+	%\vspace{14pt}
+	\begin{center}
+		\begin{onehalfspace}
+			{\large\itshape \DocSubtitle}
+		\end{onehalfspace}
+	\end{center}
+	
+	% ---- Spazio prima di Autore/Data ----
+	\vspace{36pt}
+	
+	% ---- Author / Date su due colonne ----
+	\begin{minipage}{0.92\linewidth}
+		\noindent
+		\begin{minipage}[t]{0.48\linewidth}
+			\textbf{Author:}\\[2pt]
+			\DocAuthor
+		\end{minipage}%
+		\hfill
+		\begin{minipage}[t]{0.48\linewidth}
+			\raggedleft
+			\textbf{Date:}\\[2pt]
+			\DocDate
+		\end{minipage}
+	\end{minipage}
+	% ---- Spazio prima dell'abstract ----
+	\vspace{36pt}
+	
+	% ---- Abstract indentato ----
+	\begin{center}
+		\begin{minipage}{0.85\linewidth}
+			%    \small
+			\footnotesize 
+			\begin{onehalfspace}
+				\textbf{Abstract:} \DocAbstract
+			\end{onehalfspace}
+		\end{minipage}
+	\end{center}
+	
+	% ---- Spazio prima dei metadati ----
+	\vfill
+	
+	% ---- Metadati in fondo ----
+	\noindent
+	\begin{tabular}{@{} r @{\quad} l @{}}
+		\textsc{\small\MetaLabelA:} & {\small\url{\MetaValueA}} \\[3pt]
+		\textsc{\small\MetaLabelB:} & {\small\MetaValueB}       \\[3pt]
+		%		\textsc{\small\MetaLabelC:} & {\small\MetaValueC}       \\
+	\end{tabular}
+	
+	% =============================================================
+	%  Fine frontespizio
+	% =============================================================
 	\newpage
+	\pagenumbering{arabic}
+	\setcounter{page}{1}
 	\tableofcontents
 	\listoffigures	
 	\listoftables
 	\newpage
-
-{In this document the model of a generic flexible shaft is derived.}
-
-
+	
+\begin{onehalfspace}
 \section{Equivalent mathematical model}
 The mass-spring-mass model is a valid approximation of the flexible shaft and it will be used to modelize it and its extrapolation to a generic simplified gear.
 Figure \ref{figure_cranckshaft} shows a generic flexible shaft where $\tau_m$ 
@@ -403,6 +440,6 @@ Parameters setting consist of
 	\item[--] $b_l\quad\Big[\SI{}{\newton\second\per\radian}\Big]$: Friction coefficient - \textit{follower}-side.
 	\item[--] $k_\vartheta\quad\Big[\SI{}{\newton\per\radian}\Big]$: Internal torsional spring.	
 \end{itemize}
-
+\end{onehalfspace}
 
 \end{document} 

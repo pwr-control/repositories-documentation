@@ -1,6 +1,8 @@
 % ===================== PACKAGES =====================
 \usepackage[british]{babel}
 \usepackage[tmargin=1in, bmargin=1in, lmargin=0.75in, rmargin=0.75in]{geometry}
+\usepackage[dvipsnames,table]{xcolor}  % prima di tikz, listings, ecc.
+
 \usepackage{tikz}
 \usepackage{graphicx}
 \usepackage{pgfplots}
@@ -38,20 +40,21 @@
 \usepackage{siunitx}
 \sisetup{input-digits=0123456789\pi}
 \usepackage[symbol]{footmisc}
-\usepackage{xcolor}
 \usepackage{multicol}
 \usepackage{boondox-cal}
 \usepackage{blindtext}
 \usepackage{changepage}
 \usepackage{nomencl}
 \usepackage{hyperref}
+\usepackage{xurl}
 \usepackage{ragged2e}
 \usepackage[version=4]{mhchem}  % ← conflitto di opzioni
 \usepackage{longtable}
 
 % ===================== SI UNITS =====================
 \DeclareSIUnit\atm{atm}
-
+\DeclareSIUnit{\var}{var}
+\DeclareSIUnit{\pu}{p.u.}
 
 
 % ===================== MATH OPERATORS =====================
@@ -103,7 +106,6 @@ innerbottommargin=6pt
 \newcolumntype{Y}{>{\hsize=2\hsize}X}
 \newcolumntype{Z}{>{\centering\arraybackslash\hsize=0.857\hsize}X}
 
-
 % ===================== SECTION DEPTH =====================
 \setcounter{secnumdepth}{3}
 \setcounter{tocdepth}{3}
@@ -113,8 +115,8 @@ innerbottommargin=6pt
 \fancypagestyle{firstpage}{\rhead{}}
 \fancyhead[L]{\slshape\nouppercase{\leftmark}}
 \chead{}
-\rhead{}
-\lfoot{\textit{pwr-control}}
+\rhead{\includegraphics[height=0.75cm]{figures/pwr-control_logo_doc.png}}
+\lfoot{\href{http://www.pwr-control.com}{pwr-control.com}}
 \cfoot{-\ \thepage\ -}
 \rfoot{\textit{}}
 \renewcommand{\headrulewidth}{0.4pt}

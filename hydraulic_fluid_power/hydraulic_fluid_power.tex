@@ -1,108 +1,145 @@
 %\documentclass[11pt,a4paper]{article}
-%\documentclass[11pt,a4paper]{scrartcl}
+%\documentclass[12pt,a4paper]{scrartcl}
 \documentclass[11pt,a4paper,oneside]{book}
-\usepackage[table]{xcolor}
-\usepackage{colortbl}
-\usepackage{tabularray}
-\usepackage{pgfplots}
-\usepackage[british,UKenglish,USenglish,english,american]{babel}
-%\usepackage[a4paper, total={16cm, 23cm}]{geometry}
-\usepackage[tmargin = 1.25in,bmargin = 1.25in,lmargin = 1in,rmargin = 1in]{geometry}
-\usepackage{tikz}
-\usepackage{graphicx}
-\usepackage[version=4]{mhchem}
-\usepackage{chemformula}
+\input{../AAA_template_latex_settings/settings}
 
-\usepackage{enumitem}
-\usepackage{makeidx}
-\usepackage{epstopdf}
-\usepackage{amssymb}
-\usepackage{mathrsfs}
-\usepackage{amsmath}
+\geometry{
+	a4paper,
+	top    = 3.0cm,
+	bottom = 3.0cm,
+	left   = 2.5cm,
+	right  = 2.5cm
+}
 
-\usepackage[english]{varioref}
-\usepackage[english]{babel}
-\usepackage{lipsum}
-\usepackage{fancyhdr}
-\pagestyle{fancy} 
-\usepackage{float}
-\usepackage{empheq}
-\usepackage[framemethod=tikz]{mdframed}
-\usepackage{epstopdf}
-\numberwithin{equation}{section}
-\usepackage{eso-pic}
-\usepackage{calc}
-\usepackage{nccmath}
-\usepackage{caption}
-\usepackage{subcaption}
-\usepackage{gensymb}
-\usepackage{amsfonts,amsthm,epsfig,epstopdf,titling,url,array}
-\usepackage{siunitx}
-\usepackage{xcolor}
-\usepackage{multicol}
-\usepackage{boondox-cal}
-\usepackage{tabularray}
+\hypersetup{
+	colorlinks = true,
+	urlcolor   = blue,
+	linkcolor  = black,
+	citecolor  = black
+}
 
+\pagenumbering{gobble}
 
-\setcounter{secnumdepth}{3}
-\setcounter{tocdepth}{3}
-\usepackage{booktabs}
+% =============================================================
+%  
+% =============================================================
 
-\DeclareSIUnit\atm{atm}
+\newcommand{\DocCategory}{Technical Research Report}
+\newcommand{\DocField}{Power Electronics and Control Systems}
 
-\pagestyle{fancy} 
-\fancypagestyle{firstpage}{}
-\fancyhead[L]{\slshape\nouppercase{\leftmark}}
-\chead{}
-\rhead{\includegraphics[height=0.75cm]{figures/pwr-control_logo_doc.png}}
-\lfoot{\textit{}}
-\cfoot{-\ \thepage\ -}
-\rfoot{\textit{}}
+\newcommand{\DocTitle}{%
+	Hydrostatic Fluid Power: \\[12pt]
+	\huge modelization and control
+}
+\newcommand{\DocSubtitle}{%
+	Derivation of the mathematical model of hydrostatic power trains and utilities. 
+}
 
-\DeclareMathOperator{\rank}{rank}
-\DeclareMathOperator{\atantwo}{atan2}
+\newcommand{\DocAuthor}{Davide Bagnara}
+\newcommand{\DocDate}{May 2021}
 
-\renewcommand{\headrulewidth}{0.4pt}
-\renewcommand{\footrulewidth}{0.4pt}
-\newcommand{\abs}[1]{\left|#1\right|}
-\definecolor{mycolor1}{rgb}{0.95, 0.95, 0.95}
-\definecolor{mycolor2}{rgb}{0.95, 0.95, 0.95}
-\definecolor{tableShade}{gray}{0.9}
-\newcommand{\sign}{\text{sign}}
-\newcommand{\centered}[1]{\begin{tabular}{@{}l@{}} #1 \end{tabular}}
-\theoremstyle{it}
-\newtheorem{defn}{Definition}[section]
-\newtheorem{thm}{Theorem}[section]
-\newtheorem{lemma}{Lemma}[section]
-\theoremstyle{definition}
-%\theoremstyle{it}
-\newtheorem{example}{Example}[section]
+\newcommand{\DocAbstract}{%
+	Hydrostatic fluid power systems constitute a well-established class of power transmission technology, yet their dynamic behaviour and control present modelling challenges that are not fully resolved by quasi-static approximations. This paper addresses the mathematical description and control design of hydrostatic circuits comprising variable-displacement axial-piston pumps, hydraulic motors, and associated valve and line elements, with emphasis on the nonlinear dynamics that govern transient performance.
+	The modelling framework is developed from first principles, combining continuity equations for compressible fluid volumes with the equations of motion of rotating and translating mechanical components. Particular attention is given to the volumetric and hydromechanical efficiency maps of variable-displacement machines, leakage flow modelling across the operating envelope, and the pressure dynamics of hydraulic lines under conditions of significant fluid compressibility and pipe wall compliance. The resulting state-space representation is validated against experimental data and used as the basis for control synthesis.
+	Control design is approached at two levels. At the inner loop, pressure and flow regulators are designed using linear techniques applied to locally linearised plant models, with explicit treatment of the gain scheduling required to maintain closed-loop performance across the displacement and load range. At the outer loop, speed and torque control of the hydraulic motor is formulated as a nonlinear regulation problem, and energy-optimal displacement scheduling is derived for drive cycles with significant regenerative content.
+	The interaction between hydraulic compliance, mechanical inertia, and control bandwidth is analysed in the frequency domain, identifying the conditions under which the hydrostatic transmission exhibits lightly damped resonant modes. Active damping injection via displacement modulation is proposed as a complement to conventional proportional-integral regulators, drawing on methods developed for electromechanical drive systems. Simulation results and experimental validation on a laboratory test bench confirm the effectiveness of the proposed control architecture across the full operating range of the hydrostatic transmission. 
+}
 
-\newenvironment{myitemize_1}
-{ \begin{itemize}[topsep=0pt]
-		\setlength{\topsep}{2pt}		
-		\setlength{\itemsep}{2pt}
-		\setlength{\parskip}{2pt}
-		\setlength{\parsep}{2pt}     }
-	{ \end{itemize}                  }
+% Tre righe metadati in fondo (label small caps + valore)
+\newcommand{\MetaLabelA}{Project Repository}
+\newcommand{\MetaValueA}{https://github.com/pwr-control/lectures-on-advanced-control-engineering.git}
 
-\newmdenv[innerlinewidth=0.5pt, roundcorner=4pt,backgroundcolor=mycolor2, linecolor=mycolor1,innerleftmargin=6pt,
-innerrightmargin=6pt,innertopmargin=6pt,innerbottommargin=6pt]{mybox}
+\newcommand{\MetaLabelB}{Framework}
+\newcommand{\MetaValueB}{MATLAB/Simulink/Simscape}
 
-\title{\textbf{Hydrostatic Fluid Power Modelization}}
-\author{Davide Bagnara}
+\newcommand{\MetaLabelC}{Architecture}
+\newcommand{\MetaValueC}{SiC, EiceDRIVER, Customized Power Supplies}
 
+% =============================================================
+%  FRONTESPIZIO
+% =============================================================
 \begin{document}
-	\thispagestyle{firstpage}
-	\begin{mybox}
-		\maketitle
-		\vspace{125mm}
-	\end{mybox}
+	\titlepage
+	% ---- Intestazione centrata ----
+	\begin{center}
+		{\Large\scshape \DocCategory}\\[8pt]
+		{\large\scshape \DocField}
+	\end{center}
+	
+	\vspace{18pt}
+	\noindent\rule{\linewidth}{0.8pt}
+	
+	% ---- Titolo ----
+	%\vspace{28pt}
+	\begin{center}
+		{\fontsize{30}{30}\selectfont\bfseries \DocTitle}
+	\end{center}
+	
+	\vspace{4pt}
+	\noindent\rule{\linewidth}{2.2pt}
+	
+	% ---- Sottotitolo ----
+	%\vspace{14pt}
+	\begin{center}
+		\begin{onehalfspace}
+			{\large\itshape \DocSubtitle}
+		\end{onehalfspace}
+	\end{center}
+	
+	% ---- Spazio prima di Autore/Data ----
+	\vspace{18pt}
+	
+	% ---- Author / Date su due colonne ----
+	\begin{minipage}{0.92\linewidth}
+		\noindent
+		\begin{minipage}[t]{0.48\linewidth}
+			\textbf{Author:}\\[2pt]
+			\DocAuthor
+		\end{minipage}%
+		\hfill
+		\begin{minipage}[t]{0.48\linewidth}
+			\raggedleft
+			\textbf{Date:}\\[2pt]
+			\DocDate
+		\end{minipage}
+	\end{minipage}
+	% ---- Spazio prima dell'abstract ----
+	\vspace{36pt}
+	
+	% ---- Abstract indentato ----
+	\begin{center}
+		\begin{minipage}{0.85\linewidth}
+			%    \small
+			\footnotesize 
+			\begin{onehalfspace}
+				\textbf{Abstract:} \DocAbstract
+			\end{onehalfspace}
+		\end{minipage}
+	\end{center}
+	
+	% ---- Spazio prima dei metadati ----
+	\vfill
+	
+	% ---- Metadati in fondo ----
+	\noindent
+	\begin{tabular}{@{} r @{\quad} l @{}}
+		\textsc{\small\MetaLabelA:} & {\small\url{\MetaValueA}} \\[3pt]
+		\textsc{\small\MetaLabelB:} & {\small\MetaValueB}       \\[3pt]
+		%		\textsc{\small\MetaLabelC:} & {\small\MetaValueC}       \\
+	\end{tabular}
+	
+	% =============================================================
+	%  Fine frontespizio
+	% =============================================================
 	\newpage
+	\pagenumbering{arabic}
+	\setcounter{page}{1}
 	\tableofcontents
 	\listoffigures	
 	\listoftables
 	\newpage
+	
+\begin{onehalfspace}
 	
 \chapter{Hydraulic power fluid modelization}
 \section{Introduction}
@@ -2561,5 +2598,5 @@ In this section the list of parameters used in the simulations is reported. Cons
 	\end{itemize}
 }
 
-
+\end{onehalfspace}
 \end{document} 

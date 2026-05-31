@@ -1,110 +1,146 @@
 %\documentclass[11pt,a4paper]{article}
-%\documentclass[11pt,a4paper]{scrartcl}
+%\documentclass[12pt,a4paper]{scrartcl}
 \documentclass[11pt,a4paper,oneside]{book}
-\usepackage[table]{xcolor}
-\usepackage{colortbl}
-\usepackage{tabularray}
-\usepackage{pgfplots}
-\usepackage[british,UKenglish,USenglish,english,american]{babel}
-%\usepackage[a4paper, total={16cm, 23cm}]{geometry}
-\usepackage[tmargin = 1.25in,bmargin = 1.25in,lmargin = 1in,rmargin = 1in]{geometry}
-\usepackage{tikz}
-\usepackage{graphicx}
-\usepackage[version=4]{mhchem}
-\usepackage{chemformula}
+\input{../AAA_template_latex_settings/settings}
 
-\usepackage{enumitem}
-\usepackage{makeidx}
-\usepackage{epstopdf}
-\usepackage{amssymb}
-\usepackage{mathrsfs}
-\usepackage{amsmath}
+\geometry{
+	a4paper,
+	top    = 3.0cm,
+	bottom = 3.0cm,
+	left   = 2.5cm,
+	right  = 2.5cm
+}
 
-\usepackage[english]{varioref}
-\usepackage[english]{babel}
-\usepackage{lipsum}
-\usepackage{fancyhdr}
-\pagestyle{fancy} 
-\usepackage{float}
-\usepackage{empheq}
-\usepackage[framemethod=tikz]{mdframed}
-\usepackage{epstopdf}
-\numberwithin{equation}{section}
-\usepackage{eso-pic}
-\usepackage{calc}
-\usepackage{nccmath}
-\usepackage{caption}
-\usepackage{subcaption}
-\usepackage{gensymb}
-\usepackage{amsfonts,amsthm,epsfig,epstopdf,titling,url,array}
-\usepackage{siunitx}
-\usepackage{xcolor}
-\usepackage{multicol}
-\usepackage{boondox-cal}
-\usepackage{tabularray}
+\hypersetup{
+	colorlinks = true,
+	urlcolor   = blue,
+	linkcolor  = black,
+	citecolor  = black
+}
 
+\pagenumbering{gobble}
 
-\setcounter{secnumdepth}{3}
-\setcounter{tocdepth}{3}
-\usepackage{booktabs}
+% =============================================================
+%  
+% =============================================================
 
-\DeclareSIUnit\atm{atm}
+\newcommand{\DocCategory}{Technical Research Report}
+\newcommand{\DocField}{Power Electronics and Control Systems}
 
-\pagestyle{fancy} 
-\fancypagestyle{firstpage}{}
-\fancyhead[L]{\slshape\nouppercase{\leftmark}}
-\chead{}
-\rhead{\includegraphics[height=0.75cm]{figures/pwr-control_logo_doc.png}}
-\lfoot{\textit{}}
-\cfoot{-\ \thepage\ -}
-\rfoot{\textit{}}
+\newcommand{\DocTitle}{%
+	Electrification of Heavy Duty Vehicles
+%	Electrification of Heavy Duty Vehicles: \\[12pt]
+%	PSM Design and Simscape Validation
+}
+\newcommand{\DocSubtitle}{%
+	Exploring of different PSM solution and investigation of control architecture.
+}
 
-\DeclareMathOperator{\rank}{rank}
-\DeclareMathOperator{\atantwo}{atan2}
+\newcommand{\DocAuthor}{Davide Bagnara}
+\newcommand{\DocDate}{May 2021}
 
-\renewcommand{\headrulewidth}{0.4pt}
-\renewcommand{\footrulewidth}{0.4pt}
-\newcommand{\abs}[1]{\left|#1\right|}
-\definecolor{mycolor1}{rgb}{0.95, 0.95, 0.95}
-\definecolor{mycolor2}{rgb}{0.95, 0.95, 0.95}
-\definecolor{tableShade}{gray}{0.9}
-\newcommand{\sign}{\text{sign}}
-\newcommand{\centered}[1]{\begin{tabular}{@{}l@{}} #1 \end{tabular}}
-\theoremstyle{it}
-\newtheorem{defn}{Definition}[section]
-\newtheorem{thm}{Theorem}[section]
-\newtheorem{lemma}{Lemma}[section]
-\theoremstyle{definition}
-%\theoremstyle{it}
-\newtheorem{example}{Example}[section]
+\newcommand{\DocAbstract}{%
+	The electrification of heavy-duty vehicles (HDVs) operating in off-highway and industrial sectors involves, in a significant class of applications, the replacement of hydrostatic transmission systems — comprising variable-displacement hydraulic pumps and motors — with direct-drive electric powertrains. This substitution introduces a specific set of engineering constraints that differ substantially from those encountered in on-road vehicle electrification, and that shape the requirements imposed on the power electronics and control architecture.
+	Hydrostatic drives are characterised by continuously variable speed-torque output, high power density at low speed, and intrinsic four-quadrant operation. Replicating and extending these properties in an electric direct-drive system requires careful selection of machine topology, inverter architecture, and torque control strategy. This paper examines permanent magnet synchronous machines and induction machines as candidate replacements, evaluating their field-weakening capability, low-speed torque density, and compatibility with sensorless or encoder-based control schemes suited to harsh operating environments.
+	On the power electronics side, the transition from a hydraulic circuit — which distributes power fluidly across multiple actuators — to a DC-link architecture serving independent electric drives introduces challenges in energy management, load sharing, and transient response. SiC-based inverters, active front-end converters, and DC/DC interfaces to the energy storage system are discussed in the context of the wide speed range and intermittent high-torque demands characteristic of construction, mining, and agricultural machinery.
+	Control system design is addressed at two levels: inner-loop current regulation, where the replacement of hydrostatic compliance with electrical dynamics demands high-bandwidth torque response, and supervisory energy management, where the absence of a hydraulic accumulator requires explicit handling of regenerative braking energy. Simulation and hardware-in-the-loop results demonstrate that a direct-drive electric architecture can match the functional envelope of a hydrostatic transmission while offering improved efficiency at partial load and reduced maintenance requirements.
+}
 
-\newenvironment{myitemize_1}
-{ \begin{itemize}[topsep=0pt]
-		\setlength{\topsep}{2pt}		
-		\setlength{\itemsep}{2pt}
-		\setlength{\parskip}{2pt}
-		\setlength{\parsep}{2pt}     }
-	{ \end{itemize}                  }
+% Tre righe metadati in fondo (label small caps + valore)
+\newcommand{\MetaLabelA}{Project Repository}
+\newcommand{\MetaValueA}{https://github.com/pwr-control/lectures-on-advanced-control-engineering.git}
 
+\newcommand{\MetaLabelB}{Framework}
+\newcommand{\MetaValueB}{MATLAB/Simulink/Simscape}
 
-\newmdenv[innerlinewidth=0.5pt, roundcorner=4pt,backgroundcolor=mycolor2, linecolor=mycolor1,innerleftmargin=6pt,
-innerrightmargin=6pt,innertopmargin=6pt,innerbottommargin=6pt]{mybox}
+\newcommand{\MetaLabelC}{Architecture}
+\newcommand{\MetaValueC}{SiC, EiceDRIVER, Customized Power Supplies}
 
-\title{\textbf{Electrification of Heavy Duty Vehicles}}
-\author{Davide Bagnara}
-
+% =============================================================
+%  FRONTESPIZIO
+% =============================================================
 \begin{document}
-	\thispagestyle{firstpage}
-	\begin{mybox}
-  		\maketitle
-		\vspace{125mm}
-	\end{mybox}
+	\titlepage
+	% ---- Intestazione centrata ----
+	\begin{center}
+		{\Large\scshape \DocCategory}\\[8pt]
+		{\large\scshape \DocField}
+	\end{center}
+	
+	\vspace{18pt}
+	\noindent\rule{\linewidth}{0.8pt}
+	
+	% ---- Titolo ----
+	%\vspace{28pt}
+	\begin{center}
+		{\fontsize{30}{30}\selectfont\bfseries \DocTitle}
+	\end{center}
+	
+	\vspace{4pt}
+	\noindent\rule{\linewidth}{2.2pt}
+	
+	% ---- Sottotitolo ----
+	%\vspace{14pt}
+	\begin{center}
+		\begin{onehalfspace}
+			{\large\itshape \DocSubtitle}
+		\end{onehalfspace}
+	\end{center}
+	
+	% ---- Spazio prima di Autore/Data ----
+	\vspace{18pt}
+	
+	% ---- Author / Date su due colonne ----
+	\begin{minipage}{0.92\linewidth}
+		\noindent
+		\begin{minipage}[t]{0.48\linewidth}
+			\textbf{Author:}\\[2pt]
+			\DocAuthor
+		\end{minipage}%
+		\hfill
+		\begin{minipage}[t]{0.48\linewidth}
+			\raggedleft
+			\textbf{Date:}\\[2pt]
+			\DocDate
+		\end{minipage}
+	\end{minipage}
+	% ---- Spazio prima dell'abstract ----
+	\vspace{18pt}
+	
+	% ---- Abstract indentato ----
+	\begin{center}
+		\begin{minipage}{0.85\linewidth}
+			%    \small
+			\footnotesize 
+			\begin{onehalfspace}
+				\textbf{Abstract:} \DocAbstract
+			\end{onehalfspace}
+		\end{minipage}
+	\end{center}
+	
+	% ---- Spazio prima dei metadati ----
+	\vfill
+	
+	% ---- Metadati in fondo ----
+	\noindent
+	\begin{tabular}{@{} r @{\quad} l @{}}
+		\textsc{\small\MetaLabelA:} & {\small\url{\MetaValueA}} \\[3pt]
+		\textsc{\small\MetaLabelB:} & {\small\MetaValueB}       \\[3pt]
+		%		\textsc{\small\MetaLabelC:} & {\small\MetaValueC}       \\
+	\end{tabular}
+	
+	% =============================================================
+	%  Fine frontespizio
+	% =============================================================
 	\newpage
+	\pagenumbering{arabic}
+	\setcounter{page}{1}
 	\tableofcontents
 	\listoffigures	
 	\listoftables
 	\newpage
-
+	
+\begin{onehalfspace}
 \chapter{Introduction}
 \section{Scope of the project}
 Scope of the project is to design an electrical power-train of a heavy duty vehicle, in particular of a bulldozer tracked vehicle. The original power-train configuration is made by a diesel engine (power source) followed by two hydrostatic transmissions (one for each track), which each one is made by a hydraulic pump and a hydraulic motor.  The mechanical end of each hydrostatic transmission is connected to a driver gear which, in turn, is connected to the track of the vehicle. The electrification consists of designing all the components which are necessary in order to replace the whole functionalities of the original vehicle. In order to identify the main components necessary for the design of an electrical vehicle it is necessary to consider to different case study
@@ -1509,6 +1545,6 @@ To derive a thermal model we consider the smallest slide of PMSM, where heat gen
 	\bibitem[\textbf{R. Marino, 2010}]{p35} Riccardo Marino, Patrizio Tomei, Cristiano M. Verrelli - \textit{Induction Motor Control Design}. Springer 2010.
 
 \end{thebibliography}
-
+\end{onehalfspace}
 
 \end{document} 
