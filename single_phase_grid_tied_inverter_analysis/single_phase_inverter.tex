@@ -1,34 +1,128 @@
-\documentclass[11pt,a4paper]{scrartcl}
+%\documentclass[11pt,a4paper]{article}
+\documentclass[12pt,a4paper]{scrartcl}
+%\documentclass[11pt,a4paper,oneside]{book}
+\input{../AAA_template_latex_settings/settings}
 
-\input{settings}
+% =============================================================
+%  
+% =============================================================
 
-\title{\textbf{ 
-	\begin{LARGE}
-		Single Phase Inverter:
-	\end{LARGE} \\[12pt]
-	\begin{LARGE}
-		architecture, control, and simulation results.
-	\end{LARGE}
-	}
+\newcommand{\DocCategory}{Technical Research Report}
+\newcommand{\DocField}{Power Electronics and Control Systems}
+
+\newcommand{\DocTitle}{%
+	{\fontsize{20}{24}\selectfont\bfseries Single Phase Inverter:} \\[16pt]
+	{\fontsize{16}{20}\selectfont\bfseries model derivation and control architecture.}
 }
-\author{\textbf{Davide Bagnara}}
 
+\newcommand{\DocSubtitle}{%
+Single Phase Inverter case studies applied to different control architecture. 
+}
+
+\newcommand{\DocAuthor}{Davide Bagnara}
+\newcommand{\DocDate}{June 2020}
+
+\newcommand{\DocAbstract}{%
+This paper presents the modeling and comparative analysis of three advanced control strategies for single-phase grid-connected and standalone inverters: the Resonant Proportional-Integral (Resonant PI) controller, the Virtual DQ frame with Second-Order Generalized Integrator (SOGI-VDQ), and the Virtual DQ frame with Harmonic Observer (HO-VDQ). A unified state-space model of the single-phase inverter with LC/LCL output filter is derived in both stationary and virtual synchronous reference frames, providing a consistent basis for control design and stability analysis. The Resonant PI approach is formulated as a bank of generalized integrators tuned at the fundamental and selected harmonic frequencies, offering selective harmonic rejection with a straightforward frequency-domain interpretation. The SOGI-based virtual DQ transformation generates an in-phase and quadrature signal pair from the single-phase quantity, enabling the application of standard synchronous-frame PI controllers with inherent immunity to DC offset and robust behavior under frequency variations. The harmonic observer extension augments the state estimator with resonant modes at harmonic multiples, allowing simultaneous rejection of multiple harmonic disturbances within a single control structure. Performance is evaluated under resistive, nonlinear (rectifier), and unbalanced load conditions in terms of total harmonic distortion (THD), transient response, and computational complexity. Small-signal stability margins are assessed via loop-gain analysis, and the sensitivity to grid frequency deviations and parameter uncertainty is discussed. Simulation results obtained with MATLAB/Simulink Simscape validate the theoretical predictions, and a quantitative ranking of the three strategies is provided with respect to implementation effort on embedded targets (STM32, TI C2000). The paper concludes with guidelines for strategy selection as a function of application constraints.
+}
+
+% Tre righe metadati in fondo (label small caps + valore)
+\newcommand{\MetaLabelA}{Project Repository}
+\newcommand{\MetaValueA}{https://github.com/pwr-control/modelization-and-control.git}
+\newcommand{\MetaValueAUrl}{https://github.com/pwr-control/modelization-and-control.git}
+\newcommand{\MetaValueALabel}{modelization-and-control.git}
+
+\newcommand{\MetaLabelB}{Framework}
+\newcommand{\MetaValueB}{MATLAB/Simulink/Simscape}
+
+\newcommand{\MetaLabelC}{Architecture}
+\newcommand{\MetaValueC}{SiC, EiceDRIVER, Customized Power Supplies}
+
+% =============================================================
+%  FRONTESPIZIO
+% =============================================================
 \begin{document}
-	\thispagestyle{firstpage}
-	\begin{mybox}
-		\maketitle
-		\vspace{100mm}
-	\end{mybox}
+	\titlepage
+	% ---- Intestazione centrata ----
+	\begin{center}
+		{\Large\scshape \DocCategory}\\[8pt]
+		{\large\scshape \DocField}
+	\end{center}
+	
+	\vspace{18pt}
+	\noindent\rule{\linewidth}{0.8pt}
+	
+	% ---- Titolo ----
+	\vspace{18pt}
+	\begin{center}
+		\DocTitle
+	\end{center}
+	
+	\vspace{4pt}
+	\noindent\rule{\linewidth}{2.2pt}
+	
+	% ---- Sottotitolo ----
+	%\vspace{14pt}
+	\begin{center}
+		\begin{onehalfspace}
+			{\large\itshape \DocSubtitle}
+		\end{onehalfspace}
+	\end{center}
+	
+	% ---- Spazio prima di Autore/Data ----
+%	\vspace{18pt}
+	
+	% ---- Author / Date su due colonne ----
+	\begin{minipage}{0.92\linewidth}
+		\noindent
+		\begin{minipage}[t]{0.48\linewidth}
+			\textbf{Author:}\\[2pt]
+			\DocAuthor
+		\end{minipage}%
+		\hfill
+		\begin{minipage}[t]{0.48\linewidth}
+			\raggedleft
+			\textbf{Date:}\\[2pt]
+			\DocDate
+		\end{minipage}
+	\end{minipage}
+	% ---- Spazio prima dell'abstract ----
+	\vspace{18pt}
+	
+	% ---- Abstract indentato ----
+	\begin{center}
+		\begin{minipage}{0.85\linewidth}
+			%    \small
+			\footnotesize 
+			\begin{onehalfspace}
+				\textbf{Abstract:} \DocAbstract
+			\end{onehalfspace}
+		\end{minipage}
+	\end{center}
+	
+	% ---- Spazio prima dei metadati ----
+	\vfill
+	
+	% ---- Metadati in fondo ----
+	\noindent
+	\begin{tabular}{@{} r @{\quad} l @{}}
+		%		\textsc{\MetaLabelA:} & {\url{\MetaValueA}} \\[3pt]
+		\textsc{\MetaLabelA:} & {\href{\MetaValueAUrl}{\MetaValueALabel}} \\[3pt]
+		\textsc{\MetaLabelB:} & {\MetaValueB}       \\[3pt]
+		%		\textsc{\small\MetaLabelC:} & {\small\MetaValueC}       \\
+	\end{tabular}
+	
+	% =============================================================
+	%  Fine frontespizio
+	% =============================================================
 	\newpage
+	\pagenumbering{arabic}
+	\setcounter{page}{1}
 	\tableofcontents
 	\listoffigures	
 	\listoftables
 	\newpage
 	
-%\chapter*{}	
-%\begin{adjustwidth}{50pt}{50pt}
-%		\textit{In the present document the design and model derivation of a CLL-Resonant DC/DC converter is reported. The document includes the control strategy and additional control loops for load harmonic compensation.}
-%\end{adjustwidth}
 \begin{onehalfspace}
 \section{Introduction}
 In this document a study for a single phase inverter is shown. 

@@ -3,23 +3,6 @@
 %\documentclass[11pt,a4paper,oneside]{book}
 \input{../AAA_template_latex_settings/settings}
 
-\geometry{
-	a4paper,
-	top    = 3.0cm,
-	bottom = 3.0cm,
-	left   = 2.5cm,
-	right  = 2.5cm
-}
-
-\hypersetup{
-	colorlinks = true,
-	urlcolor   = blue,
-	linkcolor  = black,
-	citecolor  = black
-}
-
-\pagenumbering{gobble}
-
 % =============================================================
 %  
 % =============================================================
@@ -37,7 +20,7 @@
 }
 
 \newcommand{\DocAuthor}{Davide Bagnara}
-\newcommand{\DocDate}{May 2021}
+\newcommand{\DocDate}{October 2022}
 
 \newcommand{\DocAbstract}{%
 	The two-mass torsional model is a standard lumped-parameter representation of a flexible shaft coupling a driving inertia to a load. Two rotational masses connected by a torsional spring and damper give rise to a single resonant mode whose frequency and damping ratio are determined by the shaft stiffness and the inertia ratio. The model is derived from Newton's second law and expressed in state-space form, yielding a fourth-order plant with a pair of lightly damped poles and a transmission zero that produces an anti-resonance in the load-side torque response.
@@ -47,6 +30,8 @@
 % Tre righe metadati in fondo (label small caps + valore)
 \newcommand{\MetaLabelA}{Project Repository}
 \newcommand{\MetaValueA}{https://github.com/pwr-control/modelization-and-control.git}
+\newcommand{\MetaValueAUrl}{https://github.com/pwr-control/modelization-and-control.git}
+\newcommand{\MetaValueALabel}{modelization-and-control.git}
 
 \newcommand{\MetaLabelB}{Framework}
 \newcommand{\MetaValueB}{MATLAB/Simulink/Simscape}
@@ -122,9 +107,10 @@
 	% ---- Metadati in fondo ----
 	\noindent
 	\begin{tabular}{@{} r @{\quad} l @{}}
-		\textsc{\small\MetaLabelA:} & {\small\url{\MetaValueA}} \\[3pt]
-		\textsc{\small\MetaLabelB:} & {\small\MetaValueB}       \\[3pt]
-		%		\textsc{\small\MetaLabelC:} & {\small\MetaValueC}       \\
+%		\textsc{\MetaLabelA:} & {\url{\MetaValueA}} \\[3pt]
+		\textsc{\MetaLabelA:} & {\href{\MetaValueAUrl}{\MetaValueALabel}} \\[3pt]
+		\textsc{\MetaLabelB:} & {\MetaValueB}       \\[3pt]
+%		\textsc{\small\MetaLabelC:} & {\small\MetaValueC}       \\
 	\end{tabular}
 	
 	% =============================================================

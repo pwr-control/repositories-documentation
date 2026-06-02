@@ -1,24 +1,7 @@
 %\documentclass[11pt,a4paper]{article}
 %\documentclass[12pt,a4paper]{scrartcl}
-\documentclass[11pt,a4paper,oneside]{book}
+\documentclass[12pt,a4paper,oneside]{book}
 \input{../AAA_template_latex_settings/settings}
-
-\geometry{
-	a4paper,
-	top    = 3.0cm,
-	bottom = 3.0cm,
-	left   = 2.5cm,
-	right  = 2.5cm
-}
-
-\hypersetup{
-	colorlinks = true,
-	urlcolor   = blue,
-	linkcolor  = black,
-	citecolor  = black
-}
-
-\pagenumbering{gobble}
 
 % =============================================================
 %  
@@ -36,7 +19,7 @@
 }
 
 \newcommand{\DocAuthor}{Davide Bagnara}
-\newcommand{\DocDate}{May 2021}
+\newcommand{\DocDate}{October 2022}
 
 \newcommand{\DocAbstract}{%
 	The electrification of heavy-duty vehicles (HDVs) operating in off-highway and industrial sectors involves, in a significant class of applications, the replacement of hydrostatic transmission systems — comprising variable-displacement hydraulic pumps and motors — with direct-drive electric powertrains. This substitution introduces a specific set of engineering constraints that differ substantially from those encountered in on-road vehicle electrification, and that shape the requirements imposed on the power electronics and control architecture.
@@ -48,6 +31,8 @@
 % Tre righe metadati in fondo (label small caps + valore)
 \newcommand{\MetaLabelA}{Project Repository}
 \newcommand{\MetaValueA}{https://github.com/pwr-control/lectures-on-advanced-control-engineering.git}
+\newcommand{\MetaValueAUrl}{https://github.com/pwr-control/lectures-on-advanced-control-engineering.git}
+\newcommand{\MetaValueALabel}{lectures-on-advanced-control-engineering.git}
 
 \newcommand{\MetaLabelB}{Framework}
 \newcommand{\MetaValueB}{MATLAB/Simulink/Simscape}
@@ -70,7 +55,7 @@
 	\noindent\rule{\linewidth}{0.8pt}
 	
 	% ---- Titolo ----
-	%\vspace{28pt}
+	\vspace{28pt}
 	\begin{center}
 		\DocTitle
 	\end{center}
@@ -79,7 +64,7 @@
 	\noindent\rule{\linewidth}{2.2pt}
 	
 	% ---- Sottotitolo ----
-	%\vspace{14pt}
+	\vspace{14pt}
 	\begin{center}
 		\begin{onehalfspace}
 			{\large\itshape \DocSubtitle}
@@ -123,8 +108,8 @@
 	% ---- Metadati in fondo ----
 	\noindent
 	\begin{tabular}{@{} r @{\quad} l @{}}
-		\textsc{\small\MetaLabelA:} & {\small\url{\MetaValueA}} \\[3pt]
-		\textsc{\small\MetaLabelB:} & {\small\MetaValueB}       \\[3pt]
+		\textsc{\MetaLabelA:} & {\href{\MetaValueAUrl}{\MetaValueALabel}} \\[3pt]
+		\textsc{\MetaLabelB:} & {\MetaValueB}       \\[3pt]
 		%		\textsc{\small\MetaLabelC:} & {\small\MetaValueC}       \\
 	\end{tabular}
 	

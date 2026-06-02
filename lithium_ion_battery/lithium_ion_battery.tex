@@ -3,23 +3,6 @@
 %\documentclass[11pt,a4paper,oneside]{book}
 \input{../AAA_template_latex_settings/settings}
 
-\geometry{
-	a4paper,
-	top    = 3.0cm,
-	bottom = 3.0cm,
-	left   = 2.5cm,
-	right  = 2.5cm
-}
-
-\hypersetup{
-	colorlinks = true,
-	urlcolor   = blue,
-	linkcolor  = black,
-	citecolor  = black
-}
-
-\pagenumbering{gobble}
-
 % =============================================================
 %  
 % =============================================================
@@ -28,23 +11,26 @@
 \newcommand{\DocField}{Power Electronics and Control Systems}
 
 \newcommand{\DocTitle}{%
-	Lithium Ion Battery: \\[12pt]
-	Simscape Model Description
+	{\fontsize{20}{24}\selectfont\bfseries Lithium Ion Battery:} \\[16pt]
+	{\fontsize{16}{20}\selectfont\bfseries modelization and Simscape implementation.}
 }
+
 \newcommand{\DocSubtitle}{%
 	Electrochemical model for Simscape Implementation
 }
 
 \newcommand{\DocAuthor}{Davide Bagnara}
-\newcommand{\DocDate}{May 2021}
+\newcommand{\DocDate}{October 2022}
 
 \newcommand{\DocAbstract}{%
-	This paper presents a Simscape-based equivalent circuit model (ECM) of a lithium-ion battery cell, developed for system-level simulation of industrial battery energy storage systems (BESS). The model captures the nonlinear electrical behaviour of the cell through a Thevenin network with state-of-charge (SoC)-dependent open-circuit voltage (OCV) and internal impedance parameters, enabling accurate representation of terminal voltage dynamics across a wide range of operating conditions. A SoC estimator based on coulomb counting is integrated within the Simscape framework, providing continuous state tracking during both charge and discharge cycles. The modular architecture of the model facilitates scalable aggregation to module and rack level, supporting co-simulation with power electronics converters in a unified MATLAB/Simulink environment. Simulation results demonstrate the model's ability to reproduce the nonlinear OCV–SoC characteristic and the dynamic voltage response under variable current profiles representative of grid-scale BESS operation, including peak shaving and frequency regulation duty cycles. The proposed modelling approach provides a computationally efficient platform for the design and validation of energy management strategies and power converter control algorithms prior to hardware implementation.
+	This document presents a Simscape-based equivalent circuit model (ECM) of a lithium-ion battery cell, developed for system-level simulation of industrial battery energy storage systems (BESS). The model captures the nonlinear electrical behaviour of the cell through a Thevenin network with state-of-charge (SoC)-dependent open-circuit voltage (OCV) and internal impedance parameters, enabling accurate representation of terminal voltage dynamics across a wide range of operating conditions. A SoC estimator based on coulomb counting is integrated within the Simscape framework, providing continuous state tracking during both charge and discharge cycles. The modular architecture of the model facilitates scalable aggregation to module and rack level, supporting co-simulation with power electronics converters in a unified MATLAB/Simulink environment. Simulation results demonstrate the model's ability to reproduce the nonlinear OCV–SoC characteristic and the dynamic voltage response under variable current profiles representative of grid-scale BESS operation, including peak shaving and frequency regulation duty cycles. The proposed modelling approach provides a computationally efficient platform for the design and validation of energy management strategies and power converter control algorithms prior to hardware implementation.
 }
 
 % Tre righe metadati in fondo (label small caps + valore)
 \newcommand{\MetaLabelA}{Project Repository}
-\newcommand{\MetaValueA}{https://github.com/pwr-control/library.git}
+\newcommand{\MetaValueA}{https://github.com/pwr-control/modelization-and-control.git}
+\newcommand{\MetaValueAUrl}{https://github.com/pwr-control/modelization-and-control.git}
+\newcommand{\MetaValueALabel}{modelization-and-control.git}
 
 \newcommand{\MetaLabelB}{Framework}
 \newcommand{\MetaValueB}{MATLAB/Simulink/Simscape}
@@ -120,8 +106,9 @@
 	% ---- Metadati in fondo ----
 	\noindent
 	\begin{tabular}{@{} r @{\quad} l @{}}
-		\textsc{\small\MetaLabelA:} & {\small\url{\MetaValueA}} \\[3pt]
-		\textsc{\small\MetaLabelB:} & {\small\MetaValueB}       \\[3pt]
+%		\textsc{\MetaLabelA:} & {\url{\MetaValueA}} \\[3pt]
+		\textsc{\MetaLabelA:} & {\href{\MetaValueAUrl}{\MetaValueALabel}} \\[3pt]
+		\textsc{\MetaLabelB:} & {\MetaValueB}       \\[3pt]
 %		\textsc{\small\MetaLabelC:} & {\small\MetaValueC}       \\
 	\end{tabular}
 	

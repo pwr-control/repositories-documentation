@@ -1,153 +1,130 @@
 %\documentclass[11pt,a4paper]{article}
-%\documentclass[11pt,a4paper]{scrartcl}
-\documentclass[11pt,a4paper,oneside]{book}
-\usepackage[british,UKenglish,USenglish,english,american]{babel}
-%\usepackage[a4paper, total={16cm, 23cm}]{geometry}
-\usepackage[tmargin = 1.25in,bmargin = 1.25in,lmargin = 1in,rmargin = 
-1in]{geometry}
-\usepackage{tikz}
-\usepackage{graphicx}
-\usepackage{pgfplots}
-\pgfplotsset{width=12cm,compat=1.9}
+%\documentclass[12pt,a4paper]{scrartcl}
+\documentclass[12pt,a4paper,oneside]{book}
+\input{../AAA_template_latex_settings/settings}
 
-\usepackage{chemmacros}
-\usepackage{chemfig}
-%\usepackage{ghsystem}
-\usechemmodule{redox}
-%\usepackage{chemnum}
-%\usepackage{bohr}
-%\usepackage{elements}
-%\usepackage{endiagram}
-%\usepackage{modiagram}
-%\usepackage{chemgreek}
-%\usepackage{mhchem}
-\usepackage{esint}
-\usepackage{tabularray}
+% =============================================================
+%  
+% =============================================================
 
-\usepackage{makeidx}
-\usepackage{epstopdf}
+\newcommand{\DocCategory}{Technical Research Report}
+\newcommand{\DocField}{Power Electronics and Control Systems}
 
-\usepackage{amssymb}
-\usepackage{mathrsfs}
-%\usepackage{minted}
-\usepackage{bm}
-\usepackage{amsmath}
-\usepackage{enumitem}
-\usepackage[english]{varioref}
-\usepackage[english]{babel}
-\usepackage{lipsum}
-\usepackage{fancyhdr}
-\pagestyle{fancy} 
-\usepackage{float}
-\usepackage{empheq}
-\usepackage[framemethod=tikz]{mdframed}
-\usepackage{epstopdf}
-\numberwithin{equation}{section}
-\usepackage{eso-pic}
-\usepackage{calc}
-\usepackage{nccmath}
-\usepackage{caption}
-\usepackage{subcaption}
-\usepackage{gensymb}
-\usepackage{amsfonts,amsthm,epsfig,epstopdf,titling,url,array}
-\usepackage{siunitx}
-\sisetup{input-digits = 0123456789\pi}
-\usepackage[symbol]{footmisc}
-\usepackage{xcolor}
-\usepackage{multicol}
-\usepackage{boondox-cal}
-\DeclareSIUnit\atm{atm}
-\setcounter{secnumdepth}{3}
-\setcounter{tocdepth}{3}
-\usepackage{booktabs}
-\usepackage{blindtext}
-\usepackage{changepage}
-
-% \usepackage{draftwatermark}
-% \SetWatermarkText{DRAFT}
-% \SetWatermarkScale{5}
-
-\DeclareSIUnit\atm{atm}
-
-\pagestyle{fancy} 
-\fancypagestyle{firstpage}{
-\rhead{
-\includegraphics[height=0.75cm]{figures/pwr-control_logo_doc.png}
+\newcommand{\DocTitle}{%
+	{\fontsize{20}{24}\selectfont\bfseries Nonlinear Observers:} \\[16pt]
+	{\fontsize{16}{20}\selectfont\bfseries application to hydrostatic transmission, and to electrical machines.}
 }
+
+\newcommand{\DocSubtitle}{%
+	Nonlinear Observer Design: Case Studies in Hydrostatic Transmissions and Electrical Machines. 
 }
-\fancyhead[L]{\slshape\nouppercase{\leftmark}}
-\chead{}
-\rhead{
-\includegraphics[height=0.75cm]{figures/pwr-control_logo_doc.png}
+
+\newcommand{\DocAuthor}{Davide Bagnara}
+\newcommand{\DocDate}{October 2022}
+
+\newcommand{\DocAbstract}{%
+	The present document is intended for personal use and its aim is to collect literature and case studies concerning the theme of the nonlinear systems and their control. The beginning of this document is made by a collection of applications of nonlinear control theory for hydrostatic and electrical systems. The document ends with an extended collection of appendices, where the main results of the nonlinear control theory are collected. Most of the literature, presented here, is taken from the fundamental works of H.K.~Khalil, A.~Isidori, J.~Slotine, and P.~Krause. 
 }
-\lfoot{\textit{}}
-\cfoot{-\ \thepage\ -}
-\rfoot{\textit{}}
 
-\DeclareMathOperator{\rank}{rank}
-\DeclareMathOperator{\atantwo}{atan2}
-\DeclareMathOperator{\spn}{span}
+% Tre righe metadati in fondo (label small caps + valore)
+\newcommand{\MetaLabelA}{Project Repository}
+\newcommand{\MetaValueA}{https://github.com/pwr-control/modelization-and-control.git}
+\newcommand{\MetaValueAUrl}{https://github.com/pwr-control/modelization-and-control.git}
+\newcommand{\MetaValueALabel}{modelization-and-control.git}
 
-\renewcommand{\headrulewidth}{0.4pt}
-\renewcommand{\footrulewidth}{0.4pt}
-\newcommand{\abs}[1]{\left|#1\right|}
-\definecolor{mycolor1}{rgb}{0.97, 0.97, 0.97}
-\definecolor{mycolor2}{rgb}{0.97, 0.97, 0.97}
-\definecolor{tableShade}{gray}{0.9}
-\newcommand{\sign}{\text{sign}}
-\newcommand{\centered}[1]{\begin{tabular}{@{}l@{}} #1 \end{tabular}}
-\theoremstyle{it}
-\newtheorem{defn}{Definition}[chapter]
-\newtheorem{assumption}{Assumption}[chapter]
-\newtheorem{thm}{Theorem}[chapter]
-\newtheorem{lemma}{Lemma}[chapter]
-\newtheorem{corollary}{Corollary}[chapter]
-\theoremstyle{definition}
-%\theoremstyle{it}
-\newtheorem{example}{Example}[section]
+\newcommand{\MetaLabelB}{Framework}
+\newcommand{\MetaValueB}{MATLAB/Simulink/Simscape}
 
-\newenvironment{myitemize_1}
-{ \begin{itemize}[topsep=0pt]
-		\setlength{\topsep}{2pt}		
-		\setlength{\itemsep}{2pt}
-		\setlength{\parskip}{2pt}
-		\setlength{\parsep}{2pt}     }
-	{ \end{itemize}                  }
+\newcommand{\MetaLabelC}{Architecture}
+\newcommand{\MetaValueC}{SiC, EiceDRIVER, Customized Power Supplies}
 
-
-\newmdenv[innerlinewidth=0.5pt, roundcorner=4pt,backgroundcolor=mycolor2, 
-linecolor=mycolor1,innerleftmargin=6pt,
-innerrightmargin=6pt,innertopmargin=6pt,innerbottommargin=6pt]{mybox}
-
-\title{\textbf{ 
-	\begin{LARGE}
-		Nonlinear Observers
-	\end{LARGE} \\[24pt]
-	\begin{Large}
-		Application to the Hydrostatic Transmissions \\[6pt] and Electrical Machinery
-	\end{Large}}
-}
-\author{\textbf{Davide Bagnara}}
-
+% =============================================================
+%  FRONTESPIZIO
+% =============================================================
 \begin{document}
-	\thispagestyle{firstpage}
-	\begin{mybox}
-		\maketitle
-		\vspace{120mm}
-	\end{mybox}
+	\titlepage
+	% ---- Intestazione centrata ----
+	\begin{center}
+		{\Large\scshape \DocCategory}\\[8pt]
+		{\large\scshape \DocField}
+	\end{center}
+	
+	\vspace{36pt}
+	\noindent\rule{\linewidth}{0.8pt}
+	
+	% ---- Titolo ----
+	%\vspace{28pt}
+	\begin{center}
+		\DocTitle
+	\end{center}
+	
+	\vspace{4pt}
+	\noindent\rule{\linewidth}{2.2pt}
+	
+	% ---- Sottotitolo ----
+	%\vspace{14pt}
+	\begin{center}
+		\begin{onehalfspace}
+			{\large\itshape \DocSubtitle}
+		\end{onehalfspace}
+	\end{center}
+	
+	% ---- Spazio prima di Autore/Data ----
+	\vspace{36pt}
+	
+	% ---- Author / Date su due colonne ----
+	\begin{minipage}{0.92\linewidth}
+		\noindent
+		\begin{minipage}[t]{0.48\linewidth}
+			\textbf{Author:}\\[2pt]
+			\DocAuthor
+		\end{minipage}%
+		\hfill
+		\begin{minipage}[t]{0.48\linewidth}
+			\raggedleft
+			\textbf{Date:}\\[2pt]
+			\DocDate
+		\end{minipage}
+	\end{minipage}
+	% ---- Spazio prima dell'abstract ----
+	\vspace{36pt}
+	
+	% ---- Abstract indentato ----
+	\begin{center}
+		\begin{minipage}{0.85\linewidth}
+			%    \small
+			\footnotesize 
+			\begin{onehalfspace}
+				\textbf{Abstract:} \DocAbstract
+			\end{onehalfspace}
+		\end{minipage}
+	\end{center}
+	
+	% ---- Spazio prima dei metadati ----
+	\vfill
+	
+	% ---- Metadati in fondo ----
+	\noindent
+	\begin{tabular}{@{} r @{\quad} l @{}}
+%		\textsc{\MetaLabelA:} & {\url{\MetaValueA}} \\[3pt]
+		\textsc{\MetaLabelA:} & {\href{\MetaValueAUrl}{\MetaValueALabel}} \\[3pt]
+		\textsc{\MetaLabelB:} & {\MetaValueB}       \\[3pt]
+		%		\textsc{\small\MetaLabelC:} & {\small\MetaValueC}       \\
+	\end{tabular}
+	
+	% =============================================================
+	%  Fine frontespizio
+	% =============================================================
 	\newpage
+	\pagenumbering{arabic}
+	\setcounter{page}{1}
 	\tableofcontents
 	\listoffigures	
 	\listoftables
 	\newpage
 	
-\chapter*{}	
-\begin{adjustwidth}{50pt}{50pt}
-		\textit{The present document is intended for personal use and its aim is to collect literature and case studies concerning the theme of the nonlinear systems and their control. The beginning of this document is made by a collection of applications of nonlinear control theory for hydrostatic and electrical systems. The document ends with an extended collection of appendices, where the main results of the nonlinear control theory are collected. Most of the literature, presented here, is taken from the fundamental works of H.K.~Khalil, A.~Isidori, J.~Slotine, and P.~Krause.}
-\end{adjustwidth}
-
-
-
+\begin{onehalfspace}
+	
 \chapter{Nonlinear Observer of a Hydrostatic Transmission}	
 	In this chapter the design of a nonlinear observer for 
 	a hydrostatic transmission is reported. At first the mathematical model of the 
@@ -2377,10 +2354,7 @@ We start our study of high-gain observers with a motivating example.
 		\dot{\hat{x}}_1=\hat{x}_2+\frac{2}{\epsilon}(y-\hat{x}_1),\quad\dot{\hat{x}}_2=-\hat{x}_1-2\hat{x}_2+\hat{a}\hat{x}_1^2\hat{x}_2+\hat{b}\sin2t+\frac{1}{\epsilon^2}(y-\hat{x}_1)
 	\end{equation*}
 	with two different choice of the pair $(\hat{a},\,\hat{b})$. When $a=0.25$ and $b=0.2$ are known, we take $\hat{a}=0.25$ and $\hat{b}=0.2$. This is a case with no model uncertainty and $\phi_0=\phi$. The other case is when the coefficients $a$ and $b$ are unknown. In this case we take $\hat{a}=\hat{b}=0$.  
-	
-	
-	
-	
+
 	\hfill$\triangle$
 \end{example}
 
@@ -2436,5 +2410,5 @@ We start our study of high-gain observers with a motivating example.
 	\bibitem{meyer} 
 	C. D. Meyer, \emph{Matrix Analysis and Applied Linear Algebra}. SIAM 2000.
 \end{thebibliography}
-
+\end{onehalfspace}
 \end{document} 

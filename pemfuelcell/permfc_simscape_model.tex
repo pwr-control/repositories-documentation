@@ -1,105 +1,129 @@
 %\documentclass[11pt,a4paper]{article}
-\documentclass[11pt,a4paper]{scrartcl}
+\documentclass[12pt,a4paper]{scrartcl}
 %\documentclass[11pt,a4paper,oneside]{book}
-\usepackage[table]{xcolor}
-\usepackage{colortbl}
-\usepackage{tabularray}
-\usepackage{pgfplots}
-\usepackage[british,UKenglish,USenglish,english,american]{babel}
-%\usepackage[a4paper, total={16cm, 23cm}]{geometry}
-\usepackage[tmargin = 1.25in,bmargin = 1.25in,lmargin = 1in,rmargin = 1in]{geometry}
-\usepackage{tikz}
-\usepackage{graphicx}
-\usepackage[version=4]{mhchem}
-\usepackage{chemformula}
+\input{../AAA_template_latex_settings/settings}
 
-\usepackage{enumitem}
-\usepackage{makeidx}
-\usepackage{epstopdf}
-\usepackage{amssymb}
-\usepackage{mathrsfs}
-\usepackage{amsmath}
+% =============================================================
+%  
+% =============================================================
 
-\usepackage[english]{varioref}
-\usepackage[english]{babel}
-\usepackage{lipsum}
-\usepackage{fancyhdr}
-\pagestyle{fancy} 
-\usepackage{float}
-\usepackage{empheq}
-\usepackage[framemethod=tikz]{mdframed}
-\usepackage{epstopdf}
-\numberwithin{equation}{section}
-\usepackage{eso-pic}
-\usepackage{calc}
-\usepackage{nccmath}
-\usepackage{caption}
-\usepackage{subcaption}
-\usepackage{gensymb}
-\usepackage{amsfonts,amsthm,epsfig,epstopdf,titling,url,array}
-\usepackage{siunitx}
-\usepackage{xcolor}
-\usepackage{multicol}
-\usepackage{boondox-cal}
-\usepackage{tabularray}
+\newcommand{\DocCategory}{Technical Research Report}
+\newcommand{\DocField}{Power Electronics and Control Systems}
 
+\newcommand{\DocTitle}{%
+	{\fontsize{24}{24}\selectfont\bfseries PEM Fuel Cell:} \\[16pt]
+	{\fontsize{16}{20}\selectfont\bfseries model derivation and Simscape implementation.}
+}
 
-\setcounter{secnumdepth}{3}
-\setcounter{tocdepth}{3}
-\usepackage{booktabs}
+\newcommand{\DocSubtitle}{%
+	Mechanical model for Simscape implementation
+}
 
-\DeclareSIUnit\atm{atm}
+\newcommand{\DocAuthor}{Davide Bagnara}
+\newcommand{\DocDate}{October 2022}
 
-\fancypagestyle{firstpage}{}
-\fancyhead[L]{\slshape\nouppercase{\leftmark}}
-\chead{}
-\rhead{\includegraphics[height=0.75cm]{figures/pwr-control_logo_doc.png}}
-\lfoot{\textit{}}
-\cfoot{-\ \thepage\ -}
-\rfoot{\textit{}}
-\renewcommand{\headrulewidth}{0.4pt}
-\renewcommand{\footrulewidth}{0.4pt}
-\newcommand{\abs}[1]{\left|#1\right|}
-\definecolor{mycolor1}{rgb}{0.95, 0.95, 0.95}
-\definecolor{mycolor2}{rgb}{0.95, 0.95, 0.95}
-\definecolor{tableShade}{gray}{0.9}
-\newcommand{\sign}{\text{sign}}
-\newcommand{\centered}[1]{\begin{tabular}{@{}l@{}} #1 \end{tabular}}
-\theoremstyle{it}
-\newtheorem{defn}{Definition}[section]
-\newtheorem{thm}{Theorem}[section]
-\theoremstyle{definition}
-\newtheorem{example}{Example}[section]
+\newcommand{\DocAbstract}{%
+{In this document we describe the proton exchange membrane (PEM) fuel-cell (PEMFC) represented in the Digital Twin Library. The principle of function is based on Nernst equation and it considers the electrochemical reaction between two elements: Hydrogenium and Oxygenium. The model consider the case of a Fuel-Cell Stack which represent a matrix of single elementary cells connect in series and parallel.}
+}
 
-\newenvironment{myitemize_1}
-{ \begin{itemize}[topsep=0pt]
-		\setlength{\topsep}{2pt}		
-		\setlength{\itemsep}{2pt}
-		\setlength{\parskip}{2pt}
-		\setlength{\parsep}{2pt}     }
-	{ \end{itemize}                  }
+% Tre righe metadati in fondo (label small caps + valore)
+\newcommand{\MetaLabelA}{Project Repository}
+\newcommand{\MetaValueA}{https://github.com/pwr-control/modelization-and-control.git}
+\newcommand{\MetaValueAUrl}{https://github.com/pwr-control/modelization-and-control.git}
+\newcommand{\MetaValueALabel}{modelization-and-control.git}
 
+\newcommand{\MetaLabelB}{Framework}
+\newcommand{\MetaValueB}{MATLAB/Simulink/Simscape}
 
-\newmdenv[innerlinewidth=0.5pt, roundcorner=4pt,backgroundcolor=mycolor2, linecolor=mycolor1,innerleftmargin=6pt,
-innerrightmargin=6pt,innertopmargin=6pt,innerbottommargin=6pt]{mybox}
+\newcommand{\MetaLabelC}{Architecture}
+\newcommand{\MetaValueC}{SiC, EiceDRIVER, Customized Power Supplies}
 
-\title{\textbf{PEM Fuel Cell}}
-\author{\textbf{Davide Bagnara}}
-
+% =============================================================
+%  FRONTESPIZIO
+% =============================================================
 \begin{document}
-	\thispagestyle{firstpage}
-	\begin{mybox}
-		\maketitle
-		\vspace{125mm}
-	\end{mybox}
+	\titlepage
+	% ---- Intestazione centrata ----
+	\begin{center}
+		{\Large\scshape \DocCategory}\\[8pt]
+		{\large\scshape \DocField}
+	\end{center}
+	
+	\vspace{36pt}
+	\noindent\rule{\linewidth}{0.8pt}
+	
+	% ---- Titolo ----
+	\vspace{16pt}
+	\begin{center}
+		\DocTitle
+	\end{center}
+	
+	\vspace{4pt}
+	\noindent\rule{\linewidth}{2.2pt}
+	
+	% ---- Sottotitolo ----
+	%\vspace{14pt}
+	\begin{center}
+		\begin{onehalfspace}
+			{\large\itshape \DocSubtitle}
+		\end{onehalfspace}
+	\end{center}
+	
+	% ---- Spazio prima di Autore/Data ----
+	\vspace{18pt}
+	
+	% ---- Author / Date su due colonne ----
+	\begin{minipage}{0.92\linewidth}
+		\noindent
+		\begin{minipage}[t]{0.48\linewidth}
+			\textbf{Author:}\\[2pt]
+			\DocAuthor
+		\end{minipage}%
+		\hfill
+		\begin{minipage}[t]{0.48\linewidth}
+			\raggedleft
+			\textbf{Date:}\\[2pt]
+			\DocDate
+		\end{minipage}
+	\end{minipage}
+	% ---- Spazio prima dell'abstract ----
+	\vspace{36pt}
+	
+	% ---- Abstract indentato ----
+	\begin{center}
+		\begin{minipage}{0.85\linewidth}
+			%    \small
+			\footnotesize 
+			\begin{onehalfspace}
+				\textbf{Abstract:} \DocAbstract
+			\end{onehalfspace}
+		\end{minipage}
+	\end{center}
+	
+	% ---- Spazio prima dei metadati ----
+	\vfill
+	
+	% ---- Metadati in fondo ----
+	\noindent
+	\begin{tabular}{@{} r @{\quad} l @{}}
+		%		\textsc{\MetaLabelA:} & {\url{\MetaValueA}} \\[3pt]
+		\textsc{\MetaLabelA:} & {\href{\MetaValueAUrl}{\MetaValueALabel}} \\[3pt]
+		\textsc{\MetaLabelB:} & {\MetaValueB}       \\[3pt]
+		%		\textsc{\small\MetaLabelC:} & {\small\MetaValueC}       \\
+	\end{tabular}
+	
+	% =============================================================
+	%  Fine frontespizio
+	% =============================================================
 	\newpage
+	\pagenumbering{arabic}
+	\setcounter{page}{1}
 	\tableofcontents
 	\listoffigures	
 	\listoftables
 	\newpage
-
-{In this document we describe the proton exchange membrane (PEM) fuel-cell (PEMFC) represented in the Digital Twin Library. The principle of function is based on Nernst equation and it considers the electrochemical reaction between two elements: Hydrogenium and Oxygenium. The model consider the case of a Fuel-Cell Stack which represent a matrix of single elementary cells connect in series and parallel.}
-
+	
+\begin{onehalfspace}
 \section{Description}
 Fuel cells are static energy conversion devices that convert the chemical energy of fuel directly into dc electrical energy. The physical structure of a fuel cell consist of two porous electrodes (anode and cathode) and an electrolyte layer in the middle. Figure~\ref{pem_fc_intro_2} shows the basic working of a fuel cell with positive ion flow through the electrolyte, which is based on electrochemical principles, like Gibbs free energy (for completeness see §\ref{fundamental}).
 \begin{figure}[H]
@@ -144,7 +168,7 @@ The partial pressure, transport and electrochemical equations for a single cell 
 where $V_a$ ($V_c$) is the volume of the anode (cathode) channel $\Big[\SI{}{\cubic\meter}\Big]$; $M_{H_2}=H_2$, mole flow rate $\Big[\SI{}{\mole\per\second}\Big]$; $i$ the fuel cell current $\Big[\SI{}{\ampere}\Big]$; $M_{O_2}=O_2$, mole flow rate $\Big[\SI{}{\mole\per\second}\Big]$; subscripts $\Big(_{in}\Big)$, $\Big(_{out}\Big)$ and $\Big(_{net}\Big)$ denote the values related to input, output, and net. $T=T(t)$ is the cell temperature. 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width = 0.5\textwidth, width = 250pt, angle = 0, keepaspectratio]{figures/pem_fuel_cell/pem_fuel_cell_1.eps}
+	\includegraphics[width = 0.5\textwidth, width = 325pt, angle = 0, keepaspectratio]{figures/pem_fuel_cell/pem_fuel_cell_1.eps}
 	\captionsetup{width=0.5\textwidth}		
 	\caption{Schematic diagram of a PEM fuel cell and voltage drop across it.}
 	\label{pem_fc_intro_1}
@@ -266,7 +290,7 @@ The efficiency of the process then is
 \begin{equation}\label{ele_chem_7}
 	\eta_c=\frac{W}{Q_1}=\frac{Q_1-Q_2}{Q_1} = 1-\frac{T_2}{T_1}
 \end{equation}
-It is clear from Eq.~\eqref{ele_chem_7} that a higher efficienty can be obtained by having a larger difference between $T_2$ and $T_1$.
+It is clear from Eq.~\eqref{ele_chem_7} that a higher efficiency can be obtained by having a larger difference between $T_2$ and $T_1$.
 Another contribution from Carnot is that $Q/T$ can be a state property of the system by showing the equivalence of $Q_1/T_1$ and $Q_2/T_2$. Based on the Carnot's idea, Rudolf Clausius (a Polish scientist, 1822-1888) developed the concept of entropy and presented the second law of thermodynamics. This concept was introduced to indicate the degree of disorder of a system. If the system is undergoing an infinitesimal reversible process with $dQ$ heat entering the system at temperature $T$, then the infinitesimal change in its \textit{entropy} ($S$) is defined as
 \begin{equation}\label{ele_chem_8}
 	dS=\left. \frac{dQ}{T}\right|_{\text{rev}}
@@ -864,4 +888,5 @@ The output bus channel \textbf{PEMFC data} includes the following data output
 	\bibitem[\textbf{M.H. Nehrir, 2009}]{p1} M.H. Nehrir, C. Wang - \textit{Modeling and Control of Fuel Cells: Distributed Generation Applications}. J. Wiley 2009.
 	
 \end{thebibliography}
+\end{onehalfspace}
 \end{document} 

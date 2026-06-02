@@ -1,24 +1,7 @@
 %\documentclass[11pt,a4paper]{article}
 %\documentclass[12pt,a4paper]{scrartcl}
-\documentclass[11pt,a4paper,oneside]{book}
+\documentclass[12pt,a4paper,oneside]{book}
 \input{../AAA_template_latex_settings/settings}
-
-\geometry{
-	a4paper,
-	top    = 3.0cm,
-	bottom = 3.0cm,
-	left   = 2.5cm,
-	right  = 2.5cm
-}
-
-\hypersetup{
-	colorlinks = true,
-	urlcolor   = blue,
-	linkcolor  = black,
-	citecolor  = black
-}
-
-\pagenumbering{gobble}
 
 % =============================================================
 %  
@@ -28,15 +11,16 @@
 \newcommand{\DocField}{Power Electronics and Control Systems}
 
 \newcommand{\DocTitle}{%
-	Hydrostatic Fluid Power: \\[12pt]
-	\huge modelization and control
+	{\fontsize{20}{24}\selectfont\bfseries Hydrostatic Fluid Power:} \\[16pt]
+	{\fontsize{16}{20}\selectfont\bfseries modelization and control.}
 }
+
 \newcommand{\DocSubtitle}{%
 	Derivation of the mathematical model of hydrostatic power trains and utilities. 
 }
 
 \newcommand{\DocAuthor}{Davide Bagnara}
-\newcommand{\DocDate}{May 2021}
+\newcommand{\DocDate}{October 2022}
 
 \newcommand{\DocAbstract}{%
 	Hydrostatic fluid power systems constitute a well-established class of power transmission technology, yet their dynamic behaviour and control present modelling challenges that are not fully resolved by quasi-static approximations. This paper addresses the mathematical description and control design of hydrostatic circuits comprising variable-displacement axial-piston pumps, hydraulic motors, and associated valve and line elements, with emphasis on the nonlinear dynamics that govern transient performance.
@@ -48,6 +32,8 @@
 % Tre righe metadati in fondo (label small caps + valore)
 \newcommand{\MetaLabelA}{Project Repository}
 \newcommand{\MetaValueA}{https://github.com/pwr-control/lectures-on-advanced-control-engineering.git}
+\newcommand{\MetaValueAUrl}{https://github.com/pwr-control/lectures-on-advanced-control-engineering.git}
+\newcommand{\MetaValueALabel}{lectures-on-advanced-control-engineering.git}
 
 \newcommand{\MetaLabelB}{Framework}
 \newcommand{\MetaValueB}{MATLAB/Simulink/Simscape}
@@ -72,7 +58,7 @@
 	% ---- Titolo ----
 	%\vspace{28pt}
 	\begin{center}
-		{\fontsize{30}{30}\selectfont\bfseries \DocTitle}
+		\DocTitle
 	\end{center}
 	
 	\vspace{4pt}
@@ -123,8 +109,9 @@
 	% ---- Metadati in fondo ----
 	\noindent
 	\begin{tabular}{@{} r @{\quad} l @{}}
-		\textsc{\small\MetaLabelA:} & {\small\url{\MetaValueA}} \\[3pt]
-		\textsc{\small\MetaLabelB:} & {\small\MetaValueB}       \\[3pt]
+%		\textsc{\MetaLabelA:} & {\url{\MetaValueA}} \\[3pt]
+		\textsc{\MetaLabelA:} & {\href{\MetaValueAUrl}{\MetaValueALabel}} \\[3pt]
+		\textsc{\MetaLabelB:} & {\MetaValueB}       \\[3pt]
 		%		\textsc{\small\MetaLabelC:} & {\small\MetaValueC}       \\
 	\end{tabular}
 	

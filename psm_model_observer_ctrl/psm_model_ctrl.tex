@@ -3,23 +3,6 @@
 %\documentclass[11pt,a4paper,oneside]{book}
 \input{../AAA_template_latex_settings/settings}
 
-\geometry{
-	a4paper,
-	top    = 3.0cm,
-	bottom = 3.0cm,
-	left   = 2.5cm,
-	right  = 2.5cm
-}
-
-\hypersetup{
-	colorlinks = true,
-	urlcolor   = blue,
-	linkcolor  = black,
-	citecolor  = black
-}
-
-\pagenumbering{gobble}
-
 % =============================================================
 %  
 % =============================================================
@@ -46,6 +29,8 @@
 % Tre righe metadati in fondo (label small caps + valore)
 \newcommand{\MetaLabelA}{Project Repository}
 \newcommand{\MetaValueA}{https://github.com/pwr-control/modelization-and-control.git}
+\newcommand{\MetaValueAUrl}{https://github.com/pwr-control/modelization-and-control.git}
+\newcommand{\MetaValueALabel}{modelization-and-control.git}
 
 \newcommand{\MetaLabelB}{Framework}
 \newcommand{\MetaValueB}{MATLAB/Simulink/Simscape}
@@ -121,9 +106,10 @@
 % ---- Metadati in fondo ----
 \noindent
 \begin{tabular}{@{} r @{\quad} l @{}}
-	\textsc{\small\MetaLabelA:} & {\small\url{\MetaValueA}} \\[3pt]
-	\textsc{\small\MetaLabelB:} & {\small\MetaValueB}       \\[3pt]
-	%		\textsc{\small\MetaLabelC:} & {\small\MetaValueC}       \\
+%		\textsc{\MetaLabelA:} & {\url{\MetaValueA}} \\[3pt]
+		\textsc{\MetaLabelA:} & {\href{\MetaValueAUrl}{\MetaValueALabel}} \\[3pt]
+		\textsc{\MetaLabelB:} & {\MetaValueB}       \\[3pt]
+%		\textsc{\small\MetaLabelC:} & {\small\MetaValueC}       \\
 \end{tabular}
 
 % =============================================================

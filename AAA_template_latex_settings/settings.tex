@@ -50,6 +50,7 @@
 \usepackage{ragged2e}
 \usepackage[version=4]{mhchem}  % ← conflitto di opzioni
 \usepackage{longtable}
+\usepackage{chemformula}
 
 % ===================== SI UNITS =====================
 \DeclareSIUnit\atm{atm}
@@ -111,6 +112,9 @@ innerbottommargin=6pt
 \setcounter{tocdepth}{3}
 
 % ===================== PAGE STYLE =====================
+\setlength{\headheight}{20pt}
+\setlength{\headsep}{20pt}
+
 \pagestyle{fancy}
 \fancypagestyle{firstpage}{\rhead{}}
 \fancyhead[L]{\slshape\nouppercase{\leftmark}}
@@ -121,3 +125,21 @@ innerbottommargin=6pt
 \rfoot{\textit{}}
 \renewcommand{\headrulewidth}{0.4pt}
 \renewcommand{\footrulewidth}{0.4pt}
+
+
+\geometry{
+	a4paper,
+	top    = 2.5cm,
+	bottom = 3.0cm,
+	left   = 2.5cm,
+	right  = 2.5cm
+}
+
+\hypersetup{
+	colorlinks = true,
+	urlcolor   = blue,
+	linkcolor  = black,
+	citecolor  = black
+}
+
+\pagenumbering{gobble}

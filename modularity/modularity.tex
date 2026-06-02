@@ -1,24 +1,7 @@
-%\documentclass[11pt,a4paper]{article}
+%\documentclass[12pt,a4paper]{article}
 \documentclass[12pt,a4paper]{scrartcl}
 %\documentclass[11pt,a4paper,oneside]{book}
 \input{../AAA_template_latex_settings/settings}
-
-\geometry{
-	a4paper,
-	top    = 3.0cm,
-	bottom = 3.0cm,
-	left   = 2.5cm,
-	right  = 2.5cm
-}
-
-\hypersetup{
-	colorlinks = true,
-	urlcolor   = blue,
-	linkcolor  = black,
-	citecolor  = black
-}
-
-\pagenumbering{gobble}
 
 % =============================================================
 %  
@@ -28,7 +11,7 @@
 \newcommand{\DocField}{Power Electronics and Control Systems}
 
 \newcommand{\DocTitle}{%
-	{\fontsize{24}{24}\selectfont\bfseries Modularity in Power Electronics:} \\[16pt]
+	{\fontsize{20}{24}\selectfont\bfseries Modularity in Power Electronics:} \\[16pt]
 	{\fontsize{16}{20}\selectfont\bfseries impact on grid power quality.}
 }
 
@@ -37,7 +20,7 @@
 }
 
 \newcommand{\DocAuthor}{Davide Bagnara}
-\newcommand{\DocDate}{May 2021}
+\newcommand{\DocDate}{October 2023}
 
 \newcommand{\DocAbstract}{%
 	This report investigates the impact of parallelising multiple variable-speed electrical drives on the power quality of a medium-voltage grid in wind power generation applications. Each drive unit consists of an Active Front End (AFE) rectifier and a two-level voltage source inverter (VSI) coupled to a permanent magnet synchronous machine (PMSM), operating under closed-loop vector control. When two to four such drive systems share a common point of coupling, the superposition of their switching harmonics and low-order current distortion components gives rise to a cumulative degradation of the grid current waveform, whose severity depends on the drive operating point, the PWM carrier frequency, and the grid impedance at the point of common coupling (PCC). An analytical harmonic model of the parallel AFE arrangement is derived and used to quantify the total harmonic distortion (THD) of the grid current as a function of the number of active units. To mitigate the identified distortion, an LCL filter is designed for each drive input stage, with corner frequency and damping ratio optimised to attenuate the dominant switching-frequency harmonics while preserving dynamic current control bandwidth. Simulation results, obtained in a MATLAB/Simscape environment, demonstrate that the proposed filtering solution brings the harmonic current emissions into compliance with the limits set forth by IEC 61000-3-12 and EN 50160, across the full operating range of the drive fleet. The results provide quantitative design guidelines for the harmonic filter dimensioning in multi-drive renewable energy conversion systems connected to weak or stiff grids.
@@ -46,6 +29,9 @@
 % Tre righe metadati in fondo (label small caps + valore)
 \newcommand{\MetaLabelA}{Project Repository}
 \newcommand{\MetaValueA}{https://github.com/pwr-control/modelization-and-control.git}
+\newcommand{\MetaValueAUrl}{https://github.com/pwr-control/modelization-and-control.git}
+\newcommand{\MetaValueALabel}{modelization-and-control.git}
+
 
 \newcommand{\MetaLabelB}{Framework}
 \newcommand{\MetaValueB}{MATLAB/Simulink/Simscape}
@@ -121,8 +107,9 @@
 	% ---- Metadati in fondo ----
 	\noindent
 	\begin{tabular}{@{} r @{\quad} l @{}}
-		\textsc{\small\MetaLabelA:} & {\small\url{\MetaValueA}} \\[3pt]
-		\textsc{\small\MetaLabelB:} & {\small\MetaValueB}       \\[3pt]
+%		\textsc{\MetaLabelA:} & {\url{\MetaValueA}} \\[3pt]
+		\textsc{\MetaLabelA:} & {\href{\MetaValueAUrl}{\MetaValueALabel}} \\[3pt]
+		\textsc{\MetaLabelB:} & {\MetaValueB}       \\[3pt]
 		%		\textsc{\small\MetaLabelC:} & {\small\MetaValueC}       \\
 	\end{tabular}
 	
