@@ -1,7 +1,7 @@
 %\documentclass[11pt,a4paper]{article}
 \documentclass[12pt,a4paper]{scrartcl}
 %\documentclass[11pt,a4paper,oneside]{book}
-\input{../../AAA_template_latex_settings/settings}
+\input{../AAA_template_latex_settings/settings}
 
 \geometry{
 	a4paper,
@@ -28,9 +28,10 @@
 \newcommand{\DocField}{Power Electronics and Control Systems}
 
 \newcommand{\DocTitle}{%
-	Permanent Magnet Synchronous Machine: \\[12pt]
-	Modelization and Control
+	{\fontsize{20}{24}\selectfont\bfseries Permanent Magnet Synchronous Machines:} \\[16pt]
+	{\fontsize{16}{20}\selectfont\bfseries model derivation, control and Simscape implementation.}
 }
+
 \newcommand{\DocSubtitle}{%
 	Derivation of the mathematical model of a permanent magnet synchronous motor. 
 }
@@ -69,7 +70,7 @@
 % ---- Titolo ----
 %\vspace{28pt}
 \begin{center}
-	{\fontsize{30}{30}\selectfont\bfseries \DocTitle}
+	\DocTitle
 \end{center}
 
 \vspace{4pt}
@@ -928,6 +929,203 @@ From Figure~\ref{load_test_Lq} we can se that the terminal voltage DQ components
 	\end{aligned}\right. 
 \end{equation}
 by the knowledge of the rotor position $\vartheta$ is it possible to measure the voltage components $\begin{bmatrix} v_d^g &  v_q^g \end{bmatrix}^T$ and hence the value of $L_q$ at different load conditions.
+
+\section{Analysis of Model Parameters Deviation}
+Scope of this section is to present a possible implementation of a rotor position estimation of the pmsm based on back emf model. The following arguments will be partially covered:
+\begin{itemize}
+	\item[--] PMSM model representation in $\alpha\beta$, namely respect to the stationary reference frame, by Kirchhoff's voltage law; 
+	\item[--] PMSM model representation in $dq$, namely respect to the rotor reference frame, by Kirchhoff's voltage law; 
+	\item[--] PMSM model representation of the mechanical rotor, by Newton's motion law; 
+	\item[--] representation of the state observer; 
+	\item[--] stability analysis of the state observer; 
+	\item[--] analysis of the motor parameters deviation on the estimation of the rotor position. 
+\end{itemize}
+\subsection{Nomenclature}	
+Here, a list of used symbols:
+\begin{itemize}
+	\item[--] $s.r.f.$: stationary reference frame;
+	\item[--] $r.r.f.$: rotor reference frame;
+	\item[--] $r.r.f.-\omega_0$: rotating reference frame at $\omega_0$;	
+	\item[--] $p$: number of pole pairs;
+	\item[--] $\omega_m$: mechanical rotor speed $\Big[\SI{}{\radian\per\second}\Big]$;
+	\item[--] $\omega$ : electrical rotor speed $\Big[\SI{}{\radian\per\second}\Big]$;
+	\item[--] $\vartheta$ : electrical rotor position $\Big[\SI{}{\radian}\Big]$;
+	\item[--] $\vartheta_{emf}$ : electrical rotor position derived from rotor fluxes $\Big[\SI{}{\radian}\Big]$;
+	\item[--] $\tau_m$ : electromagnetic torque $\Big[\SI{}{\newton\meter}\Big]$;
+	\item[--] $i_\alpha$ : direct current in $s.r.f.$ $\Big[\SI{}{\ampere}\Big]$;
+	\item[--] $i_\beta$ : quadrature current in $s.r.f.$ $\Big[\SI{}{\ampere}\Big]$;
+	\item[--] $i_d$ : direct current in $r.r.f.$ $\Big[\SI{}{\ampere}\Big]$;
+	\item[--] $i_q$ : quadrature current in $r.r.f.$ $\Big[\SI{}{\ampere}\Big]$;
+	\item[--] $\psi_d^s=\psi_d^r+i_dL_d$ : direct flux $\Big[\SI{}{\weber}\Big]$;	
+	\item[--] $\psi_q^s=\psi_q^r+i_qL_q$ : quadrature flux $\Big[\SI{}{\weber}\Big]$;	
+	\item[--] $\psi_{\alpha}^s=\psi_{\alpha}^r+i_{\alpha}L_{s}$ : $\Big[\SI{}{\weber}\Big]$;	
+	\item[--] $\psi_{\beta}^s=\psi_{\beta}^r+i_{\beta}L_{s}$ : $\Big[\SI{}{\weber}\Big]$;		
+	\item[--] $\psi^m$ : permanent magnet linkage flux $\Big[\SI{}{\weber}\Big]$;		
+	\item[--] $u_d$ : direct motor terminal voltage in $r.r.f.$ $\Big[\SI{}{\volt}\Big]$;
+	\item[--] $u_q$ : quadrature motor terminal voltage in $r.r.f.$ $\Big[\SI{}{\volt}\Big]$;
+	\item[--] $u_\alpha$ : direct motor terminal voltage in $s.r.f.$ $\Big[\SI{}{\volt}\Big]$;
+	\item[--] $u_\beta$ : quadrature motor terminal voltage in $s.r.f.$ $\Big[\SI{}{\volt}\Big]$;
+\end{itemize}
+
+\subsection{Normalization}	
+For the purpose of modelization of the \textit{plant} as well as of the \textit{control system} in \textit{Simulink/Simscape} ambient, two different representations are adopted:
+\begin{itemize}
+	\item[--] continuous time in SI unit for plant models;
+	\item[--] discrete time in per unit for control systems (controls, observers, model based control, etc).	
+\end{itemize}
+
+The per unit representation of the model pass through the \textit{normalization}, as follows
+\begin{itemize}
+	\item[--] Reference quantities
+	\begin{itemize}
+		\item[--] $u_{bez}$ : peak phase voltage (at no-load, at nominal rotor speed $\omega_m^{nom}$) of the motor in $\SI{}{\volt}$;
+		\item[--] $i_{bez}$ : peak phase nominal current of the motor in $\SI{}{\ampere}$ and can be derived from parameter $\tau_m^{nom}$ (Nominal Torque) as follows
+		\begin{equation}
+			i_{bez} = \frac{2}{3}\frac{\tau_m^{nom}}{p\,\psi_{bez}} \qquad\text{we consider $i_d=0$ control};
+		\end{equation}
+		\item[--] $\omega_m^{nom}$ : nominal mechanical rotor speed of the motor in $\SI{}{\radian\per\second}$;
+		\item[--] $\omega_{bez} = p\,\omega_m^{nom}$ : nominal electrical speed of the motor in $\SI{}{\radian\per\second}$;
+		\item[--] $X_{bez} = u_{bez}/i_{bez}$ : reference electrical impedance of the motor in $\SI{}{\ohm}$;
+		\item[--] $L_{bez} = X_{bez}/\omega_{bez}$ : reference inductance of the motor in $\SI{}{\henry}$;
+		\item[--] $\psi_{bez} = u_{bez}/\omega_{bez}$ : reference flux of the motor in $\SI{}{\weber}$.
+	\end{itemize}
+	\item[--] Per unit quantities
+	\begin{itemize}
+		\item[--] $R_s^{norm} = R_s/X_{bez}$ : per unit of the phase resistance;
+		\item[--] $L_s^{norm} = L_s/L_{bez}$ : per unit of $L_s$ inductance;
+		\item[--] $\omega^{norm} = p\omega_m/\omega_{bez}$ : per unit of the electrical speed;		
+		\item[--] $i^{norm} = i/i_{bez}$ : per unit of $i$ current;
+		\item[--] $u^{norm} = u/u_{bez}$ : per unit of $u$ voltage;
+		\item[--] $\psi_m^{norm} = \psi^m/\psi_{bez} = 1$ : per unit of the linkage permanent magnet flux.
+	\end{itemize}	 
+\end{itemize}
+In the next sections the superscript $\Big(\Big)^{norm}$ will be neglected, even if all controllers and observers has to be intended in per unit form. 
+
+\subsection{Isotropic PMSM model respect to the stationary reference frame}
+In this section a $\alpha\beta$ representation of the pmsm is depicted. The mechanical equation of the motion of the rotor will be approximated due to their slower dynamic in comparison with the electrical equations. The model represented will be used as model reference for the state observer design.
+
+By Kirchhoff's voltage law, the stator linkage fluxes can be represented as follows
+\begin{align}
+	\frac{d\psi_{\alpha}^s}{dt} &= -R_si_{\alpha} + u_{\alpha} \\[6pt]
+	\frac{d\psi_{\beta}^s}{dt} &= -R_si_{\beta} + u_{\beta}
+\end{align}
+The rotor linkage fluxes can be represented as follows
+\begin{align}
+	\psi_{\alpha}^r &= \psi_{\alpha}^s -L_s i_{\alpha} \\[6pt]
+	\psi_{\beta}^r &= \psi_{\beta}^s -L_s i_{\beta}
+\end{align}
+The rotor linkage fluxes correspond to the flux generated by the permanent magnet rotor:
+\begin{align}
+	\psi_{\alpha}^r &= \abs{\psi^m}\cos\vartheta \\[6pt]
+	\psi_{\beta}^r &= \abs{\psi^m}\sin\vartheta
+\end{align}
+By Newton's motion law, the mechanical rotor dynamic can be approximated to the system:
+\begin{align}
+	\frac{d\vartheta}{dt} &= \omega \\[6pt]
+	\frac{d\omega}{dt} &= 0
+\end{align}
+which represents a double integrator system ($\ddot{\vartheta}=0$).
+
+\subsection{Back EMF based Observer}
+Define
+\begin{align}
+	&\abs{\psi^m} = 1\qquad\text{(in per unit parameter)} \label{emf_state_obse_eq1} \\[6pt]
+	&\Big(\psi_{\alpha}^r\Big)^* = \abs{\psi^m}\cos\vartheta = \psi^m\cos\vartheta \label{emf_state_obse_eq2} \\[6pt]
+	&\Big(\psi_{\beta}^r\Big)^* = \abs{\psi^m}\sin\vartheta = \psi^m\sin\vartheta \label{emf_state_obse_eq3}
+\end{align}
+The flux state observer can be written as follows
+\begin{align}
+	\frac{d\hat{\psi}_{\alpha}^s}{dt} &= -R_s i_{\alpha} + u_{\alpha} + k_\psi \Big(\psi^m\cos\hat{\vartheta}-\hat{\psi}_{\alpha}^r\Big) \label{emf_state_obse_eq4} \\[6pt]
+	\frac{d\hat{\psi}_{\beta}^s}{dt} &= -R_s i_{\beta} + u_{\beta} + k_\psi \Big(\psi^m\sin\hat{\vartheta}-\hat{\psi}_{\beta}^r\Big) \label{emf_state_obse_eq5}
+\end{align}
+where
+\begin{align}
+	\hat{\psi}_{\alpha}^r = \hat{\psi}_{\alpha}^s -L_s i_{\alpha} \label{emf_state_obse_eq6} \\[6pt]
+	\hat{\psi}_{\beta}^r = \hat{\psi}_{\beta}^s -L_s i_{\beta} \label{emf_state_obse_eq7}
+\end{align}
+The mechanical state observer can be written as follows
+\begin{align}
+	\frac{d\hat{\vartheta}}{dt} &= \hat{\omega} + k_{\vartheta}\Big(\hat{\vartheta}_{emf} - \hat{\vartheta}\Big) \label{emf_state_obse_eq8} \\[6pt]
+	\frac{d\hat{\omega}}{dt} &= k_{\omega}\Big(\hat{\vartheta}_{emf} - \hat{\vartheta}\Big) \label{emf_state_obse_eq9}
+\end{align}
+where 
+\begin{align}
+	\hat{\vartheta}_{emf} = \atantwo\big(\hat{\psi}_{\beta}^r,\,\hat{\psi}_{\alpha}^r\big) \label{emf_state_obse_eq10}
+\end{align}
+See also the control layout diagram depicted in Figure~\ref{pmsm_sv_ctrl_scheme_1}.
+
+For practical implementation the equations
+\begin{align}
+	\frac{d\hat{\psi}_{\alpha}^s}{dt} &= -R_s i_{\alpha} + u_{\alpha} + k_\psi \Big(\psi^m\cos\hat{\vartheta}-\hat{\psi}_{\alpha}^r\Big) \label{emf_state_obse_eq11} \\[6pt]
+	\frac{d\hat{\psi}_{\beta}^s}{dt} &= -R_s i_{\beta} + u_{\beta} + k_\psi \Big(\psi^m\sin\hat{\vartheta}-\hat{\psi}_{\beta}^r\Big) \label{emf_state_obse_eq12}
+\end{align}
+are implemented as follows
+\begin{align}
+	\frac{d\hat{\psi}_{\alpha}^s}{dt} &= -R_s i_{\alpha} + u_{\alpha} + k_\psi \Big(\psi^m\cos\hat{\vartheta}-\hat{\psi}_{\alpha}^r\Big) - k_{d}\,\hat{\psi}_{\alpha}^s \label{emf_state_obse_eq13} \\[6pt]
+	\frac{d\hat{\psi}_{\beta}^s}{dt} &= -R_s i_{\beta} + u_{\beta} + k_\psi \Big(\psi^m\sin\hat{\vartheta}-\hat{\psi}_{\beta}^r\Big) - k_{d}\,\hat{\psi}_{\beta}^s \label{emf_state_obse_eq14}
+\end{align}
+which converter the pure integration of Eqs.~\eqref{emf_state_obse_eq11}~-~\eqref{emf_state_obse_eq12} into a pt1 low pass filter of Eqs.~\eqref{emf_state_obse_eq13}~-~\eqref{emf_state_obse_eq14}
+\begin{figure}[H]
+	\centering
+	\includegraphics[height= 320pt, angle = 0, 
+	keepaspectratio]{figures/control_layout/pmsm_sv_ctrl_scheme_1.eps}
+	\captionsetup{width=0.5\textwidth, font=small}	
+	\caption{State observer and vector control diagram.}
+	\label{pmsm_sv_ctrl_scheme_1}
+\end{figure}
+
+\subsection{Motor Parameters Deviation Effects}	
+
+Figure~\ref{pmsm_fig1} shows the psm 
+%\begin{figure}[H]
+%	\centering
+%	\includegraphics[height= 300pt, angle = 0, keepaspectratio]{figures/pmsm/pmsm_fig1.eps}
+%	\captionsetup{width=0.5\textwidth, font=small}
+%	\caption{Generic PMSM - vector diagram.}
+%	\label{pmsm_fig1}
+%\end{figure}
+
+\begin{figure}[H]
+	\includegraphics[height= 300pt, angle = 0, keepaspectratio]{figures/pmsm/pmsm_fig1.eps}
+	\captionsetup{width=1\textwidth, font=small}
+	\caption{\lipsum[1]}
+	\label{pmsm_fig1}
+\end{figure}
+
+Figure~\ref{pmsm_fig1} shows the psm 
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[height= 265pt, angle = 0, 
+	keepaspectratio]{figures/pmsm/pmsm_fig2.eps}
+	\captionsetup{width=0.5\textwidth, font=small}	
+	\caption{PMSM - vector diagram case with matching parameters.}
+	\label{pmsm_fig2}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{.5\textwidth}
+		\centering
+		\includegraphics[height= 265pt, angle = 0, 
+		keepaspectratio]{figures/pmsm/pmsm_fig3.eps}
+		\captionsetup{width=0.5\textwidth, font=footnotesize}	
+		\caption{PMSM - vector diagram in under compensation case.}
+		\label{pmsm_fig3}
+	\end{subfigure}%
+	\begin{subfigure}{.5\textwidth}
+		\centering
+		\includegraphics[height= 265pt, angle = 0, 
+		keepaspectratio]{figures/pmsm/pmsm_fig4.eps}
+		\captionsetup{width=0.5\textwidth, font=footnotesize}	
+		\caption{PMSM - vector diagram in over compensation case.}
+		\label{pmsm_fig4}
+	\end{subfigure}
+	\captionsetup{width=0.5\textwidth, font=small}	
+	\caption{Motor parameters effects on rotor position identification.}
+	\label{}
+\end{figure}
+
 
 \section{Model parameters settings}
 
