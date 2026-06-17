@@ -1,35 +1,130 @@
-\documentclass[11pt,a4paper]{scrartcl}
+%\documentclass[12pt,a4paper]{article}
+\documentclass[12pt,a4paper]{scrartcl}
+%\documentclass[11pt,a4paper,oneside]{book}
+\input{../../AAA_template_latex_settings/settings}
 
-\input{settings}
+% =============================================================
+%  
+% =============================================================
 
-\title{\textbf{ 
-	\begin{LARGE}
-		Single Phase Inverter:
-	\end{LARGE} \\[12pt]
-	\begin{LARGE}
-		architecture, control, and simulation results.
-	\end{LARGE}
-	}
+\newcommand{\DocCategory}{Technical Research Report}
+\newcommand{\DocField}{Power Electronics and Control Systems}
+
+\newcommand{\DocTitle}{%
+	{\fontsize{20}{24}\selectfont\bfseries Single Phase Inverter:} \\[16pt]
+	{\fontsize{16}{20}\selectfont\bfseries analysis of architecture and control strategies.}
 }
-\author{\textbf{Davide Bagnara}}
 
+\newcommand{\DocSubtitle}{%
+	Single phase inverter: investigation on different control architecture and impact on performance.
+}
+
+\newcommand{\DocAuthor}{Davide Bagnara}
+\newcommand{\DocDate}{June 2026}
+
+\newcommand{\DocAbstract}{%
+	Single phase inverter: investigation on different control architecture and impact on performance.
+}
+
+% Tre righe metadati in fondo (label small caps + valore)
+\newcommand{\MetaLabelA}{Project Repository}
+\newcommand{\MetaValueA}{https://github.com/pwr-control/single-phase-inverter.git}
+\newcommand{\MetaValueAUrl}{https://github.com/pwr-control/single-phase-inverter.git}
+\newcommand{\MetaValueALabel}{single-phase-inverter.git}
+
+
+\newcommand{\MetaLabelB}{Framework}
+\newcommand{\MetaValueB}{MATLAB/Simulink/Simscape}
+
+\newcommand{\MetaLabelC}{Architecture}
+\newcommand{\MetaValueC}{SiC, EiceDRIVER, Customized Power Supplies}
+
+% =============================================================
+%  FRONTESPIZIO
+% =============================================================
 \begin{document}
-	\thispagestyle{firstpage}
-	\begin{mybox}
-		\maketitle
-		\vspace{100mm}
-	\end{mybox}
+	\titlepage
+	% ---- Intestazione centrata ----
+	\begin{center}
+		{\Large\scshape \DocCategory}\\[8pt]
+		{\large\scshape \DocField}
+	\end{center}
+	
+	\vspace{36pt}
+	\noindent\rule{\linewidth}{0.8pt}
+	
+	% ---- Titolo ----
+	\vspace{16pt}
+	\begin{center}
+		\DocTitle
+	\end{center}
+	
+	\vspace{4pt}
+	\noindent\rule{\linewidth}{2.2pt}
+	
+	% ---- Sottotitolo ----
+	%\vspace{14pt}
+	\begin{center}
+		\begin{onehalfspace}
+			{\large\itshape \DocSubtitle}
+		\end{onehalfspace}
+	\end{center}
+	
+	% ---- Spazio prima di Autore/Data ----
+	\vspace{18pt}
+	
+	% ---- Author / Date su due colonne ----
+	\begin{minipage}{0.92\linewidth}
+		\noindent
+		\begin{minipage}[t]{0.48\linewidth}
+			\textbf{Author:}\\[2pt]
+			\DocAuthor
+		\end{minipage}%
+		\hfill
+		\begin{minipage}[t]{0.48\linewidth}
+			\raggedleft
+			\textbf{Date:}\\[2pt]
+			\DocDate
+		\end{minipage}
+	\end{minipage}
+	% ---- Spazio prima dell'abstract ----
+	\vspace{36pt}
+	
+	% ---- Abstract indentato ----
+	\begin{center}
+		\begin{minipage}{0.85\linewidth}
+			%    \small
+			\footnotesize 
+			\begin{onehalfspace}
+				\textbf{Abstract:} \DocAbstract
+			\end{onehalfspace}
+		\end{minipage}
+	\end{center}
+	
+	% ---- Spazio prima dei metadati ----
+	\vfill
+	
+	% ---- Metadati in fondo ----
+	\noindent
+	\begin{tabular}{@{} r @{\quad} l @{}}
+		%		\textsc{\MetaLabelA:} & {\url{\MetaValueA}} \\[3pt]
+		\textsc{\MetaLabelA:} & {\href{\MetaValueAUrl}{\MetaValueALabel}} \\[3pt]
+		\textsc{\MetaLabelB:} & {\MetaValueB}       \\[3pt]
+		%		\textsc{\small\MetaLabelC:} & {\small\MetaValueC}       \\
+	\end{tabular}
+	
+	% =============================================================
+	%  Fine frontespizio
+	% =============================================================
 	\newpage
+	\pagenumbering{arabic}
+	\setcounter{page}{1}
 	\tableofcontents
 	\listoffigures	
 	\listoftables
 	\newpage
 	
-%\chapter*{}	
-%\begin{adjustwidth}{50pt}{50pt}
-%		\textit{In the present document the design and model derivation of a CLL-Resonant DC/DC converter is reported. The document includes the control strategy and additional control loops for load harmonic compensation.}
-%\end{adjustwidth}
-\begin{onehalfspace}
+	\begin{onehalfspace}
 \section{Introduction}
 In this document a study for a single phase inverter is shown. 
 
