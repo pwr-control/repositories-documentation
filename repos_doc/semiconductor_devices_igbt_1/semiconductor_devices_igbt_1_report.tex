@@ -1,30 +1,126 @@
-\documentclass[11pt,a4paper]{scrartcl}
+%\documentclass[11pt,a4paper]{article}
+%\documentclass[12pt,a4paper]{scrartcl}
+\documentclass[12pt,a4paper,oneside]{book}
+\input{../../AAA_template_latex_settings/settings}
 
-\input{../latex_settings/settings.tex}
+% =============================================================
+%  
+% =============================================================
 
-\title{\textbf{
-		\begin{LARGE}
-			DPTs for 690\,V EDrive IGBT Module:
-		\end{LARGE} \\[12pt]
-		\begin{Large}
-			Evaluation with different driver concepts.
-		\end{Large}
-}}
-\author{\textbf{Davide Bagnara}}
+\newcommand{\DocCategory}{Technical Research Report}
+\newcommand{\DocField}{Power Electronics and Control Systems}
 
+\newcommand{\DocTitle}{%
+	{\fontsize{20}{24}\selectfont\bfseries IGBTs performance analysis:} \\[16pt]
+	{\fontsize{16}{20}\selectfont\bfseries application to electrical drives.}
+}
+\newcommand{\DocSubtitle}{%
+	Exploring different IGBT for an electrical drive.
+}
+
+\newcommand{\DocAuthor}{Davide Bagnara}
+\newcommand{\DocDate}{April 2026}
+
+\newcommand{\DocAbstract}{%
+This feasibility study investigates the potential adoption of the FF1200R17IP5P (Infineon) IGBT module as an alternative to the currently used DP650B1700 (Danfoss), FF650R17IE4 (Infineon), and FF650R17IE4DB2 (Infineon) in the 690\,V EDrive platform. In parallel to a theoretical power losses evaluation a series of Double Pulse Tests (DPTs) were carried out to characterize and compare the switching behavior of the main module DP650B1700 (Danfoss series)  and FF1200R17IP5P (new Infineon) under representative operating conditions. The evaluation also covers compatibility with both the legacy DB1.00 and the updated DB1.51 driver boards, in order to assess whether any hardware changes are required for a potential transition. The results and observations from this study aim to support the suitability of the FF1200R17IP5P as a replacement for the DP650B1700, FF650R17IE4DB2, and FF650R17IE4 modules.
+}
+
+% Tre righe metadati in fondo (label small caps + valore)
+\newcommand{\MetaLabelA}{Project Repository}
+\newcommand{\MetaValueA}{https://github.com/pwr-control/repositories-documentation.git}
+\newcommand{\MetaValueAUrl}{https://github.com/pwr-control/repositories-documentation.git}
+\newcommand{\MetaValueALabel}{repositories-documentation.git}
+
+\newcommand{\MetaLabelB}{Framework}
+\newcommand{\MetaValueB}{MATLAB/Simulink/Simscape}
+
+\newcommand{\MetaLabelC}{Architecture}
+\newcommand{\MetaValueC}{SiC, EiceDRIVER, Customized Power Supplies}
+
+% =============================================================
+%  FRONTESPIZIO
+% =============================================================
 \begin{document}
-	\thispagestyle{firstpage}
-	\begin{mybox}
-		\maketitle
-		\vspace{100mm}
-	\end{mybox}
+	\titlepage
+	% ---- Intestazione centrata ----
+	\begin{center}
+		{\Large\scshape \DocCategory}\\[8pt]
+		{\large\scshape \DocField}
+	\end{center}
+	
+	\vspace{18pt}
+	\noindent\rule{\linewidth}{0.8pt}
+	
+	% ---- Titolo ----
+	\vspace{28pt}
+	\begin{center}
+		\DocTitle
+	\end{center}
+	
+	\vspace{4pt}
+	\noindent\rule{\linewidth}{2.2pt}
+	
+	% ---- Sottotitolo ----
+	\vspace{14pt}
+	\begin{center}
+		\begin{onehalfspace}
+			{\large\itshape \DocSubtitle}
+		\end{onehalfspace}
+	\end{center}
+	
+	% ---- Spazio prima di Autore/Data ----
+	\vspace{18pt}
+	
+	% ---- Author / Date su due colonne ----
+	\begin{minipage}{0.92\linewidth}
+		\noindent
+		\begin{minipage}[t]{0.48\linewidth}
+			\textbf{Author:}\\[2pt]
+			\DocAuthor
+		\end{minipage}%
+		\hfill
+		\begin{minipage}[t]{0.48\linewidth}
+			\raggedleft
+			\textbf{Date:}\\[2pt]
+			\DocDate
+		\end{minipage}
+	\end{minipage}
+	% ---- Spazio prima dell'abstract ----
+	\vspace{18pt}
+	
+	% ---- Abstract indentato ----
+	\begin{center}
+		\begin{minipage}{0.85\linewidth}
+			%    \small
+			\footnotesize 
+			\begin{onehalfspace}
+				\textbf{Abstract:} \DocAbstract
+			\end{onehalfspace}
+		\end{minipage}
+	\end{center}
+	
+	% ---- Spazio prima dei metadati ----
+	\vfill
+	
+	% ---- Metadati in fondo ----
+	\noindent
+	\begin{tabular}{@{} r @{\quad} l @{}}
+		\textsc{\MetaLabelA:} & {\href{\MetaValueAUrl}{\MetaValueALabel}} \\[3pt]
+		\textsc{\MetaLabelB:} & {\MetaValueB}       \\[3pt]
+		%		\textsc{\small\MetaLabelC:} & {\small\MetaValueC}       \\
+	\end{tabular}
+	
+	% =============================================================
+	%  Fine frontespizio
+	% =============================================================
 	\newpage
+	\pagenumbering{arabic}
+	\setcounter{page}{1}
 	\tableofcontents
-	\listoffigures
+	\listoffigures	
 	\listoftables
-	
-	
 	\newpage
+	
 	\subsection*{Nomenclature}
 	\begin{itemize}
 		\item[--] \textbf{AFE}: AC/DC three phase active front end;
@@ -76,13 +172,6 @@
 	\newpage
 
 	\begin{onehalfspace}
-		\begin{abstract}
-			\small
-			\textbf{This feasibility study investigates the potential adoption of the FF1200R17IP5P (Infineon) IGBT module as an alternative to the currently used DP650B1700 (Danfoss), FF650R17IE4 (Infineon), and FF650R17IE4DB2 (Infineon) in the 690\,V EDrive platform. In parallel to a theoretical power losses evaluation a series of Double Pulse Tests (DPTs) were carried out to characterize and compare the switching behavior of the main module DP650B1700 (Danfoss series)  and FF1200R17IP5P (new Infineon) under representative operating conditions. The evaluation also covers compatibility with both the legacy DB1.00 and the updated DB1.51 driver boards, in order to assess whether any hardware changes are required for a potential transition. The results and observations from this study aim to support the suitability of the FF1200R17IP5P as a replacement for the DP650B1700, FF650R17IE4DB2, and FF650R17IE4 modules.}
-		\end{abstract}
-
-
-
 		\section{Motivations: original design versus new performance requirements}
 		The EDrive 690\,V has been designed primarily for wind applications with the following
 		nominal specifications:
