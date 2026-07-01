@@ -1,0 +1,166 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{geometry}
+\usepackage{siunitx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\geometry{margin=2.5cm}
+
+\title{Passive Current Sharing in Parallel-Connected\\ Medium-Frequency Transformers\\
+\large Static Equilibrium Analysis under Parametric Mismatch}
+\author{Davide Bagnara}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This note addresses a specific and practically relevant question: when $N$ medium-frequency transformers, nominally identical but with a small parametric mismatch (e.g. $\pm 2\%$ on leakage inductance), are connected with primaries driven by a common voltage source and secondaries tied to a common node -- with \emph{no active current-sharing control} -- does the system settle into a static equilibrium, or does it tend to diverge toward a single dominant current path? We show, from first principles, that the system is governed by a purely algebraic (memoryless) impedance-divider relation, and therefore admits a unique, stable static solution. We quantify the resulting current imbalance as a function of the inductance mismatch and the number of paralleled modules, distinguish the worst-case and statistical scenarios, and discuss the two physical mechanisms -- thermal feedback and core saturation -- that can in principle couple modules dynamically, showing that only the latter constitutes a genuine destabilizing pathway.
+\end{abstract}
+
+\section{Problem Statement}
+
+Consider $N$ transformers, identical by part number, connected as follows:
+\begin{itemize}
+  \item All primaries are driven in parallel by the \emph{same} voltage source $v(t)$ (e.g.\ the primary-side bridge of a medium-frequency power converter), so each transformer sees an identical applied primary voltage waveform.
+  \item All secondaries are tied together at a common node, feeding a common load.
+  \item The system is fully passive: there is no per-module phase-shift control, no current-mode regulation, no active balancing of any kind.
+  \item Each transformer differs from the nominal design only by a small manufacturing tolerance, typically reflected in the leakage inductance $L_k$, on the order of a few percent.
+\end{itemize}
+
+The question is whether such a system reaches a stable current distribution among modules, or whether positive feedback can drive an increasing fraction of the total current into a single module over time.
+
+\section{Circuit Model}
+
+At medium frequency ($\omega$ in the kHz range), the transfer impedance of each transformer secondary is dominated by the leakage inductance, with the winding resistance contributing a small, comparatively frequency-independent term:
+\begin{equation}
+Z_i = R_i + j\omega L_{k,i}, \qquad \omega L_{k,i} \gg R_i .
+\end{equation}
+Hence, to good approximation,
+\begin{equation}
+Z_i \approx j\omega L_{k,i}.
+\end{equation}
+
+Write the leakage inductance of module $i$ as a perturbation about the nominal value $L_0$:
+\begin{equation}
+L_{k,i} = L_0\left(1+\varepsilon_i\right), \qquad |\varepsilon_i| \ll 1,
+\end{equation}
+where $\varepsilon_i$ is the per-unit manufacturing tolerance of module $i$ (e.g.\ $\varepsilon_i \in [-0.02, +0.02]$ for a $\pm 2\%$ spread).
+
+\subsection{Why this is an algebraic, not a dynamic, problem}
+
+Because all primaries are driven by the \emph{same} voltage source and all secondaries are tied to the \emph{same} node, the network reduces -- at every instant, or equivalently for every harmonic, of the steady-state waveform -- to a current divider: $N$ impedances $Z_i$ in parallel, fed by a common voltage and sinking into a common node. This is a purely algebraic relation obtained from instantaneous KVL/KCL; there is no integrator, no state variable that accumulates an error over time, and therefore no mechanism by which a transient imbalance could be amplified cycle after cycle. The system has a unique fixed point, and that fixed point is reached essentially instantaneously (within the first switching cycle), not asymptotically through some slow drift.
+
+This is the fundamental distinction with respect to actively-controlled architectures (e.g.\ ISOP-DAB stacks with distributed input-voltage or output-current regulation), where local control loops can create genuine positive-feedback paths between modules. No such path exists here.
+
+\section{Static Current Distribution}
+
+Let $I_{tot}$ be the total secondary current drawn by the common load, and $I_i$ the current contributed by module $i$. By the current-divider relation,
+\begin{equation}
+I_i = \frac{1/Z_i}{\displaystyle\sum_{k=1}^N 1/Z_k}\; I_{tot}.
+\end{equation}
+
+Substituting $Z_i \approx j\omega L_0 (1+\varepsilon_i)$ and normalizing to the average current $\bar I = I_{tot}/N$:
+
+\begin{equation}
+\frac{I_i}{\bar I} = \frac{\dfrac{1}{1+\varepsilon_i}}{\dfrac{1}{N}\displaystyle\sum_{k=1}^N \dfrac{1}{1+\varepsilon_k}}.
+\end{equation}
+
+\subsection{First-order (small mismatch) expansion}
+
+For $|\varepsilon_i|\ll 1$, using $\dfrac{1}{1+\varepsilon_i} \approx 1-\varepsilon_i+\varepsilon_i^2-\dots$, and keeping first order:
+
+\begin{equation}
+\frac{I_i}{\bar I} \approx \left(1-\varepsilon_i\right)\Big/\left(1-\bar\varepsilon\right) \approx 1-\varepsilon_i+\bar\varepsilon,
+\qquad \bar\varepsilon \triangleq \frac{1}{N}\sum_{k=1}^N \varepsilon_k.
+\end{equation}
+
+\textbf{Key result:} to first order, the per-unit current deviation of module $i$ from the mean is simply
+\begin{equation}
+\boxed{\;\delta_i \triangleq \frac{I_i-\bar I}{\bar I} \approx \bar\varepsilon-\varepsilon_i\;}
+\end{equation}
+i.e.\ a module with \emph{below-average} leakage inductance draws \emph{above-average} current, on a one-to-one basis at first order. There is no amplification factor; the current imbalance is of the same order of magnitude as the inductance mismatch itself.
+
+\section{Worst-Case and Statistical Imbalance}
+
+\subsection{Worst-case bound}
+
+If the tolerance band is $|\varepsilon_i|\le \varepsilon_{max}$ for all $i$, the worst case occurs when one module sits at $\varepsilon_i = -\varepsilon_{max}$ (lowest impedance, highest current) while the population mean $\bar\varepsilon$ is pulled toward $+\varepsilon_{max}$ (e.g.\ all other modules at $+\varepsilon_{max}$, which is the configuration that maximizes $\bar\varepsilon - \varepsilon_i$ for the extreme module). In the limit of large $N$, $\bar\varepsilon \to \varepsilon_{max}$ for that adversarial configuration, giving:
+
+\begin{equation}
+\delta_{max} \approx 2\,\varepsilon_{max} \qquad (N\to\infty,\ \text{adversarial mismatch}).
+\end{equation}
+
+For $\varepsilon_{max}=2\%$, this gives a worst-case theoretical bound of $\delta_{max}\approx 4\%$ -- well inside the $10\%$ design margin in the original question. Note this is a \emph{pathological} worst case requiring all other modules to be biased in the same direction; in any real production batch this is statistically very unlikely for $N>2$--$3$.
+
+\subsection{Statistical (random mismatch) case}
+
+If the $\varepsilon_i$ are independent random variables with zero mean and standard deviation $\sigma_\varepsilon$ (a realistic assumption for an uncorrelated manufacturing tolerance), then from Eq.~(7):
+\begin{equation}
+\delta_i = \bar\varepsilon - \varepsilon_i,
+\end{equation}
+and since $\bar\varepsilon = \frac{1}{N}\sum_k \varepsilon_k$ is itself a random variable with variance $\sigma_\varepsilon^2/N$, independent contributions give:
+\begin{equation}
+\mathrm{Var}(\delta_i) = \mathrm{Var}(\varepsilon_i) + \mathrm{Var}(\bar\varepsilon) - 2\,\mathrm{Cov}(\varepsilon_i,\bar\varepsilon).
+\end{equation}
+Using $\mathrm{Cov}(\varepsilon_i,\bar\varepsilon) = \sigma_\varepsilon^2/N$:
+\begin{equation}
+\mathrm{Var}(\delta_i) = \sigma_\varepsilon^2 + \frac{\sigma_\varepsilon^2}{N} - \frac{2\sigma_\varepsilon^2}{N} = \sigma_\varepsilon^2\left(1-\frac{1}{N}\right),
+\end{equation}
+\begin{equation}
+\boxed{\;\sigma_\delta \approx \sigma_\varepsilon\sqrt{1-\dfrac{1}{N}}\;}
+\end{equation}
+
+For $N$ large, $\sigma_\delta \to \sigma_\varepsilon$: the standard deviation of the per-module current imbalance converges to the standard deviation of the inductance tolerance itself -- it does \emph{not} grow with $N$. This confirms that adding more paralleled modules does not, by itself, worsen the imbalance; it is purely a function of the unit-to-unit spread.
+
+\subsection{Numerical summary}
+
+\begin{center}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Scenario & $\varepsilon$ spread & $N$ & Resulting current imbalance \\
+\midrule
+Worst-case (adversarial) & $\pm 2\%$ & any & $\approx 4\%$ \\
+Statistical, $1\sigma$ & $2\%$ (as $\sigma$) & $4$ & $\approx 1.7\%$ \\
+Statistical, $1\sigma$ & $2\%$ (as $\sigma$) & $\to\infty$ & $\approx 2.0\%$ \\
+Statistical, $3\sigma$ & $2\%$ (as $\sigma$) & $\to\infty$ & $\approx 6.0\%$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+In all realistic cases, the resulting imbalance remains comfortably within a $10\%$ design margin for a $2\%$-class mismatch on $L_k$.
+
+\section{Dynamic Coupling Mechanisms: Stabilizing vs.\ Destabilizing}
+
+The algebraic analysis above describes the instantaneous (memoryless) equilibrium. Two physical effects introduce genuine dynamics into the system; their sign determines whether they reinforce or counteract the static imbalance.
+
+\subsection{Thermal feedback -- self-stabilizing}
+
+The module carrying above-average current dissipates more $I^2R$ loss in its windings, raising its temperature above the others. Since copper has a positive temperature coefficient of resistivity,
+\begin{equation}
+R_i(T) = R_i(T_0)\left[1+\alpha_{Cu}(T-T_0)\right], \qquad \alpha_{Cu}\approx 0.393\%/^\circ\text{C},
+\end{equation}
+the resistive (real) part of $Z_i$ increases for the hotter, more heavily loaded module. This \emph{increases} its effective impedance, which in turn \emph{reduces} the current it draws relative to the others. This is a negative-feedback loop: it is slow (thermal time constants of seconds to minutes, vs.\ electrical time constants of microseconds), but it acts to flatten the imbalance over time, not to amplify it. No divergence can arise from this path with copper windings.
+
+\subsection{Core saturation -- potentially destabilizing}
+
+The leakage inductance $L_k$ is largely geometry-determined and relatively insensitive to flux level, but the magnetizing branch is not: if core tolerances (gap length, relative permeability $\mu_r$, residual flux) combine with the current imbalance such that the more heavily loaded module operates closer to saturation, its incremental permeability drops, $L_k$ may decrease further (depending on core construction), and the module could draw an even larger share of the current. This \emph{is} a positive-feedback path, but it is qualitatively distinct from the linear-impedance mismatch discussed above: it requires significant flux excursion toward saturation, and is therefore a design margin issue (core sizing, flux density derating) rather than an inherent property of paralleling nominally-matched transformers. It should be checked explicitly against the peak flux density expected under the worst-case current imbalance computed in Section~3, but it does not arise under normal (unsaturated) operating conditions.
+
+\section{Conclusion}
+
+For $N$ nominally identical medium-frequency transformers connected with common-driven primaries and common-node secondaries, in a fully passive configuration with no active current-sharing control:
+
+\begin{enumerate}
+  \item The current distribution among modules is governed by an algebraic impedance-divider relation with no memory and no integrator -- the system reaches a unique static equilibrium, not an evolving or diverging state.
+  \item For a leakage-inductance mismatch on the order of $\pm 2\%$, the resulting current imbalance is of the same order of magnitude (worst-case $\approx 4\%$, statistical $1\sigma\approx 2\%$), well within a $10\%$ design margin.
+  \item Increasing the number of paralleled modules $N$ does not worsen the statistical imbalance; it saturates at $\sigma_\delta\to\sigma_\varepsilon$.
+  \item Thermal coupling via copper resistivity is self-stabilizing.
+  \item The only genuine positive-feedback (destabilizing) path is core saturation under combined tolerance and current imbalance, which is a flux-density margin issue to be verified separately, not an intrinsic consequence of paralleling matched transformers.
+\end{enumerate}
+
+This stands in sharp contrast to actively-controlled module-paralleling architectures (e.g.\ ISOP-connected DAB stacks with distributed input-voltage or output-current control), where the control structure itself can introduce genuine positive-feedback paths between modules -- a fundamentally different problem from the passive transformer-paralleling case treated here.
+
+\end{document}

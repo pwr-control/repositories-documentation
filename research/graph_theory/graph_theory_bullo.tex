@@ -1,0 +1,472 @@
+%% ============================================================
+%% Sunto: Teoria dei Grafi Algebrica
+%% Propedeutico a: F. Bullo, "Lectures on Network Systems"
+%% Autore: Davide Bagnara
+%% ============================================================
+\documentclass[a4paper,11pt]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[provide=*,italian]{babel}
+\usepackage{geometry}
+\geometry{a4paper, top=2.5cm, bottom=2.5cm, left=2.8cm, right=2.8cm}
+
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{mathtools}
+\usepackage{bm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{tikz}
+\usetikzlibrary{graphs, positioning, arrows.meta, calc}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!60!black,
+  urlcolor=blue!60!black,
+  citecolor=blue!60!black,
+}
+
+%% ------ Teoremi ------
+\theoremstyle{definition}
+\newtheorem{defn}{Definizione}[section]
+\newtheorem{esempio}{Esempio}[section]
+
+\theoremstyle{plain}
+\newtheorem{thm}{Teorema}[section]
+\newtheorem{prop}{Proposizione}[section]
+\newtheorem{lem}{Lemma}[section]
+\newtheorem{cor}{Corollario}[section]
+
+\theoremstyle{remark}
+\newtheorem{oss}{Osservazione}[section]
+
+%% ------ Comandi custom ------
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\mat}[1]{\mathbf{#1}}
+\newcommand{\vect}[1]{\bm{#1}}
+\newcommand{\ones}{\mathbf{1}}
+\newcommand{\zeros}{\mathbf{0}}
+\newcommand{\spec}[1]{\sigma\!\left(#1\right)}
+\newcommand{\specrad}[1]{\varrho\!\left(#1\right)}
+\DeclareMathOperator{\diag}{diag}
+\DeclareMathOperator{\rank}{rank}
+\DeclareMathOperator{\tr}{tr}
+\DeclareMathOperator{\im}{im}
+\DeclareMathOperator{\Ker}{ker}
+\DeclareMathOperator{\outdeg}{outdeg}
+\DeclareMathOperator{\indeg}{indeg}
+
+%% ------ Titolo ------
+\title{%
+  \textbf{Teoria dei Grafi Algebrica}\\[0.4em]
+  \large Sunto propedeutico a\\
+  \textit{Lectures on Network Systems} --- F.~Bullo, Ed.~1.7 (2024)
+}
+\author{claude}
+\date{\today}
+
+%% ============================================================
+\begin{document}
+\maketitle
+\tableofcontents
+\vspace{1em}
+\noindent\textbf{Nota d'uso.} Il documento copre la teoria dei grafi nella forma
+algebrica utilizzata da Bullo. L'enfasi è sulle matrici associate al grafo
+(adiacenza, Laplaciano, incidenza) e sulle loro proprietà spettrali, che sono
+il linguaggio di quasi tutti i risultati del libro.
+
+% ============================================================
+\section{Grafi: definizioni fondamentali}
+% ============================================================
+
+\begin{defn}[Grafo non orientato]
+Un \emph{grafo non orientato} è una coppia $\mathcal{G} = (\mathcal{V}, \mathcal{E})$
+dove:
+\begin{itemize}[noitemsep]
+  \item $\mathcal{V} = \{1, 2, \ldots, n\}$ è l'insieme dei \emph{nodi} (o vertici),
+  \item $\mathcal{E} \subseteq \{\{i,j\} \mid i,j \in \mathcal{V},\; i \neq j\}$
+        è l'insieme degli \emph{archi}.
+\end{itemize}
+\end{defn}
+
+\begin{defn}[Grafo orientato (digrafo)]
+Un \emph{grafo orientato} è una coppia $\mathcal{G} = (\mathcal{V}, \mathcal{E})$
+dove $\mathcal{E} \subseteq \mathcal{V} \times \mathcal{V}$, con $(i,j) \in \mathcal{E}$
+che rappresenta un arco \emph{da} $i$ \emph{verso} $j$. Si richiede $(i,i) \notin \mathcal{E}$
+(no auto-loop).
+\end{defn}
+
+\begin{defn}[Pesi]
+Un grafo \emph{pesato} associa a ciascun arco $(i,j)$ un peso
+$w_{ij} \in \R_{>0}$. Se non diversamente specificato si assume $w_{ij}=1$.
+\end{defn}
+
+\subsection{Gradi di un nodo}
+
+\begin{defn}[Grado (caso non orientato)]
+Il \emph{grado} di un nodo $i$ è
+\[
+  d_i = \sum_{j \,:\, \{i,j\}\in\mathcal{E}} w_{ij}.
+\]
+\end{defn}
+
+\begin{defn}[Grado entrante e uscente (caso orientato)]
+\[
+  \outdeg(i) = \sum_{j \,:\, (i,j)\in\mathcal{E}} w_{ij}, \qquad
+  \indeg(i)  = \sum_{j \,:\, (j,i)\in\mathcal{E}} w_{ji}.
+\]
+\end{defn}
+
+\begin{defn}[Nodo bilanciato]
+Un nodo $i$ è \emph{bilanciato} se $\outdeg(i) = \indeg(i)$.
+Un grafo orientato in cui ogni nodo è bilanciato si dice \emph{bilanciato}.
+\end{defn}
+
+% ============================================================
+\section{Connettività}
+% ============================================================
+
+\begin{defn}[Cammino]
+Un \emph{cammino} da $i$ a $j$ è una sequenza di nodi
+$i = v_0, v_1, \ldots, v_k = j$ tale che $(v_{l-1}, v_l) \in \mathcal{E}$
+per ogni $l = 1, \ldots, k$. Il numero $k$ è la \emph{lunghezza} del cammino.
+\end{defn}
+
+\begin{defn}[Connettività]
+\begin{itemize}[noitemsep]
+  \item Un grafo non orientato è \emph{connesso} se esiste un cammino tra
+        ogni coppia di nodi.
+  \item Un grafo orientato è \emph{fortemente connesso} se esiste un cammino
+        orientato da $i$ a $j$ \emph{e} da $j$ a $i$ per ogni coppia
+        $(i,j)$.
+  \item È \emph{debolmente connesso} se il grafo non orientato sottostante
+        (ottenuto ignorando gli orientamenti) è connesso.
+\end{itemize}
+\end{defn}
+
+\begin{defn}[Albero ricoprente (spanning tree)]
+Un \emph{albero ricoprente} di un grafo connesso $\mathcal{G}$ con $n$ nodi è un
+sottografo connesso privo di cicli che include tutti gli $n$ nodi e $n-1$ archi.
+In un grafo orientato si parla di \emph{in-branching} (o \emph{spanning tree verso
+una radice}) se esiste un nodo radice $r$ tale che ogni altro nodo possiede un
+cammino orientato verso $r$.
+\end{defn}
+
+\begin{defn}[Componente fortemente connessa (SCC)]
+Una \emph{componente fortemente connessa} è un sottografo massimale fortemente
+connesso. Ogni grafo orientato ammette una partizione unica in SCC.
+\end{defn}
+
+% ============================================================
+\section{Matrici associate al grafo}
+% ============================================================
+
+Sia $\mathcal{G}=(\mathcal{V},\mathcal{E})$ con $|\mathcal{V}|=n$ e $|\mathcal{E}|=m$.
+
+\subsection{Matrice di adiacenza}
+
+\begin{defn}[Matrice di adiacenza]
+La \emph{matrice di adiacenza pesata} $\mat{A} \in \R^{n \times n}$ è definita da
+\[
+  [\mat{A}]_{ij} = a_{ij} =
+  \begin{cases}
+    w_{ij} & \text{se } (i,j) \in \mathcal{E},\\
+    0       & \text{altrimenti.}
+  \end{cases}
+\]
+Per un grafo non orientato $\mat{A} = \mat{A}^\top$ (simmetrica).
+\end{defn}
+
+\begin{oss}
+Per un grafo non orientato non pesato, $a_{ij} \in \{0,1\}$ e
+$\mat{A}^k_{ij}$ conta il numero di cammini di lunghezza $k$ da $i$ a $j$.
+\end{oss}
+
+\subsection{Matrice dei gradi}
+
+\begin{defn}[Matrice dei gradi]
+\[
+  \mat{D} = \diag(d_1, d_2, \ldots, d_n),
+  \quad d_i = \sum_{j=1}^n a_{ij}.
+\]
+Per un grafo orientato si usa convenzionalmente il grado \emph{uscente}
+$d_i^{\text{out}}$, a meno di specificazione diversa.
+\end{defn}
+
+\subsection{Matrice Laplaciana}
+
+\begin{defn}[Laplaciano (caso non orientato)]
+Il \emph{Laplaciano del grafo} è
+\[
+  \mat{L} = \mat{D} - \mat{A}.
+\]
+Esplicitamente:
+\[
+  [\mat{L}]_{ij} =
+  \begin{cases}
+    d_i      & i = j,\\
+    -w_{ij}  & (i,j) \in \mathcal{E},\\
+    0         & \text{altrimenti.}
+  \end{cases}
+\]
+\end{defn}
+
+\begin{defn}[Laplaciano (caso orientato)]
+Per un grafo orientato, il \emph{Laplaciano orientato} (o \emph{out-degree
+Laplacian}) è ancora $\mat{L} = \mat{D}^{\text{out}} - \mat{A}$, dove
+$\mat{D}^{\text{out}} = \diag(d_1^{\text{out}}, \ldots, d_n^{\text{out}})$.
+\end{defn}
+
+\begin{prop}[Proprietà fondamentali di $\mat{L}$]
+\label{prop:laplacian}
+\begin{enumerate}[label=(\roman*), noitemsep]
+  \item \textbf{Somma delle righe nulla:} $\mat{L}\,\ones = \zeros$,
+        ossia $\ones \in \Ker(\mat{L})$, dove $\ones = (1,\ldots,1)^\top$.
+  \item \textbf{Semidefinita positiva (caso non orientato):} $\mat{L} \succeq 0$.
+        Più precisamente, per ogni $\vect{x} \in \R^n$:
+        \[
+          \vect{x}^\top \mat{L}\, \vect{x}
+          = \sum_{\{i,j\}\in\mathcal{E}} w_{ij}(x_i - x_j)^2 \geq 0.
+        \]
+  \item \textbf{Numero di zeri di $\mat{L}$:} il numero di autovalori nulli
+        (con molteplicità) è uguale al numero di componenti connesse del grafo.
+  \item \textbf{Simmetria (caso non orientato):} $\mat{L} = \mat{L}^\top$.
+\end{enumerate}
+\end{prop}
+
+\begin{thm}[Connettività algebrica --- Fiedler, 1973]
+Sia $\mathcal{G}$ un grafo non orientato connesso. Gli autovalori di $\mat{L}$
+soddisfano
+\[
+  0 = \lambda_1 < \lambda_2 \leq \lambda_3 \leq \cdots \leq \lambda_n.
+\]
+Il secondo autovalore $\lambda_2 > 0$, detto \emph{valore di Fiedler} o
+\emph{connettività algebrica}, misura quanto il grafo sia ``ben connesso'':
+più $\lambda_2$ è grande, più veloce è il consenso sulla rete.
+\end{thm}
+
+\begin{oss}[Importanza in Bullo]
+Il Laplaciano $\mat{L}$ è la matrice centrale del libro. Il sistema di consenso
+$\dot{\vect{x}} = -\mat{L}\,\vect{x}$ converge a $x_i \to \bar{x}$ per ogni $i$
+se e solo se $\mathcal{G}$ è connesso (non orientato) oppure contiene un albero
+ricoprente (orientato).
+\end{oss}
+
+\subsection{Matrice di incidenza orientata}
+
+\begin{defn}[Matrice di incidenza]
+Dopo aver assegnato un'orientazione arbitraria agli archi (indicizzati
+$e_1, \ldots, e_m$), la \emph{matrice di incidenza orientata}
+$\mat{B} \in \R^{n \times m}$ è definita da
+\[
+  [\mat{B}]_{ik} =
+  \begin{cases}
+    +1  & \text{se il nodo } i \text{ è la testa dell'arco } e_k,\\
+    -1  & \text{se il nodo } i \text{ è la coda dell'arco } e_k,\\
+    0   & \text{altrimenti.}
+  \end{cases}
+\]
+\end{defn}
+
+\begin{prop}[Relazione $\mat{L} = \mat{B}\mat{W}\mat{B}^\top$]
+Sia $\mat{W} = \diag(w_1, \ldots, w_m) \succ 0$ la matrice diagonale dei pesi
+degli archi. Allora
+\[
+  \mat{L} = \mat{B}\,\mat{W}\,\mat{B}^\top.
+\]
+Per archi non pesati ($\mat{W}=\mat{I}$): $\mat{L} = \mat{B}\mat{B}^\top$.
+\end{prop}
+
+\begin{proof}[Dimostrazione (traccia)]
+Si verifica direttamente che
+$[\mat{B}\mat{W}\mat{B}^\top]_{ij} = \sum_k w_k [\mat{B}]_{ik}[\mat{B}]_{jk}$.
+Per $i=j$ si ottiene $d_i$ (grado); per $i\neq j$ si ottiene $-w_{ij}$
+se $(i,j)\in\mathcal{E}$, $0$ altrimenti.
+\end{proof}
+
+\begin{cor}
+$\rank(\mat{B}) = n - c$, dove $c$ è il numero di componenti connesse di $\mathcal{G}$.
+In particolare, per un grafo connesso, $\rank(\mat{B}) = n-1$.
+\end{cor}
+
+% ============================================================
+\section{Matrici stocastiche e di Perron-Frobenius}
+% ============================================================
+
+Questa sezione collega la teoria dei grafi alla dinamica del consenso
+e alle catene di Markov.
+
+\begin{defn}[Matrice stocastica per righe]
+Una matrice $\mat{P} \in \R^{n\times n}$ con $p_{ij} \geq 0$ e
+$\sum_j p_{ij} = 1$ per ogni $i$ è detta \emph{stocastica per righe}.
+Equivalentemente: $\mat{P}\,\ones = \ones$.
+\end{defn}
+
+\begin{defn}[Matrice stocastica doppia (doubly stochastic)]
+Una matrice è \emph{doppiamente stocastica} se è stocastica sia per righe
+che per colonne: $\mat{P}\,\ones = \ones$ e $\ones^\top \mat{P} = \ones^\top$.
+\end{defn}
+
+\begin{defn}[Matrice non-negativa primitiva]
+Una matrice non-negativa $\mat{A} \geq 0$ è \emph{primitiva} se esiste
+$k \in \N$ tale che $\mat{A}^k > 0$ (tutte le entrate strettamente positive).
+\end{defn}
+
+\begin{thm}[Perron-Frobenius per matrici primitive]
+\label{thm:pf}
+Sia $\mat{A} \geq 0$ primitiva. Allora:
+\begin{enumerate}[label=(\roman*), noitemsep]
+  \item Esiste un unico autovalore reale $\varrho = \specrad{\mat{A}} > 0$
+        (raggio spettrale), detto \emph{autovalore di Perron}.
+  \item $\varrho$ è semplice: $\dim\Ker(\varrho\mat{I}-\mat{A})=1$.
+  \item Gli autovettori destro e sinistro associati a $\varrho$ hanno
+        tutte le componenti strettamente positive.
+  \item Tutti gli altri autovalori $\lambda$ soddisfano $|\lambda| < \varrho$.
+  \item $\mat{A}^k / \varrho^k \to \vect{v}\,\vect{w}^\top$ per $k\to\infty$,
+        dove $\vect{v}, \vect{w}$ sono gli autovettori di Perron
+        normalizzati tali che $\vect{w}^\top\vect{v}=1$.
+\end{enumerate}
+\end{thm}
+
+\begin{cor}[Convergenza delle catene di Markov ergodiche]
+Sia $\mat{P}$ stocastica e primitiva. Allora $\varrho(\mat{P})=1$ e
+\[
+  \lim_{k\to\infty} \mat{P}^k = \ones\,\vect{\pi}^\top,
+\]
+dove $\vect{\pi}^\top \mat{P} = \vect{\pi}^\top$ è la \emph{distribuzione stazionaria}
+(unica, con $\pi_i > 0$, $\sum_i \pi_i = 1$).
+\end{cor}
+
+\begin{oss}[Collegamento con il consenso]
+Il sistema lineare a tempo discreto $\vect{x}(k+1) = \mat{P}\,\vect{x}(k)$ con
+$\mat{P}$ stocastica primitiva converge a $x_i \to \vect{\pi}^\top \vect{x}(0)$
+per ogni $i$. Questo è il risultato base del \emph{consensus averaging} in Bullo,
+Cap.\ 4--5.
+\end{oss}
+
+% ============================================================
+\section{Spettro del Laplaciano: risultati chiave}
+% ============================================================
+
+\subsection{Caso non orientato}
+
+\begin{prop}[Bounds sugli autovalori di $\mat{L}$]
+Per un grafo connesso non orientato con $n$ nodi e grado massimo $d_{\max}$:
+\[
+  0 = \lambda_1 < \lambda_2 \leq \cdots \leq \lambda_n \leq 2\,d_{\max}.
+\]
+Inoltre $\lambda_n = 2d_{\max}$ se e solo se il grafo è bipartito.
+\end{prop}
+
+\begin{prop}[Traccia e determinante]
+\[
+  \tr(\mat{L}) = \sum_{i=1}^n d_i = 2|\mathcal{E}| \quad
+  \text{(non orientato, non pesato)},
+  \qquad
+  \det(\mat{L}) = 0 \quad \text{(sempre).}
+\]
+\end{prop}
+
+\begin{thm}[Matrice-albero di Kirchhoff]
+Il numero di alberi ricoprenti di un grafo non orientato connesso con $n$ nodi è
+\[
+  \tau(\mathcal{G}) = \frac{1}{n} \prod_{i=2}^n \lambda_i
+  = \frac{1}{n}\, \lambda_2 \cdots \lambda_n,
+\]
+dove $\lambda_2, \ldots, \lambda_n$ sono gli autovalori non nulli di $\mat{L}$.
+\end{thm}
+
+\subsection{Caso orientato}
+
+\begin{prop}[Autovettore sinistro]
+Per un grafo orientato, $\ones^\top \mat{L} = \zeros^\top$ (somma delle colonne nulla),
+ma in generale $\mat{L}\,\ones \neq \zeros$.
+Pertanto $0$ è autovalore sinistro di $\mat{L}$ per ogni grafo orientato.
+\end{prop}
+
+\begin{thm}[Condizione di consenso --- grafo orientato]
+Il sistema $\dot{\vect{x}} = -\mat{L}\,\vect{x}$ ammette convergenza al consenso
+(tutti i $x_i(t) \to $ costante comune) se e solo se $\mathcal{G}$ contiene
+un \emph{albero ricoprente orientato} (spanning tree), ovvero se e solo se
+$\mat{L}$ ha un unico autovalore in $0$ (semplice).
+\end{thm}
+
+% ============================================================
+\section{Esempi notevoli di grafi}
+% ============================================================
+
+\begin{esempio}[Grafo completo $K_n$]
+$n$ nodi, tutti connessi tra loro. Matrice di adiacenza: $\mat{A} = \ones\ones^\top - \mat{I}$.
+Laplaciano: $\mat{L} = n\mat{I} - \ones\ones^\top$.
+Spettro: $\lambda_1 = 0$ (semplice), $\lambda_2 = \cdots = \lambda_n = n$.
+\end{esempio}
+
+\begin{esempio}[Grafo cammino $P_n$]
+$n$ nodi in sequenza $1-2-\cdots-n$.
+Autovalori del Laplaciano: $\lambda_k = 2\bigl(1 - \cos\frac{(k-1)\pi}{n}\bigr)$, $k=1,\ldots,n$.
+La connettività algebrica è $\lambda_2 = 2(1-\cos\frac{\pi}{n}) \approx \frac{\pi^2}{n^2}$ per $n$ grande.
+\end{esempio}
+
+\begin{esempio}[Grafo stella $S_n$]
+Un nodo hub connesso a $n-1$ nodi foglia.
+Spettro di $\mat{L}$: $0$, $1$ (con molteplicità $n-2$), $n$.
+\end{esempio}
+
+\begin{esempio}[Grafo anello $C_n$]
+$n$ nodi disposti in anello. Autovalori: $\lambda_k = 2(1 - \cos\frac{2\pi(k-1)}{n})$, $k=1,\ldots,n$.
+La connettività algebrica è $\lambda_2 = 2(1-\cos\frac{2\pi}{n}) \approx \frac{4\pi^2}{n^2}$ per $n$ grande.
+\end{esempio}
+
+% ============================================================
+\section{Riepilogo delle notazioni}
+% ============================================================
+
+\begin{center}
+\renewcommand{\arraystretch}{1.35}
+\begin{tabular}{lll}
+\toprule
+\textbf{Simbolo} & \textbf{Dimensione} & \textbf{Significato} \\
+\midrule
+$\mathcal{V}$    & $n$ elementi        & Insieme dei nodi \\
+$\mathcal{E}$    & $m$ elementi        & Insieme degli archi \\
+$w_{ij}$         & scalare             & Peso dell'arco $(i,j)$ \\
+$\mat{A}$        & $n \times n$        & Matrice di adiacenza \\
+$\mat{D}$        & $n \times n$        & Matrice dei gradi (diagonale) \\
+$\mat{L}$        & $n \times n$        & Laplaciano ($= \mat{D}-\mat{A}$) \\
+$\mat{B}$        & $n \times m$        & Matrice di incidenza orientata \\
+$\mat{W}$        & $m \times m$        & Matrice diagonale dei pesi archi \\
+$\lambda_k$      & scalare             & $k$-esimo autovalore di $\mat{L}$ ($\lambda_1 \leq \cdots \leq \lambda_n$) \\
+$\lambda_2$      & scalare             & Connettività algebrica (valore di Fiedler) \\
+$\varrho(\mat{A})$ & scalare           & Raggio spettrale di $\mat{A}$ \\
+$\ones$          & $\R^n$              & Vettore di tutti uni \\
+$\mat{P}$        & $n\times n$         & Matrice stocastica per righe \\
+$\vect{\pi}$     & $\R^n$              & Distribuzione stazionaria \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% ============================================================
+\section*{Riferimenti bibliografici}
+% ============================================================
+
+\begin{itemize}[noitemsep]
+  \item F.~Bullo, \textit{Lectures on Network Systems}, Ed.~1.7,
+        Kindle Direct Publishing, 2024.
+        \url{https://fbullo.github.io/lns}
+
+  \item C.~Godsil, G.~Royle, \textit{Algebraic Graph Theory},
+        Springer, 2001.
+
+  \item R.~A.~Horn, C.~R.~Johnson, \textit{Matrix Analysis},
+        2nd ed., Cambridge University Press, 2013.
+
+  \item M.~Fiedler, ``Algebraic connectivity of graphs,''
+        \textit{Czechoslovak Math.\ J.}, vol.~23, pp.~298--305, 1973.
+\end{itemize}
+
+\end{document}

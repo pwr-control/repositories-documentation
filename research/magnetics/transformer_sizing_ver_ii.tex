@@ -1,0 +1,377 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage{siunitx}
+\usepackage{booktabs}
+\usepackage{geometry}
+\usepackage{hyperref}
+\geometry{margin=2.5cm}
+
+\title{Single-Phase Power Transformer Sizing\\
+\large A Practical Methodology for High-Frequency, High-Power Designs}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Scope}
+This document summarizes the engineering steps required to dimension a single-phase
+power transformer for switch-mode converter applications (e.g.\ PSFB, DAB, isolated
+DC/DC stages), covering:
+\begin{itemize}
+    \item turns ratio determination from the voltage transfer function,
+    \item core material selection as a function of operating frequency,
+    \item core sizing via the area-product method,
+    \item winding design considerations (skin/proximity effects, litz wire vs.\ foil),
+    \item a worked numerical example at \SI{800}{V}/\SI{800}{V}, \SI{10}{kHz}, \SI{250}{kW}.
+\end{itemize}
+
+\section{Turns Ratio}
+For an ideal isolated transformer driven by a quasi-square or square voltage waveform
+(as typical of PSFB, DAB, or any hard/soft-switched bridge), the volt-second balance on
+each winding gives Faraday's law in its waveform-corrected form:
+\begin{equation}
+    V = K_f \, N \, A_c \, B_{m} \, f
+    \label{eq:faraday}
+\end{equation}
+where:
+\begin{itemize}
+    \item $V$ = RMS (or peak, depending on $K_f$ convention) voltage applied to the winding [V],
+    \item $N$ = number of turns,
+    \item $A_c$ = core cross-sectional area [m$^2$],
+    \item $B_m$ = peak flux density [T],
+    \item $f$ = switching/operating frequency [Hz],
+    \item $K_f$ = waveform factor: $K_f = 4$ for a symmetric square wave, $K_f = 4.44$ for a pure sinusoid, intermediate values for trapezoidal/quasi-square waveforms with duty cycle $D<0.5$ (e.g.\ $K_f \approx 4D$ for a unipolar square wave of duty $D$).
+\end{itemize}
+
+The turns ratio is fixed by the required voltage transformation:
+\begin{equation}
+    n = \frac{N_1}{N_2} = \frac{V_1}{V_2}
+\end{equation}
+For converters requiring voltage step change under varying duty cycle (e.g.\ PSFB with
+output inductor), $n$ is chosen at the nominal/maximum duty point, with margin for
+line and load regulation.
+
+\section{Core Material Selection vs.\ Frequency}
+The dominant constraint at a given frequency is core loss, which is approximately:
+\begin{equation}
+    P_{core} \approx k_c \, f^{\alpha} \, B_m^{\beta} \, V_{core}
+\end{equation}
+(Steinmetz equation), where $\alpha,\beta$ and $k_c$ are material-dependent. The choice
+of material is therefore frequency-driven:
+
+\begin{center}
+\begin{tabular}{@{}lllp{5.5cm}@{}}
+\toprule
+Material & Typical $f$ range & $B_{sat}$ [T] & Notes \\
+\midrule
+Grain-oriented Si-Fe (laminated) & DC--\SI{1}{kHz} & 1.6--2.0 & High saturation, but eddy-current losses scale with $f^2 t^2$; lamination thickness limits practical use above $\sim$\SI{1}{kHz}. \\
+Amorphous (Fe-based) & \SI{1}{}--\SI{10}{kHz} & 1.5--1.6 & Lower loss than Si-Fe at the same $f$, good compromise for medium-frequency, high-power transformers. \\
+Nanocrystalline (e.g.\ Vitroperm, Finemet) & \SI{1}{}--\SI{150}{kHz} & 1.2--1.5 & High $B_{sat}$ retained at MF, low specific losses; preferred for high-power MF transformers (DAB, solid-state transformers, traction). \\
+MnZn ferrite & \SI{20}{kHz}--\SI{500}{kHz} & 0.35--0.5 & Low $B_{sat}$ limits power density at low kHz; becomes attractive above $\sim$\SI{50}{kHz} where its losses remain low and nanocrystalline/amorphous losses rise. \\
+NiZn ferrite & $>$\SI{500}{kHz} & 0.3--0.4 & High-frequency, low-power applications; not relevant for high-power MF transformers. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Rule of thumb:} for a given frequency, select the material that allows the
+highest usable $B_m$ (limited by core loss density, typically targeting
+\SIrange{0.5}{1.5}{W/cm^3} depending on cooling) while satisfying thermal constraints.
+At \SI{10}{kHz} and high power, nanocrystalline or amorphous tape-wound cores
+typically outperform ferrite because their higher $B_{sat}$ allows a smaller, lighter
+core for the same volt-seconds, even though their specific core losses per unit volume
+at \SI{10}{kHz} are higher than ferrite's — the reduction in required volume usually
+wins for power levels in the hundreds of kW.
+
+\section{Core Sizing: Area-Product Method}
+The area product $A_p = A_c \cdot A_w$ (core area times window area) relates the
+apparent power transferred to the achievable current density and flux density,
+and is the standard first-pass sizing tool (McLyman):
+\begin{equation}
+    A_p \;[\text{cm}^4] = \frac{P_t \cdot 10^4}{K_f \, K_u \, B_m \, f \, J}
+    \label{eq:ap}
+\end{equation}
+where:
+\begin{itemize}
+    \item $P_t$ = total apparent power handled by the transformer, $P_t \approx P_{in}+P_{out} \approx 2P$ for an isolated transformer carrying power $P$ on each side,
+    \item $K_u$ = window utilization factor ($\approx 0.2$--$0.3$ for round/litz wire with insulation and creepage, up to $\approx 0.4$--$0.5$ for foil/busbar windings),
+    \item $B_m$ = peak flux density [T] (material- and loss-limited, see above),
+    \item $f$ = frequency [Hz],
+    \item $J$ = RMS current density [A/cm$^2$] (cooling-dependent: $\sim$200--350 for natural convection, up to 500+ with forced air/liquid cooling).
+\end{itemize}
+Once $A_p$ is known, a core (or stack of cores) is selected from a manufacturer
+catalogue with matching or slightly larger $A_p$, giving $A_c$ and $A_w$ directly.
+Equation~\eqref{eq:faraday} then yields the turns count for each winding.
+
+\section{Winding Design}
+At MF/HF, conduction losses are dominated by skin and proximity effects rather
+than DC resistance:
+\begin{equation}
+    \delta = \sqrt{\frac{\rho}{\pi f \mu_0 \mu_r}}
+\end{equation}
+For copper, $\delta \approx 7.5/\sqrt{f\,[\text{Hz}]}$ cm. At \SI{10}{kHz},
+$\delta \approx \SI{0.66}{mm}$, meaning conductor thickness should not exceed
+roughly $2\delta \approx \SI{1.3}{mm}$ in any single layer.
+
+\begin{itemize}
+    \item \textbf{Litz wire}: appropriate for moderate current windings where many
+    strands keep each strand below $\delta$; strand count and bundle geometry must
+    be checked for proximity losses in multi-layer windings.
+    \item \textbf{Copper foil}: preferred at very high current, low turn-count
+    windings (as in the example below); foil thickness $\le 2\delta$, interleaved
+    with thin insulation, often the only practical option above a few hundred
+    amperes RMS per turn.
+    \item \textbf{Interleaving}: primary/secondary interleaving reduces the MMF
+    excursion across the window and is essential to control proximity losses at
+    MF in high-current designs.
+\end{itemize}
+
+\section{Leakage Inductance Estimation}
+Leakage inductance arises from the imperfect coupling between primary and
+secondary windings and is set almost entirely by winding geometry rather than
+core material. For concentric (or foil) windings arranged radially in the
+window, the standard analytical estimate (Erickson \& Maksimovic;
+McLyman)\cite{erickson,mclyman} referred to the primary is:
+\begin{equation}
+    L_{lk} \approx \frac{\mu_0 \, N_1^2 \, \mathrm{MLT}}{h_w}
+    \left[ \frac{b_1+b_2}{3} + \delta \right]
+    \label{eq:lk}
+\end{equation}
+where:
+\begin{itemize}
+    \item $\mathrm{MLT}$ = mean length per turn [m],
+    \item $h_w$ = winding (window) height available for the turns [m],
+    \item $b_1, b_2$ = total radial (or axial, depending on construction)
+    build-up of the primary and secondary windings respectively [m],
+    \item $\delta$ = thickness of the inter-winding insulation/isolation gap [m].
+\end{itemize}
+Equation~\eqref{eq:lk} shows the two key levers for leakage reduction:
+\begin{itemize}
+    \item \textbf{Increasing $h_w$} (taller, narrower window) spreads the same
+    turns over a larger MMF-cancellation path, reducing $L_{lk}$.
+    \item \textbf{Interleaving} the primary and secondary into $m$ alternating
+    sections divides the effective leakage by approximately $m^2$:
+    \begin{equation}
+        L_{lk,\,interleaved} \approx \frac{L_{lk}}{m^2}
+    \end{equation}
+\end{itemize}
+For DAB or PSFB topologies, leakage inductance is often a wanted design
+parameter (it forms part or all of the power-transfer/resonant inductance), so
+this calculation should be checked against the value required by the converter
+control law, not only minimized.
+
+\section{Insulation and Isolation}
+Creepage and clearance distances are dictated by the working voltage, altitude,
+pollution degree, and required isolation class (basic/supplementary/reinforced)
+per IEC~60664-1 or the relevant converter standard. Tape-wound cores with bobbin
+or potted construction are common; for busbar/foil windings, solid insulation
+(e.g.\ polyimide, Nomex, epoxy-glass) must be verified for partial-discharge-free
+operation at the working dV/dt, which can be severe with hard-switched square waves.
+
+\section{Worked Example: \SI{800}{V}/\SI{800}{V}, \SI{10}{kHz}, \SI{250}{kW}}
+
+\subsection*{Assumptions}
+\begin{itemize}
+    \item Square-wave excitation (PSFB/DAB-type bridge), $K_f = 4$.
+    \item Turns ratio $n=1$ (\SI{800}{V}/\SI{800}{V}).
+    \item Nanocrystalline tape-wound core, $B_m = \SI{1.0}{T}$ (derated from
+    $B_{sat}\approx\SI{1.2}{T}$ for MF loss margin).
+    \item $K_u = 0.3$ (foil winding, generous insulation/creepage at this power level).
+    \item $J = \SI{300}{A/cm^2}$ (forced-air or liquid-cooled busbar/foil winding).
+\end{itemize}
+
+\subsection*{Step 1 — Apparent power}
+\begin{equation}
+    P_t = 2P = 2 \times \SI{250}{kW} = \SI{500}{kW}
+\end{equation}
+
+\subsection*{Step 2 — Area product}
+\begin{equation}
+    A_p = \frac{500{,}000 \times 10^4}{4 \times 0.3 \times 1.0 \times 10{,}000 \times 300}
+    \approx \SI{1389}{cm^4}
+\end{equation}
+This is a large core (or, in practice, a paralleled/stacked assembly of standard
+nanocrystalline C-cores or cut cores), consistent with a \SI{250}{kW} MF transformer.
+
+\subsection*{Step 3 — Core area and turns}
+Assuming a roughly square window/core split, $A_c \approx \sqrt{A_p} \approx \SI{37}{cm^2}$.
+From Eq.~\eqref{eq:faraday}:
+\begin{equation}
+    N_1 = \frac{V_1}{K_f \, A_c \, B_m \, f}
+    = \frac{800}{4 \times 37\times10^{-4} \times 1.0 \times 10{,}000}
+    \approx 5.4 \;\Rightarrow\; N_1 = N_2 = 6 \ \text{turns}
+\end{equation}
+(rounding up gives margin against saturation; with $n=1$, $N_2=N_1$).
+
+\subsection*{Step 4 — Conductor sizing}
+RMS current per winding (lossless approximation):
+\begin{equation}
+    I_1 = I_2 = \frac{P}{V} = \frac{250{,}000}{800} = \SI{312.5}{A}
+\end{equation}
+Required copper cross-section at $J=\SI{300}{A/cm^2}$:
+\begin{equation}
+    A_{Cu} = \frac{I}{J} = \frac{312.5}{300} \approx \SI{1.04}{cm^2}
+\end{equation}
+With skin depth $\delta \approx \SI{0.66}{mm}$ at \SI{10}{kHz}, this area should be
+realized as a foil (or paralleled foils) of thickness $\le \SI{1.3}{mm}$ and
+sufficient width, or an equivalent litz bundle — foil/busbar is the practical
+choice at this current level and turn count.
+
+\subsection*{Step 5 — Leakage inductance estimate}
+Assume a square-ish window of side $\approx\SI{6.1}{cm}$, so $h_w \approx \SI{6}{cm}$,
+and a mean turn length $\mathrm{MLT}\approx\SI{20}{cm}$ (typical for this core size).
+Each winding uses 6 foil turns of thickness $\SI{1.3}{mm}$ with $\SI{0.1}{mm}$
+inter-turn insulation, giving a winding build-up:
+\begin{equation}
+    b_1 = b_2 = 6\times(1.3+0.1)\,\text{mm} = \SI{8.4}{mm}
+\end{equation}
+With an inter-winding isolation gap $\delta = \SI{2}{mm}$, Eq.~\eqref{eq:lk} gives:
+\begin{equation}
+    L_{lk} \approx \frac{4\pi\times10^{-7} \times 6^2 \times 0.20}{0.06}
+    \left[\frac{0.0084+0.0084}{3}+0.002\right] \approx \SI{1.14}{\micro H}
+\end{equation}
+If the primary and secondary are interleaved into two sections each ($m=2$),
+this drops to $L_{lk}\approx\SI{0.29}{\micro H}$. This value should be compared
+against the leakage/resonant inductance required by the DAB/PSFB power-transfer
+equation; if higher inductance is needed, an air gap or reduced interleaving can
+be used deliberately to tune $L_{lk}$ upward.
+
+\subsection*{Summary Table}
+\begin{center}
+\begin{tabular}{@{}ll@{}}
+\toprule
+Parameter & Value \\
+\midrule
+Core material & Nanocrystalline (e.g.\ Vitroperm 500F) \\
+$B_m$ & \SI{1.0}{T} \\
+Area product $A_p$ & $\approx \SI{1389}{cm^4}$ \\
+$N_1 = N_2$ & 6 turns \\
+$I_1 = I_2$ (RMS) & \SI{312.5}{A} \\
+Winding type & Interleaved copper foil, $t \le \SI{1.3}{mm}$ \\
+$L_{lk}$ (non-interleaved / $m{=}2$) & $\approx\SI{1.14}{\micro H}$ / $\SI{0.29}{\micro H}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection*{Notes}
+This first-pass sizing must be followed by: (i) FEA cross-check of the analytical
+leakage inductance estimate above (relevant for DAB/PSFB soft-switching range),
+(ii) thermal verification of core and winding losses against the chosen cooling
+method, and (iii) insulation coordination for the working voltage and dV/dt. The
+area-product method gives the correct order of magnitude but final core selection
+should match an actual manufacturer part (or stack thereof) with $A_p \ge$ the
+calculated value.
+
+\section{Alternative Design: Ferrite Core, Same Specification}
+For comparison, the same \SI{800}{V}/\SI{800}{V}, \SI{10}{kHz}, \SI{250}{kW}
+transformer is now sized with a MnZn ferrite core.
+
+\subsection*{Assumptions}
+\begin{itemize}
+    \item MnZn ferrite (e.g.\ 3C95/3C90-type material), $B_m=\SI{0.3}{T}$
+    (derated from $B_{sat}\approx\SI{0.4}{-}\SI{0.45}{T}$ at \SI{10}{kHz} and
+    elevated temperature, to keep core losses bounded).
+    \item Same $K_f=4$, $K_u=0.3$, $J=\SI{300}{A/cm^2}$ as before, for direct
+    comparison.
+\end{itemize}
+
+\subsection*{Step 1 — Area product}
+\begin{equation}
+    A_p = \frac{500{,}000\times10^4}{4\times0.3\times0.3\times10{,}000\times300}
+    \approx \SI{4630}{cm^4}
+\end{equation}
+This is roughly $3.3\times$ larger than the nanocrystalline design, a direct
+consequence of the lower usable $B_m$ — illustrating why ferrite becomes
+volumetrically penalized at high power and moderate (\SI{10}{kHz}) frequency,
+despite its lower specific core loss.
+
+\subsection*{Step 2 — Core area and turns}
+\begin{equation}
+    A_c \approx \sqrt{A_p} \approx \SI{68}{cm^2}
+\end{equation}
+\begin{equation}
+    N_1 = \frac{800}{4\times68\times10^{-4}\times0.3\times10{,}000}
+    \approx 9.8 \;\Rightarrow\; N_1=N_2=10 \ \text{turns}
+\end{equation}
+
+\subsection*{Step 3 — Conductors}
+Current is unchanged ($I=\SI{312.5}{A}$, $A_{Cu}\approx\SI{1.04}{cm^2}$); skin
+depth at \SI{10}{kHz} is also unchanged ($\delta\approx\SI{0.66}{mm}$), so the
+same foil thickness limit ($\le\SI{1.3}{mm}$) applies, now over 10 turns instead
+of 6.
+
+\subsection*{Step 4 — Leakage inductance}
+Window side $\approx\SI{8.25}{cm}\Rightarrow h_w\approx\SI{8}{cm}$;
+$\mathrm{MLT}\approx\SI{30}{cm}$ for the larger core. Winding build-up with 10
+foil turns:
+\begin{equation}
+    b_1=b_2=10\times(1.3+0.1)\,\text{mm}=\SI{14}{mm}
+\end{equation}
+With the same $\delta=\SI{2}{mm}$:
+\begin{equation}
+    L_{lk} \approx \frac{4\pi\times10^{-7}\times10^2\times0.30}{0.08}
+    \left[\frac{0.014+0.014}{3}+0.002\right] \approx \SI{5.3}{\micro H}
+\end{equation}
+The higher turns count ($N^2$ scaling) and larger window both push leakage
+inductance up by roughly $4.7\times$ relative to the nanocrystalline design —
+a relevant trade-off if a specific $L_{lk}$ is targeted for soft-switching.
+
+\subsection*{Comparison Summary}
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+Parameter & Nanocrystalline & Ferrite (MnZn) \\
+\midrule
+$B_m$ & \SI{1.0}{T} & \SI{0.3}{T} \\
+$A_p$ & $\approx\SI{1389}{cm^4}$ & $\approx\SI{4630}{cm^4}$ \\
+$N_1=N_2$ & 6 & 10 \\
+$L_{lk}$ (non-interleaved) & $\approx\SI{1.14}{\micro H}$ & $\approx\SI{5.3}{\micro H}$ \\
+Relative core volume & baseline & $\approx 3.3\times$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+At this power and frequency, nanocrystalline gives a markedly more compact
+design with lower leakage; ferrite remains attractive mainly where its higher
+achievable switching frequency (tens to hundreds of kHz) can be exploited, which
+is not the case at \SI{10}{kHz}.
+
+\begin{thebibliography}{9}
+
+\bibitem{mclyman}
+C.~W.~T.~McLyman, \textit{Transformer and Inductor Design Handbook}, 4th ed.,
+CRC Press, 2011.
+
+\bibitem{erickson}
+R.~W.~Erickson and D.~Maksimovic, \textit{Fundamentals of Power Electronics},
+3rd ed., Springer, 2020.
+
+\bibitem{mohan}
+N.~Mohan, T.~M.~Undeland, and W.~P.~Robbins, \textit{Power Electronics:
+Converters, Applications, and Design}, 3rd ed., Wiley, 2003.
+
+\bibitem{ferreira}
+J.~A.~Ferreira, \textit{Electromagnetic Modelling of Power Electronic
+Converters}, Kluwer Academic Publishers, 1989.
+
+\bibitem{iec60664}
+IEC~60664-1, \textit{Insulation coordination for equipment within low-voltage
+systems -- Part 1: Principles, requirements and tests}, International
+Electrotechnical Commission.
+
+\bibitem{vacuumschmelze}
+Vacuumschmelze, \textit{VITROPERM -- Nanocrystalline Tape-Wound Cores},
+Application Notes and Material Datasheets.
+
+\bibitem{ferroxcube}
+Ferroxcube, \textit{Soft Ferrites and Accessories -- Data Handbook}, MnZn
+Material Grades (3C90, 3C95, 3F3), Application Notes.
+
+\bibitem{dowell}
+P.~L.~Dowell, ``Effects of eddy currents in transformer windings,'' \textit{
+Proceedings of the IEE}, vol.~113, no.~8, pp.~1387--1394, 1966.
+
+\end{thebibliography}
+
+\end{document}

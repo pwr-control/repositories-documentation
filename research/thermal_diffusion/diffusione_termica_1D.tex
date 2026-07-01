@@ -14,12 +14,20 @@
 \usepackage{booktabs}
 \usepackage{array}
 \usepackage{geometry}
-\usepackage{mathtools}
 \usepackage{xcolor}
 \usepackage{listings}
 \usepackage{caption}
 \usepackage{hyperref}
 \usepackage{tikz}
+
+\usepackage[svgnames]{xcolor}
+\usepackage{mathtools}
+\usepackage{xpatch}
+\makeatletter
+\newcommand{\colorboxed}[3][white]{\fcolorbox{#2}{#1}{\m@th$\displaystyle#3$}}
+\xpatchcmd{\@Aboxed}{\boxed}{\colorboxed[LavenderBlush!40]{IndianRed}}{}{}
+\makeatother 
+
 \usetikzlibrary{arrows.meta, decorations.markings, patterns}
 
 \geometry{margin=2.5cm}
@@ -66,7 +74,7 @@
 \begin{center}
   {\LARGE\bfseries\color{myblue} Diffusione Termica 1D}\\[6pt]
   {\large Fondamenti Fisici, Discretizzazione e Implementazione MATLAB}\\[8pt]
-  {\normalsize Shannon \quad|\quad Marzo 2026}
+  {\normalsize claude \quad|\quad Marzo 2026}
 \end{center}
 
 \vspace{0.5em}
@@ -111,25 +119,25 @@ Il dominio spaziale è $x \in [0,\, L]$. Le condizioni al contorno sono:
 \begin{figure}[h!]
 \centering
 \begin{tikzpicture}[scale=1.0]
-  % Bar
-\fill[blue!10, draw=myblue, line width=1pt] (0,0) rectangle (8,1);
-% Incoming flux arrow
-\draw[-{Latex[length=3mm]}, myred, line width=1.5pt] (-1.5, 0.5) -- (-0.05, 0.5);
-\node[myred, above] at (-1, 0.6) {$q_\text{in} = \SI{25}{\watt}$};
-% Left boundary label
-\node[myblue, below] at (0, -0.1) {$x=0$};
-\node[myblue, below] at (0, -0.55) {\small Neumann};
-% Right heat sink
-\fill[red!30, draw=myred, line width=1pt] (8,0) rectangle (9.2,1);
-\node[myred] at (8.6, 0.5) {$T_\text{sink}$};
-\node[myblue, below] at (8, -0.1) {$x=L$};
-\node[myblue, below] at (8, -0.55) {\small Dirichlet};
-% x-axis
-\draw[->, gray] (0,-1.4) -- (8,-1.4) node[right] {$x$};
-\node[gray, below] at (4,-1.65) {$L = \SI{50}{\milli\meter}$};
-% Temperature profile arrow
-%  \draw[->, dashed, myblue, line width=1pt] (0.3, 1.3) to[out=0, in=170] (7.7, 0.9);
-\node[myblue, above] at (4, 1.5) {\small Profile $T(x,t) \to T_\text{ss}(x)$ linear at steady state};
+  % Sbarra
+  \fill[blue!10, draw=myblue, line width=1pt] (0,0) rectangle (8,1);
+  % Freccia flusso entrante
+  \draw[-{Latex[length=3mm]}, myred, line width=1.5pt] (-1.5, 0.5) -- (-0.05, 0.5);
+  \node[myred, above] at (-0.75, 0.6) {$q_\text{in} = \SI{25}{\watt}$};
+  % Etichetta bordo sinistro
+  \node[myblue, below] at (0, -0.1) {$x=0$};
+  \node[myblue, below] at (0, -0.55) {\small Neumann};
+  % Pozzo termico a destra
+  \fill[red!30, draw=myred, line width=1pt] (8,0) rectangle (9.2,1);
+  \node[myred] at (8.6, 0.5) {$T_\text{sink}$};
+  \node[myblue, below] at (8, -0.1) {$x=L$};
+  \node[myblue, below] at (8, -0.55) {\small Dirichlet};
+  % Asse x
+  \draw[->, gray] (0,-0.9) -- (8,-0.9) node[right] {$x$};
+  \node[gray, below] at (4,-1.15) {$L = \SI{50}{\milli\meter}$};
+  % Freccia profilo temperatura
+  \draw[->, dashed, myblue, line width=1pt] (0.3, 1.3) to[out=0, in=170] (7.7, 0.9);
+  \node[myblue, above] at (4, 1.5) {\small Profilo $T(x,t) \to T_\text{ss}(x)$ lineare a regime};
 \end{tikzpicture}
 \caption{Schema del dominio: sbarra con flusso imposto a sinistra e pozzo termico a destra.}
 \end{figure}
@@ -317,7 +325,7 @@ Sostituendo~\eqref{eq:ghost} nell'equazione di aggiornamento per $i=1$:
 \begin{align}
   u_1^{n+1} &= u_1^n + \lambda \left( u_2^n - 2u_1^n + u_0^n \right) \notag\\
              &= u_1^n + \lambda \left( u_2^n - 2u_1^n + u_2^n + \frac{2\,\Delta x\, q_\text{in}}{k A} \right) \notag\\
-  \Aboxed{u_1^{n+1} &= u_1^n + \lambda \left( 2u_2^n - 2u_1^n + \frac{2\,\Delta x\, q_\text{in}}{k A} \right)}
+	\Aboxed{u_1^{n+1} &= u_1^n + \lambda \left( 2u_2^n - 2u_1^n + \frac{2\,\Delta x\, q_\text{in}}{k A} \right)}
   \label{eq:neumann_impl}
 \end{align}
 
