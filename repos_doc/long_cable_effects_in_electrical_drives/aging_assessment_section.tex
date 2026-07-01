@@ -1,0 +1,135 @@
+\subsection{Aging Assessment: Vibration-Induced Fatigue}
+\label{sec:aging}
+
+A natural question is whether the section subject to resonance ages faster than
+the non-resonant one. The answer must separate the \emph{relative} effect of the
+resonance from the \emph{absolute} stress level, and must keep the acoustic
+vibration distinct from the mechanisms that actually govern the cable service
+life.
+
+\paragraph{Relative effect.}
+Fatigue damage is driven by the amplitude of the cyclic stress. Resonance amplifies
+the vibration amplitude, and therefore the bending stress at the cleats, by the
+mechanical quality factor $Q$ (typically $10$--$50$). Since the fatigue life follows
+a Basquin law
+\begin{equation}
+	N_f = N_{\mathrm{ref}}\left(\frac{\sigma_{\mathrm{ref}}}{\sigma_a}\right)^{k},
+	\qquad k\approx 5\text{--}10,
+	\label{eq:basquin}
+\end{equation}
+a factor $Q$ on the stress becomes a factor $Q^{k}$ on the damage rate. On this
+basis the resonant section is, in relative terms, far more stressed than the
+non-resonant one. This is the origin of the concern, and the reason the absolute
+level must also be evaluated.
+
+\paragraph{Absolute stress level.}
+The decisive quantity is the actual vibration amplitude. The audible emission
+estimated in Section~\ref{sec:onsite_summary} corresponds to a surface velocity of
+about $\hat v \approx \SI{27}{\micro\meter\per\second}$ at resonance, i.e.\ a
+transverse displacement amplitude
+\begin{equation}
+	w_0 = \frac{\hat v}{\omega_{sw}} \approx \SI{1}{\nano\meter}.
+\end{equation}
+The corresponding surface bending strain, with conductor radius $a$ and bending
+wavenumber $k_B=2\pi/\lambda_B$, is
+\begin{equation}
+	\varepsilon_a \approx a\,k_B^{2}\,w_0 \sim 10^{-8},
+	\label{eq:strain}
+\end{equation}
+giving a cyclic stress $\sigma_a = E\varepsilon_a$ of the order of a few
+kilopascal, even including a cleat stress-concentration factor of $3$--$5$. The
+copper fatigue strength in the very-high-cycle regime is of the order of tens of
+megapascal; the applied stress is therefore three to four orders of magnitude
+below the fatigue strength. Table~\ref{tab:fatigue} collects the estimate.
+
+\begin{table}[h]
+\centering
+\caption{Order-of-magnitude estimate of the vibration-induced fatigue (rated load,
+constant PWM, resonant span).}
+\label{tab:fatigue}
+\begin{tabular}{@{}lcl@{}}
+\toprule
+Quantity & Symbol & Value \\
+\midrule
+Displacement amplitude & $w_0$ & $\sim\SI{1}{\nano\meter}$ \\
+Cyclic bending strain & $\varepsilon_a$ & $\sim 10^{-8}$ \\
+Cyclic stress (incl.\ SCF) & $\sigma_a$ & $\sim\SI{5}{\kilo\pascal}$ \\
+Copper fatigue strength (VHCF) & $\sigma_f$ & $\sim\SI{50}{\mega\pascal}$ \\
+Stress margin & $\sigma_f/\sigma_a$ & $\sim 10^{4}$ \\
+Cycles per year (50\% load) & $\dot n$ & $\sim\num{6e10}\ \mathrm{yr^{-1}}$ \\
+Cycles to failure~\eqref{eq:basquin} ($k=7$) & $N_f$ & $\sim 10^{37}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Cycle count and accumulated damage.}
+At $f_{sw}=\SI{3.8}{\kilo\hertz}$ with a $50\%$ load duty, the excitation delivers
+$\dot n\approx\num{6e10}$ cycles per year, i.e.\ about $\num{3e12}$ cycles over the
+\num{50}-year design life --- a very-high-cycle regime. The Palmgren--Miner damage
+accumulated over the design life $T_d$ is
+\begin{equation}
+	D = \frac{\dot n\,T_d}{N_f} \sim \frac{\num{3e12}}{10^{37}} \sim 10^{-25},
+	\label{eq:miner}
+\end{equation}
+which is negligible by an enormous margin. The equivalent fatigue life imposed by
+the acoustic vibration alone exceeds $10^{15}$ years and is not a service-life
+constraint.
+
+\paragraph{Aging threshold.}
+To make the criterion explicit, define the fatigue life that the vibration
+\emph{alone} would impose, $L_{\mathrm{fat}}=N_f/\dot n$, and the resulting aging
+fraction over the design life,
+\begin{equation}
+	\varphi = \frac{T_d}{L_{\mathrm{fat}}} = D.
+\end{equation}
+The following bands are adopted:
+\begin{equation}
+	\boxed{\;
+	\begin{aligned}
+	&\varphi < 0.02 \;\;(\text{1 yr in 50}) && \Rightarrow\;\; \text{negligible},\\
+	&0.02 \le \varphi \le 0.20 && \Rightarrow\;\; \text{monitor},\\
+	&\varphi > 0.20 \;\;(\text{10 yr in 50}) && \Rightarrow\;\; \text{significant}.
+	\end{aligned}
+	\;}
+\end{equation}
+The present estimate, $\varphi\sim10^{-25}$, falls in the negligible band with a
+margin of many orders of magnitude.
+
+\paragraph{Qualifications.}
+Three points must accompany this result in order not to misread it:
+\begin{itemize}[leftmargin=*]
+	\item[--] \textbf{Acoustic emission is not a damage indicator.} The audible tone
+	is a comfort/acceptability issue, not a measure of fatigue. In fact the
+	$2f_1$ ($\SI{100}{\hertz}$) force is about seven times larger than the
+	switching-frequency force yet is inaudible: if a fatigue driver ever existed,
+	it would be the largest force acting on the most compliant mode, independent of
+	its audibility. The noise must not be used as a proxy for damage.
+	\item[--] \textbf{The service life is governed by other mechanisms.} The
+	\num{50}-year life is set by thermal aging of the insulation
+	(Arrhenius law, IEC~60216), by electrical aging (partial discharge, water
+	treeing in the XLPE), and by thermo-mechanical fatigue at the cleats driven by
+	the \emph{load cycle} (daily/seasonal expansion, a few cycles per day --- not
+	the kilohertz vibration). The PWM-induced resonance is negligible relative to
+	these.
+	\item[--] \textbf{The only vibration-related watch item} is the possible
+	progressive loosening or fretting of cleats, terminations and clamps. At a
+	displacement amplitude of order \SI{1}{\nano\meter} the motion is well below the
+	micrometre slip threshold of fretting, so this is a periodic-inspection item,
+	not a life limit.
+\end{itemize}
+
+\paragraph{Confirmation by measurement.}
+Because the fatigue damage scales as $Q^{k}$, the absolute figure is sensitive to
+the true strain at the cleat, which has here been inferred acoustically. A direct
+measurement closes the question:
+\begin{enumerate}[leftmargin=*]
+	\item Instrument a \SI{120}{\meter} span at the point of maximum curvature (at a
+	cleat) with a strain gauge, or with an accelerometer converted to strain through
+	the local mode shape.
+	\item Record under rated load with constant PWM (the worst, tonal case), and
+	extract the cyclic strain amplitude $\varepsilon_a$ at $f_{sw}\pm m f_1$.
+	\item Repeat off resonance to bound $Q$.
+	\item Insert the measured $\varepsilon_a$ into \eqref{eq:basquin}--\eqref{eq:miner}
+	with the cable-material S--N data and compare $\varphi$ against the threshold.
+\end{enumerate}
+This converts the assessment from an estimate into a verified result.
