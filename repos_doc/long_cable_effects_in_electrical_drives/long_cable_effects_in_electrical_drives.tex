@@ -274,12 +274,22 @@ analysis.
 
 
 \chapter{Shielded Power Cable Model}
-
+\textit{This chapter develops the mathematical model required to implement a shielded
+	three-phase power cable in Simscape (MATLAB) as a lumped RLC network. The
+	multiconductor transmission-line (MTL) formulation is reduced to per-unit-length
+	(p.u.l.) series and shunt matrices, then mapped onto single- and multi-section
+	$\pi$ models. A complete numerical dimensioning is carried out for the reference
+	case of a copper cable with $95\ \mathrm{mm^2}$ per phase, collectively shielded,
+	of length $120\ \mathrm{m}$. The section-count criterion for the cascaded $\pi$
+	model is derived from the propagation velocity and the target bandwidth, and the
+	shield/common-mode representation is included so that the same model serves both
+	fundamental-frequency studies and high-frequency phenomena (reflected-wave
+	overvoltage, common-mode current). References follow IEEE practice.}
 %======================================================================
 \section{Scope and modeling objectives}
 %======================================================================
 The objective is a circuit-equivalent cable model suitable for time-domain
-simulation in Simscape / Simscape Electrical (Specialized Power Systems). Three
+simulation in Matlab / Simscape. Three
 requirements drive the formulation:
 
 \begin{enumerate}[leftmargin=*]
@@ -315,9 +325,9 @@ substituted directly into Sections~\ref{sec:numbers}--\ref{sec:simscape}.
 		\toprule
 		Quantity & Symbol & Value \\
 		\midrule
-		Phase conductor cross-section & $A_c$ & $90\ \mathrm{mm^2}$ (Cu, stranded) \\
-		Effective conductor radius & $r_c$ & $6.0\ \mathrm{mm}$ \\
-		Geometric mean radius & $\mathrm{GMR}$ & $0.77\,r_c \approx 4.6\ \mathrm{mm}$ \\
+		Phase conductor cross-section & $A_c$ & $95\ \mathrm{mm^2}$ (Cu, stranded) \\
+		Effective conductor radius & $r_c$ & $5.5\ \mathrm{mm}$ \\
+		Geometric mean radius & $\mathrm{GMR}$ & $0.78\,r_c \approx 4.3\ \mathrm{mm}$ \\
 		Insulation (XLPE) rel. permittivity & $\varepsilon_r$ & $2.5$ \\
 		Insulation loss tangent & $\tan\delta$ & $4\times10^{-3}$ \\
 		Radius over core insulation & $r_i$ & $8.0\ \mathrm{mm}$ \\
