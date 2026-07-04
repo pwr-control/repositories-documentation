@@ -430,7 +430,7 @@ IEC~60287 / IEEE cable-loss practice:
 	\label{eq:rac}
 \end{equation}
 with $k_s\approx1$ for round stranded conductors. At $50\ \mathrm{Hz}$ the
-correction is a few percent for $90\ \mathrm{mm^2}$; at the kHz range relevant to
+correction is a few percent for $95\ \mathrm{mm^2}$; at the kHz range relevant to
 converter harmonics it grows and is captured by re-evaluating \eqref{eq:rac} at the
 dominant harmonic, or by a Foster (R--L ladder) branch when broadband fidelity is
 required.
@@ -733,12 +733,12 @@ forces, and that the length dependence arises from the mechanical/acoustic
 response, not from the electromagnetic source itself.
 
 The arrangement modeled is three \emph{separate} single-core copper cables,
-$90\ \mathrm{mm^2}$ each, length $\ell=120\ \mathrm{m}$. Separate single cores are
+$95\ \mathrm{mm^2}$ each, length $\ell=120\ \mathrm{m}$. Separate single cores are
 essential to the mechanism: unlike the bound conductors of a single three-core
 cable, each single core is mechanically free to vibrate between its supports, so
 the inter-conductor force does work on a movable structure. The per-unit-length
 electrical parameters are taken unchanged from the companion document
-(in particular $C_g=36\ \mathrm{nF}$ retained as requested, although the
+(in particular $C_g=20\ \mathrm{nF}$ retained as requested, although the
 common-mode capacitance does not enter the force).
 
 \begin{figure}[h]
@@ -756,8 +756,8 @@ common-mode capacitance does not enter the force).
 		\node at (0,0.62) {$i_b$};
 		\node at (2.0,0.62) {$i_c$};
 		% forces on b
-		\draw[->,thick,red] (B) -- ($(B)+(-0.9,0)$) node[below]{$f_{ba}$};
-		\draw[->,thick,red] (B) -- ($(B)+(0.9,0)$) node[below]{$f_{bc}$};
+		\draw[->,thick,black] (B) -- ($(B)+(-0.9,0)$) node[below]{$f_{ba}$};
+		\draw[->,thick,black] (B) -- ($(B)+(0.9,0)$) node[below]{$f_{bc}$};
 		\draw[<->,dashed] (-2.0,-0.7) -- (0,-0.7) node[midway,below]{$d$};
 		\draw[<->,dashed] (0,-0.7) -- (2.0,-0.7) node[midway,below]{$d$};
 		\node[align=left] at (4.6,0) {\small force $\propto i_a i_b$\\ \small (quadratic)};
@@ -1045,19 +1045,18 @@ mechanism by which random PWM is used to reduce acoustic noise in drives.
 \end{itemize}
 
 %======================================================================
-\appendix
 \section{Signal chain}
 %======================================================================
 \begin{center}
-	\begin{tikzpicture}[>=Latex,node distance=4mm and 7mm,
-		block/.style={draw,rounded corners,minimum height=10mm,minimum width=24mm,align=center,font=\small}]
+	\begin{tikzpicture}[>=Latex,node distance=12mm and 16mm,
+		block/.style={draw,rounded corners,minimum height=12mm,minimum width=24mm,align=center,font=\small}]
 		\node[block] (a) {PWM\\ripple $\tilde\imath$};
 		\node[block,right=of a] (b) {Amp\`ere\\force $\hat F_{sw}$};
 		\node[block,right=of b] (c) {span\\vibration $\hat v$};
 		\node[block,right=of c] (d) {acoustic\\radiation $W_{ac}$};
-		\draw[->] (a)--(b) node[midway,above,font=\scriptsize]{$\times\hat I_1$};
-		\draw[->] (b)--(c) node[midway,above,font=\scriptsize]{$Q/\rho_A\omega$};
-		\draw[->] (c)--(d) node[midway,above,font=\scriptsize]{$\sigma_{\text{rad}}$};
+		\draw[->] (a)--(b) node[midway,above,font=\small]{$\times\hat I_1$};
+		\draw[->] (b)--(c) node[midway,above,font=\small]{$Q/\rho_A\omega$};
+		\draw[->] (c)--(d) node[midway,above,font=\small]{$\sigma_{\text{rad}}$};
 	\end{tikzpicture}
 \end{center}
 \noindent
