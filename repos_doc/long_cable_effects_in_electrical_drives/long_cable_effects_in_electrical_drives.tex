@@ -171,12 +171,12 @@ analysis.
 	acceptable.
 	\item[--] The common-mode (zero-sequence) current is
 	$I_z^{\mathrm{inv}}=\SI{8}{\ampere}$ rms at the drive output and
-	$I_z^{\mathrm{m}}=\SI{2.5}{\ampere}$ rms at the machine input. The larger
+	$I_z^{\mathrm{m}}=\SI{2.5}{\ampere}$ rms at the machine input. \textbf{The larger
 	part of the common-mode current therefore returns through the cable shield
 	rather than through the machine, which bounds the fraction available to
 	drive bearing current. This common-mode path concerns bearing-current and
 	EMC behavior and is distinct from the acoustic mechanism discussed below,
-	which is a differential-mode effect.
+	which is a differential-mode effect.}
 \end{itemize}
 \paragraph{Preliminary conclusions:}
 \begin{itemize}
@@ -201,11 +201,11 @@ analysis.
 		\label{string_beam_model}
 	\end{equation}
 	\item[--] The per-unit-length electromagnetic force is approximately equal
-	on both sections, under the assumption of the same fundamental current
-	$I_1$, conductor spacing $d$, and switching ripple
+	on both plant sections (\SI{120}{\meter} and  \SI{40}{\meter} respectively), under the assumption of the same fundamental current
+	$I_1$, conductor spacing\footnote{distance between cables, see  Figure~\ref{fig:forces}} $d$, and switching ripple
 	$\hat{\tilde\imath}_{sw}$. The difference in emission therefore does not
-	originate in the excitation, but in the mechanical--acoustic response of
-	the two runs.
+	originate in the excitation, \textbf{but in the mechanical--acoustic response of
+	the two runs}.
 	\item[--] The string--beam system~\eqref{string_beam_model} has a dense
 	spectrum of span resonances whose modal density scales with cable length.
 	On the \SI{120}{\meter} run a force harmonic at $f_{sw}\pm m f_1$ is far
@@ -745,22 +745,22 @@ common-mode capacitance does not enter the force).
 	\centering
 	\begin{tikzpicture}[>=Latex]
 		\def\R{0.32}
-		\coordinate (A) at (-2.0,0);
+		\coordinate (A) at (-3.0,0);
 		\coordinate (B) at (0,0);
-		\coordinate (C) at (2.0,0);
+		\coordinate (C) at (3.0,0);
 		\foreach \p/\n in {A/$i_a$,B/$i_b$,C/$i_c$}{
 			\draw[thick] (\p) circle (\R);
 			\fill (\p) circle (1.2pt);
 		}
-		\node at (-2.0,0.62) {$i_a$};
-		\node at (0,0.62) {$i_b$};
-		\node at (2.0,0.62) {$i_c$};
+		\node at (-2.0,0.75) {$i_a$};
+		\node at (0,0.75) {$i_b$};
+		\node at (2.0,0.75) {$i_c$};
 		% forces on b
-		\draw[->,thick,black] (B) -- ($(B)+(-0.9,0)$) node[below]{$f_{ba}$};
-		\draw[->,thick,black] (B) -- ($(B)+(0.9,0)$) node[below]{$f_{bc}$};
-		\draw[<->,dashed] (-2.0,-0.7) -- (0,-0.7) node[midway,below]{$d$};
-		\draw[<->,dashed] (0,-0.7) -- (2.0,-0.7) node[midway,below]{$d$};
-		\node[align=left] at (4.6,0) {\small force $\propto i_a i_b$\\ \small (quadratic)};
+		\draw[->,thick,black] (B) -- ($(B)+(-1.5,0)$) node[below]{$f_{ba}$};
+		\draw[->,thick,black] (B) -- ($(B)+(1.5,0)$) node[below]{$f_{bc}$};
+		\draw[<->,dashed] (-3.0,-1) -- (0,-1) node[midway,below]{$d$};
+		\draw[<->,dashed] (0,-1) -- (3.0,-1) node[midway,below]{$d$};
+		\node[align=left] at (6,0) {\small force $\propto i_a i_b$\\ \small (quadratic)};
 	\end{tikzpicture}
 	\caption{Transverse Amp\`ere forces on a single core from its two neighbors. The
 		force on each conductor is the vector sum of two contributions, each proportional
