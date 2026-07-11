@@ -34,7 +34,7 @@
 \newcommand{\DocDate}{July 2026}
 
 \newcommand{\DocAbstract}{%
-	This report shows the design of 12V-12kA power supply unit used in electrolysis applications.
+	This report presents the design and simulation-based verification of a 300 kW power supply unit for electrolysis applications, rated 25 V / 12 kA at nominal load and supplied from a three-phase 480 V grid. The proposed architecture comprises two conversion stages: a grid-tied Active Front End (AFE) rectifier interfaced through an LCL filter exploiting the point-of-common-coupling inductance, and an isolated Phase-Shift Full Bridge Converter (PS-FBC) with center-tapped high-frequency transformers and a high-current diode rectifier stage. The design addresses the stringent requirements of galvanic isolation, output voltage ripple below 0.25 V rms, grid current distortion $\text{THD}_i<5\% $, and power factor above 0.95 over the entire operating range. Component sizing — including the LCL filter, DC-link capacitor banks, HF transformer series inductance enabling Zero-Voltage Switching, and welding-grade rectifier diodes — is reported together with a complete loss budget, yielding an estimated overall efficiency of approximately $91.7\%$, in compliance with the $\eta > 90 \%$ specification. The full AFE + PS-FBC system, based on CM1200DW-24T LV100 IGBT modules, is validated in MATLAB/Simulink/Simscape under two operating scenarios, nominal load cold (NLC, 25 V / 12 kA) and nominal load hot (NLH, 10 V / 12 kA), reporting voltages, currents and power losses of the main active and passive components.
 }
 
 
