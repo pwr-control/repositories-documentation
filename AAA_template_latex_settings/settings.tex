@@ -52,13 +52,14 @@
 \usepackage{longtable}
 \usepackage{chemformula}
 \usetikzlibrary{arrows.meta,positioning,calc}
+\usepackage[page,toc]{appendix}
 
 
 % ===================== SI UNITS =====================
 \DeclareSIUnit\atm{atm}
 \DeclareSIUnit{\var}{var}
 \DeclareSIUnit{\pu}{p.u.}
-
+\sisetup{detect-weight=true, detect-inline-weight=math}
 
 % ===================== MATH OPERATORS =====================
 \DeclareMathOperator{\rank}{rank}

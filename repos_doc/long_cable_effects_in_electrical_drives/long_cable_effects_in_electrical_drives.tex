@@ -140,10 +140,16 @@
 
 \section*{Nomenclature}
 \begin{itemize}
+	\item[--] ASE : Audible sound emission.
 	\item[--] PSM : Permanent magnet synchronous machine.
 	\item[--] Differential mode: quantity which flows through two different phases.
 	\item[--] Common mode (or zero sequence) : quantity which flows through one (or more phases) and ground.
-	\item[--] XLPE : Cross-linked Polyethylene.
+	\item[--] XLPE : Cross-linked Polyethylene.	
+	\item[--] PWM: pulse-width modulation (fixed-frequency carrier-based).
+	\item[--] RPWM: random pulse-width modulation (random-frequency carrier-based).
+	\item[--] $I_z^{\mathrm{inv}}$ : zero sequence current measured at the output of the inverter side electrical drive.
+	\item[--] $I_z^{\mathrm{m}}$ : zero sequence current measured at the input of a PSM winding system.
+	\item[--] $\hat{\tilde\imath}_{sw}$ : switching current ripple magnitude. The magnitude is function of the switching frequency and machine side synchronous inductance. 
 \end{itemize}
 
 \begin{onehalfspace}
@@ -166,28 +172,84 @@
 	the cables themselves; the \SI{40}{\meter} section does not.
 \end{itemize}
 
-\section{On-site measurement}
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{0.5\textwidth}
+		\centering
+		\includegraphics[width = 250pt, angle = 0, 
+		keepaspectratio]{figures/power_cable/three_phase_shielded_power_cable_1.eps}
+		\captionsetup{width=0.5\textwidth, font=footnotesize}	
+		\caption{Power cable representation.}
+		\label{electrical_power_cable_1}
+	\end{subfigure}%
+	\begin{subfigure}{.5\textwidth}
+		\centering
+		\includegraphics[width = 250pt, angle = 0, 
+		keepaspectratio]{figures/power_cable/three_phase_shielded_power_cable_2.eps}
+		\captionsetup{width=0.5\textwidth, font=footnotesize}	
+		\caption{Equivalent per phase-shield per-unit length model.}
+		\label{electrical_power_cable_2}
+	\end{subfigure}
+	\captionsetup{width=0.65\textwidth, font=small}	
+	\caption{Shielded three phase power cable and per-unit length model.}
+	\label{electrical_power_cable}
+\end{figure}
+Figure~\ref{whole_system} shows the whole connection layout:
 \begin{itemize}
-	\item[--] The magnitude of the audible sound emission is proportional to
-	the plant load.
-	\item[--] The tone of the audible sound emission is correlated to the
-	inverter PWM switching frequency.
-	\item[--] With a constant PWM carrier frequency at the inverter side, the
-	audible emission is narrowband, centered on a single tone.
-	\item[--] With random PWM enabled at the inverter side, the emission becomes
-	broadband (spread-spectrum), and the resulting sound is subjectively more
-	acceptable.
-	\item[--] The common-mode (zero-sequence) current is
-	$I_z^{\mathrm{inv}}=\SI{8}{\ampere}$ rms at the drive output and
-	$I_z^{\mathrm{m}}=\SI{2.5}{\ampere}$ rms at the machine input. \textbf{The larger
-	part of the common-mode current therefore returns through the cable shield
-	rather than through the machine, which bounds the fraction available to
-	drive bearing current. This common-mode path concerns bearing-current and
-	EMC behavior and is distinct from the acoustic mechanism discussed below,
-	which is a differential-mode effect.}
+	\item[--] the permanent magnet synchronous motor (PSM) consists of eight galvanically isolated three-phase winding systems;
+	\item[--] each electrical drive supplies two of these winding systems at a time;
+	\item[--] the winding systems are spatially arranged so as to minimize torque ripple at the shaft.
 \end{itemize}
 
+\begin{figure}[H]
+	\centering
+	\includegraphics[width = 600pt, angle = 90, 
+	keepaspectratio]{figures/power_cable/whole_system.eps}
+	\captionsetup{width=0.75\textwidth, font=small}	
+	\caption{Whole system connection for the \SI{120}{\meter} section.}
+	\label{whole_system}
+\end{figure}
+
+\section{On-site measurement}
+The on-site inspection yielded the following results:
+\begin{itemize}
+	\item[--] the magnitude of the audible sound emission (ASE) is proportional to
+	the plant load;
+	\item[--] the tone of the ASE is correlated to the inverter PWM switching frequency;
+	\item[--] enabling a constant carrier frequency at the inverter side (\textbf{PWM}), the
+	audible emission is narrow-band, centered on a single tone;
+	\item[--] enabling random carrier frequency at the inverter side (\textbf{RPWM}), the sound emission becomes
+	broadband (spread-spectrum), and the resulting sound is subjectively more acceptable;
+	\item[--] the measured common-mode (zero-sequence) current was
+	$I_z^{\mathrm{inv}}=\SI{8}{\ampere}$ rms at the drive output and
+	$I_z^{\mathrm{m}}=\SI{2.5}{\ampere}$ rms at the machine system input; 
+\end{itemize}
+
+\paragraph{Remark -} From the first point of the list, it follows that the ASE is correlated with the differential-mode current flowing through the power cable.
+
+\paragraph{Remark -} From the last point of the list it follows that most of the common-mode current returns through the cable shield rather than through the machine, so the fraction flowing through the bearings is further reduced. This is beneficial for the bearing lifetime.
+	
+\paragraph{Remark -} The analysis of the common-mode current path. see also Figure~\ref{one_system} and its magnitude relates to bearing-current stress and belongs to the domain of electromagnetic compatibility (EMC). It is therefore distinct from the acoustic mechanism, which is a differential-mode effect.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width = 600pt, angle = 90, 
+	keepaspectratio]{figures/power_cable/total_system_one_drive.eps}
+	\captionsetup{width=0.75\textwidth, font=small}	
+	\caption{Per system equivalent circuit: input transformer - drive - machine system - shielded power cable and common mode current path.}
+	\label{one_system}
+\end{figure}
+
 \section{Results of the Analysis}
+
+\paragraph{The analysis of the sound emission is based on the following mechanisms:}
+\begin{itemize}
+	\item[--] the audible sound emission (ASE) spectrum is centered around \SI{4}{\kilo\hertz} which is the same of the PWM carrier frequency;
+	\item[--] the ASE is correlated with the internal forces of the power cable generated by the differential-mode currents;
+	\item[--] the ASE results from the interaction between these differential-mode forces and the resonances of the cable, modeled as an equivalent string-beam system;
+\end{itemize}
+
+\paragraph{Based on the above points, the following conclusions were reached (see the next chapters for further analysis).}
 \begin{itemize}
 	\item[--] The power cable on both sections experiences internal inter-phase
 	forces proportional to the product of the fundamental phase current $I_1$
@@ -221,66 +283,43 @@
 	more likely to coincide with a lightly damped span resonance and be
 	resonantly amplified; on the \SI{40}{\meter} run the sparser resonances can
 	fall between the force lines, leaving the response near the non-resonant
-	level. This resonant coincidence is the dominant reason why the
+	level. \textbf{This resonant coincidence is the dominant reason why the
 	\SI{120}{\meter} section emits audible sound while the \SI{40}{\meter}
-	section does not.
+	section does not.}
 	\item[--] The larger radiating length of the \SI{120}{\meter} cable adds a
 	secondary contribution of about $10\log_{10}(120/40)\approx\SI{4.8}{\decibel}$
 	for equal surface velocity, but this alone cannot account for the
 	audible/inaudible contrast between the two sections.
-	\item[--] The resonant-coupling hypothesis can be confirmed on site by an
-	impact (bump) test on a \SI{120}{\meter} span to identify its mechanical
-	natural frequencies, and by verifying their coincidence with the force
-	harmonics $f_{sw}\pm m f_1$.
+	\item[--] The resonant-coupling hypothesis remains the most likely scenario. It can be further investigated by shifting the resonance frequency of the power cable, i.e., by changing the stiffness of the mechanical installation.
    \end{itemize}
 
 \section{Ageing Consideration} Three points:
 \begin{itemize}[leftmargin=*]
-	\item[--] \textbf{Acoustic emission is not a damage indicator.} The audible tone
-	is a comfort/acceptability issue, not a measure of fatigue. In fact the
-	$2f_1$ ($\SI{100}{\hertz}$) force is about seven times larger than the
-	switching-frequency force yet is inaudible: if a fatigue driver ever existed,
-	it would be the largest force acting on the most compliant mode, independent of
-	its audibility. The noise must not be used as a proxy for damage.
-	\item[--] \textbf{The service life is governed by other mechanisms.} The
-	\num{50}-year life is set by thermal ageing of the insulation
+	\item[--] \textbf{The acoustic emission is not a damage indicator.} The audible
+	tone is a comfort problem, not a sign of fatigue. In fact, the $2f_1$
+	($\SI{100}{\hertz}$) force is about seven times larger than the
+	switching-frequency force, yet it is inaudible. If vibration-induced fatigue
+	were a real risk, it would come from this larger force acting on the most
+	flexible mode, whether audible or not. Therefore, the noise must not be used
+	as a proxy for damage.
+	\item[--] \textbf{The service life is set by other mechanisms.} The
+	\num{50}-year life is determined by thermal ageing of the insulation
 	(Arrhenius law, IEC~60216), by electrical ageing (partial discharge, water
-	treeing in the XLPE), and by thermo-mechanical fatigue at the cleats driven by
-	the \emph{load cycle} (daily/seasonal expansion, a few cycles per day --- not
-	the kilohertz vibration). The PWM-induced resonance is negligible relative to
-	these.
-	\item[--] \textbf{The only vibration-related watch item} is the possible
-	progressive loosening or fretting of cleats, terminations and clamps. At a
-	displacement amplitude of order \SI{1}{\nano\meter} the motion is well below the
-	micrometer slip threshold of fretting, so this is a periodic-inspection item,
-	not a life limit.
+	treeing in the XLPE), and by thermo-mechanical fatigue at the cleats. The
+	latter is driven by the \emph{load cycle} (daily and seasonal expansion, a few
+	cycles per day), not by the kilohertz vibration. Compared to these mechanisms,
+	the PWM-induced resonance is negligible.
+	\item[--] \textbf{The only vibration-related item to monitor} is a possible
+	progressive loosening or fretting of cleats, terminations and clamps. However,
+	with a displacement amplitude on the order of \SI{1}{\nano\meter}, the motion
+	is far below the micrometer-level slip threshold required for fretting. This
+	is therefore an item for periodic inspection, not a life limit.
 \end{itemize}
 
-\noindent\textbf{Remark} - \textit{Audible noise arises from the resonant coupling between the harmonics
-	of the differential electromagnetic forces and the natural frequencies of the
-	cable; it is the coincidence of a force line at $f_{sw}\pm m f_1$ with a cable
-	span mode that raises the emission above the audibility threshold. Audible noise does not any contribution to the overall power cable ageing.}
+\section{Conclusions}
+Audible noise emission arises from the resonant coupling between the harmonics of the differential-mode electromagnetic forces and the natural frequencies of the cable: it is the coincidence of a force component at  $ f_{sw} \pm m f_1 $ with a cable span mode that raises the emission above the audibility threshold. However, the audible noise gives no contribution to the overall ageing of the power cable.
 
-
-\vspace{25mm}
-\begin{figure}[H]
-	\centering
-	\includegraphics[width = 450pt, angle = 0, 
-	keepaspectratio]{figures/power_cable/three_phase_shielded_power_cable.eps}
-	\captionsetup{width=0.75\textwidth, font=small}	
-	\caption{Shielded three phase power cable and per unit length HF model.}
-	\label{electrical_power_cable}
-\end{figure}
-
-\begin{figure}[H]
-	\centering
-	\includegraphics[width = 600pt, angle = 90, 
-	keepaspectratio]{figures/power_cable/total_system_one_drive.eps}
-	\captionsetup{width=0.75\textwidth, font=small}	
-	\caption{Per system equivalent circuit: input transformer - drive - machine system - shielded power cable and common mode current path.}
-	\label{ElectricalDrive_connection}
-\end{figure}
-
+\begin{appendices}
 
 \chapter{Shielded Power Cable High-Frequency Model}
 \textit{This chapter develops the mathematical model required to implement a shielded
@@ -680,6 +719,54 @@ intended bandwidth:
 \end{enumerate}
 Convergence of these three indicators with increasing $N$ confirms that the chosen
 section count is sufficient.
+%======================================================================
+\section{Simulation results}
+%======================================================================
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{0.5\textwidth}
+		\centering
+		\includegraphics[width = 225pt, angle = 0, 
+		keepaspectratio]{figures/sim_results/sim_results_fig_1.eps}
+		\captionsetup{width=0.5\textwidth, font=footnotesize}	
+		\caption{Simulation results: zero sequence current.}
+		\label{sim_results_fig_1}
+	\end{subfigure}%
+	\begin{subfigure}{.5\textwidth}
+		\centering
+		\includegraphics[width = 225pt, angle = 0, 
+		keepaspectratio]{figures/sim_results/trace_15_b.eps}
+		\captionsetup{width=0.5\textwidth, font=footnotesize}	
+		\caption{Experimental measure: zero sequence current.}
+		\label{trace_15_b}
+	\end{subfigure}
+	\captionsetup{width=0.65\textwidth, font=small}	
+	\caption{Simulation results versus on-site measurements.}
+	\label{}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{0.5\textwidth}
+		\centering
+		\includegraphics[width = 225pt, angle = 0, 
+		keepaspectratio]{figures/sim_results/sim_results_fig_2.eps}
+		\captionsetup{width=0.5\textwidth, font=footnotesize}	
+		\caption{Simulation results: DClink positive pole and ground voltage.}
+		\label{sim_results_fig_2}
+	\end{subfigure}%
+	\begin{subfigure}{.5\textwidth}
+		\centering
+		\includegraphics[width = 225pt, angle = 0, 
+		keepaspectratio]{figures/sim_results/trace_35_b.eps}
+		\captionsetup{width=0.5\textwidth, font=footnotesize}	
+		\caption{Experimental measure: DClink positive pole and ground voltage.}
+		\label{trace_35_b}
+	\end{subfigure}
+	\captionsetup{width=0.65\textwidth, font=small}	
+	\caption{Simulation results versus on-site measurements.}
+	\label{}
+\end{figure}
 
 %======================================================================
 \section{Application notes}
@@ -1215,6 +1302,9 @@ measurement closes the question:
 \end{enumerate}
 This converts the assessment from an estimate into a verified result.
 
+\end{appendices}
+
+\end{onehalfspace}
 %======================================================================
 %\section*{References}
 \addcontentsline{toc}{section}{References}
@@ -1294,5 +1384,5 @@ This converts the assessment from an estimate into a verified result.
 %*********************************************************
 %\newpage
 %\printbibliography[heading=bibintoc]
-\end{onehalfspace}
+
 \end{document}
