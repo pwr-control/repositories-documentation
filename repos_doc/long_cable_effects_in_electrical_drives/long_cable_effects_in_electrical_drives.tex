@@ -138,19 +138,23 @@
 	\newpage
 	
 
-\section*{Nomenclature}
-\begin{itemize}
-	\item[--] ASE : Audible sound emission.
-	\item[--] PSM : Permanent magnet synchronous machine.
-	\item[--] Differential mode: quantity which flows through two different phases.
-	\item[--] Common mode (or zero sequence) : quantity which flows through one (or more phases) and ground.
-	\item[--] XLPE : Cross-linked Polyethylene.	
-	\item[--] PWM: pulse-width modulation (fixed-frequency carrier-based).
-	\item[--] RPWM: random pulse-width modulation (random-frequency carrier-based).
-	\item[--] $I_z^{\mathrm{inv}}$ : zero sequence current measured at the output of the inverter side electrical drive.
-	\item[--] $I_z^{\mathrm{m}}$ : zero sequence current measured at the input of a PSM winding system.
-	\item[--] $\hat{\tilde\imath}_{sw}$ : switching current ripple magnitude. The magnitude is function of the switching frequency and machine side synchronous inductance. 
-\end{itemize}
+\section*{Abbreviations}
+\begin{description}
+	\item[ASE] audible sound emission.
+	\item[PSM] permanent magnet synchronous machine.
+	\item[Differential mode] quantity which flows through two different phases.
+	\item[Common mode (or zero sequence)] quantity which flows through one (or more phases) and ground.
+	\item[XLPE] cross-linked polyethylene.	
+	\item[PWM] pulse-width modulation (fixed-frequency carrier-based).
+	\item[RPWM] random pulse-width modulation (random-frequency carrier-based).
+	\item[$I_z^{\mathrm{inv}}$] zero sequence current measured at the output of the inverter side electrical drive.
+	\item[$I_z^{\mathrm{m}}$] zero sequence current measured at the input of a PSM winding system.
+	\item[$\hat{\tilde\imath}_{sw}$] switching current ripple magnitude. The magnitude is function of the switching frequency and machine side synchronous inductance. 
+	\item[p.u.l.] per unit length. All distributed cable parameters marked
+	with a prime ($'$) are expressed per unit length, e.g.
+	$R'$~[$\Omega/\mathrm{m}$], $L'$~[H/m], $C'$~[F/m], $G'$~[S/m].
+	\item[p.u.] per unit, dimensionless quantity.
+\end{description}
 
 \begin{onehalfspace}
 \chapter{Power Cable Sound Emission --- Conclusions from On-Site Measurements}
@@ -361,9 +365,7 @@ when needed.
 %======================================================================
 The reference cable is a three-core copper construction with a collective metallic
 shield, representative of a $0.6/1\ \mathrm{kV}$ EMC drive cable. The assumed
-geometry is summarized in Table~\ref{tab:geom}. These values define the worked
-example; for a specific product the manufacturer datasheet p.u.l. values should be
-substituted directly into Sections~\ref{sec:numbers}--\ref{sec:simscape}.
+geometry is summarized in Table~\ref{tab:geom}. 
 
 \begin{table}[h]
 	\centering
@@ -389,7 +391,7 @@ substituted directly into Sections~\ref{sec:numbers}--\ref{sec:simscape}.
 		\bottomrule
 	\end{tabular}
 \end{table}
-Power losses from insulation-loss-tangent: {$P_{loss}^\varepsilon = \sum_{n} U_u^2 \omega_h C \tan \delta$}.
+\paragraph{Remark -} Power losses from insulation-loss-tangent: {$P_{loss}^\varepsilon = \sum_{n} U_u^2 \omega_h C \tan \delta$}.
 %======================================================================
 \section{Distributed-parameter formulation}
 %======================================================================
@@ -758,7 +760,7 @@ section count is sufficient.
 	\begin{subfigure}{.5\textwidth}
 		\centering
 		\includegraphics[width = 225pt, angle = 0, 
-		keepaspectratio]{figures/sim_results/trace_35_b.eps}
+		keepaspectratio]{figures/sim_results/trace_34_b.eps}
 		\captionsetup{width=0.5\textwidth, font=footnotesize}	
 		\caption{Experimental measure: DClink positive pole and ground voltage.}
 		\label{trace_35_b}
