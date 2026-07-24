@@ -1,0 +1,298 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb}
+\usepackage{siunitx}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage[colorlinks=true,linkcolor=black,citecolor=black,urlcolor=blue]{hyperref}
+\usepackage{geometry}
+\geometry{margin=25mm}
+
+\lstdefinelanguage{ssc}{
+  morekeywords={component,nodes,inputs,parameters,variables,intermediates,
+                branches,equations,events,annotations,end,when,elsewhen,
+                edge,if,else,der,priority,Event,Access,private,value},
+  sensitive=true,
+  morecomment=[l]{\%},
+  morestring=[b]',
+}
+\lstset{
+  language=ssc,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\bfseries,
+  commentstyle=\itshape\color{gray},
+  columns=fullflexible,
+  frame=single,
+  breaklines=true,
+  tabsize=2
+}
+
+\title{A Simscape Language Thyristor Model with Reverse Recovery\\
+\large Lumped-Charge (Lauritzen--Ma) Dynamics with Latching Logic and a Physical $t_q$ Constraint}
+\author{Davide Bagnara}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Simscape Electrical does not provide a thyristor block with junction charge
+dynamics: the \emph{Thyristor (Piecewise Linear)} block models reverse
+recovery only as a thermal loss term (from R2023a), and the Specialized Power
+Systems \emph{Detailed Thyristor} models only the circuit-commutated turn-off
+time $t_q$ without the reverse recovery current waveform. This document
+describes a custom Simscape language component that combines the
+piecewise-linear SCR static characteristic with the Lauritzen--Ma lumped-charge
+model, so that the terminal current reproduces the reverse recovery peak
+$I_{rr}$, the stored charge $Q_{rr}$ and the recovery tail. The latching and
+holding behaviour is implemented with an event variable, and the turn-off time
+constraint $t_q$ is reproduced physically through a residual-charge re-trigger
+condition rather than an explicit timer. Parameter extraction from datasheet
+quantities is discussed, and the relevant literature is referenced.
+\end{abstract}
+
+\section{Motivation}
+
+The thyristor is a bipolar four-layer (pnpn) device. During conduction the
+junctions are flooded with minority carriers; at natural commutation the anode
+current does not stop at zero but reverses while the stored charge is
+extracted, producing a reverse recovery transient characterized by the peak
+current $I_{rr}$, the recovered charge $Q_{rr}$ and the recovery time
+$t_{rr}$. Phase-controlled thyristors, designed with long carrier lifetime for
+low on-state voltage, store comparatively large charge, so the recovery
+transient is significant. Its practical consequences include:
+
+\begin{itemize}
+  \item overvoltage spikes $L\,\mathrm{d}i/\mathrm{d}t$ on the commutation
+        inductance during current snap-off, which drive RC snubber and clamp
+        design;
+  \item switching (recovery) losses;
+  \item the circuit-commutated turn-off time $t_q$: after recovery, residual
+        charge in the n and p bases must recombine before forward voltage can
+        be reapplied, otherwise the device re-fires spontaneously. $t_q$ is
+        typically much longer than $t_{rr}$ (\SIrange{50}{200}{\micro\second}
+        for phase-controlled devices, \SIrange{10}{30}{\micro\second} for fast
+        thyristors) and sets the extinction margin (angle $\gamma$) in
+        line-commutated converters.
+\end{itemize}
+
+An electrical (waveform-level) reverse recovery model is therefore required
+whenever snubber stress, commutation overvoltage or recovery-driven
+interactions must be simulated. Since no standard block provides it, the
+component below implements it in the Simscape language.
+
+\section{Theoretical background: the lumped-charge model}
+
+\subsection{Lauritzen--Ma two-charge model}
+
+Lauritzen and Ma \cite{lauritzen1991} describe the excess minority-carrier
+charge in the lightly doped base with two lumped state quantities: the charge
+$q_E$ injected at the junction boundary, which follows the static device
+characteristic instantaneously, and the charge $q_M$ stored in the middle of
+the base region, which follows $q_E$ with finite dynamics. Charge is exchanged
+between the two nodes by diffusion with a cross-over time constant $T_M$, and
+$q_M$ recombines with the carrier lifetime $\tau$. The model equations are:
+
+\begin{align}
+  i(t)                          &= \frac{q_E - q_M}{T_M}, \label{eq:current}\\
+  \frac{\mathrm{d}q_M}{\mathrm{d}t} &= \frac{q_E - q_M}{T_M} - \frac{q_M}{\tau}. \label{eq:charge}
+\end{align}
+
+The injected charge is tied to the static characteristic $i_s(v)$ through
+
+\begin{equation}
+  q_E = (\tau + T_M)\, i_s(v), \label{eq:qE}
+\end{equation}
+
+where the gain $(\tau + T_M)$ is chosen so that in forward steady state
+($\mathrm{d}q_M/\mathrm{d}t = 0$) the terminal current reduces exactly to
+$i = i_s(v)$. This is the same formulation documented for the charge dynamics
+option of the Simscape \emph{Diode} block.
+
+During commutation, the external circuit forces $i_s$ (and hence $q_E$) down
+and negative, while $q_M$ can only decrease at the rate allowed by
+\eqref{eq:charge}. The difference $q_E - q_M$ in \eqref{eq:current} produces
+the negative recovery current. Once the junction blocks ($q_E \approx 0$), the
+remaining $q_M$ decays with the effective recovery time constant
+
+\begin{equation}
+  \tau_{rr} = \frac{\tau\, T_M}{\tau + T_M},
+\end{equation}
+
+which gives the model its characteristic soft exponential recovery tail. The
+snappiness of the recovery is controlled by the ratio $T_M/\tau$: small
+$T_M/\tau$ gives abrupt (snappy) recovery, larger values give soft recovery.
+
+The 1991 model was subsequently extended to include forward recovery and
+emitter recombination \cite{ma1993}, generalized into the systematic
+lumped-charge modeling technique with parameter extraction from datasheets
+\cite{ma1997}, and applied to multi-layer devices including SCRs and GTOs
+\cite{ma1994}. A practical implementation of the diode and thyristor models
+with automatic parameter extraction was given by Courtay for the Saber/MAST
+environment \cite{courtay1995}, which is the reference cited by the MathWorks
+documentation for the Diode charge model. The device physics background
+(charge control, base charge storage, origin of $t_q$) is covered by Baliga
+\cite{baliga2019}.
+
+\subsection{Application to the thyristor}
+
+A rigorous lumped-charge thyristor model represents the pnpn structure as two
+coupled transistors with separate base charge nodes \cite{ma1994}. For system
+and converter level simulation a simpler behavioural structure is adequate:
+the static characteristic is the piecewise-linear SCR model with a latch,
+
+\begin{equation}
+  i_s =
+  \begin{cases}
+    \dfrac{v - V_f\,(1 - R_{on} G_{off})}{R_{on}}, & \text{device on},\\[2ex]
+    v\, G_{off}, & \text{device off},
+  \end{cases}
+  \label{eq:pwl}
+\end{equation}
+
+identical to the \emph{Thyristor (Piecewise Linear)} block, and the charge
+dynamics \eqref{eq:current}--\eqref{eq:qE} are wrapped around it. The latch
+state evolves by discrete events:
+
+\begin{itemize}
+  \item \textbf{turn-on}: gate signal above the trigger threshold $V_{gt}$
+        while $v > 0$;
+  \item \textbf{turn-off}: anode current below the holding current $I_h$ with
+        the gate low (natural commutation);
+  \item \textbf{$t_q$ re-trigger}: if forward voltage is reapplied while the
+        stored charge $q_M$ exceeds a threshold $Q_{th}$, the device turns
+        back on spontaneously.
+\end{itemize}
+
+The last rule reproduces the physical origin of $t_q$ --- residual
+unrecombined base charge --- without an explicit timer. In the blocking state
+$q_M$ decays approximately as $e^{-t/\tau}$, so the effective turn-off time
+realized by the model is
+
+\begin{equation}
+  t_q \approx \tau \, \ln\!\frac{Q_{rr}}{Q_{th}},
+  \label{eq:tq}
+\end{equation}
+
+which is the design equation for $Q_{th}$ given a datasheet $t_q$.
+
+\section{Simscape language implementation}
+
+The component uses electrical anode and cathode nodes and a physical-signal
+gate input (replace with an electrical gate node plus $R_g$ if gate-circuit
+loading matters). The latch is an integer event variable updated in the
+\texttt{events} section (Simscape language R2019b or later). The full source
+is listed below.
+
+\lstinputlisting[caption={\texttt{thyristor\_rr.ssc}}]{thyristor_rr.ssc}
+
+Implementation notes:
+
+\begin{itemize}
+  \item The stored charge $q_M$ is declared with high initialization priority
+        and zero initial value (device initially blocking and discharged).
+  \item The static current $i_s$ and injected charge $q_E$ are
+        \texttt{intermediates}, so the DAE keeps only $q_M$ as a continuous
+        state.
+  \item The system is stiff ($\tau$, $T_M$ in the microsecond range against
+        milliohm on-resistance): use the \texttt{daessc} solver or
+        \texttt{ode23t} with tight tolerances.
+  \item Always include the commutation (source) inductance in the test
+        circuit; without it the current slope is unbounded and the recovery
+        transient degenerates.
+  \item The latching current $I_l$ is declared but the present event logic
+        latches directly on gate turn-on. Strict latching behaviour (turn-off
+        if the gate is removed before $i > I_l$) requires one additional
+        event flag and transition.
+\end{itemize}
+
+\section{Parameter extraction from datasheet data}
+
+Datasheets for phase-controlled thyristors specify $Q_{rr}$, $I_{rr}$ and
+$t_{rr}$ (or $t_q$) as functions of the commutation slope
+$a = |\mathrm{d}i/\mathrm{d}t|$ and junction temperature. A practical
+extraction sequence:
+
+\begin{enumerate}
+  \item \textbf{Initial $\tau$}: from the datasheet $t_q$ using
+        \eqref{eq:tq} with a provisional $Q_{th}$, or the rule of thumb
+        $\tau \approx t_q/3$ as a starting point.
+  \item \textbf{Initial $T_M$}: from the recovery softness. For a linear
+        current ramp $-a$ the recovery peak obeys approximately
+        $I_{rr} \approx a\,\tau_{rr}\,(1 - e^{-t_{rr}/\tau_{rr}})$ with
+        $\tau_{rr} = \tau T_M/(\tau + T_M)$; solve for $\tau_{rr}$ at the
+        datasheet operating point, then $T_M = \tau\,\tau_{rr}/(\tau - \tau_{rr})$.
+  \item \textbf{Validation sweep}: simulate a controlled-$\mathrm{d}i/\mathrm{d}t$
+        commutation test harness (half-bridge or single pulse with series
+        inductance), sweep $a$ over the datasheet range, extract $I_{rr}$ and
+        $Q_{rr}$ from the waveforms, and compare against the datasheet curves.
+        A power-law fit $I_{rr}(a)$, $Q_{rr}(a)$ of the datasheet points is
+        convenient both for the comparison and for extrapolation beyond the
+        specified range.
+  \item \textbf{$Q_{th}$}: finalize from \eqref{eq:tq} so that the spurious
+        re-trigger disappears for reapplied forward voltage delayed by more
+        than the datasheet $t_q$.
+  \item \textbf{Temperature}: $\tau$, and hence $Q_{rr}$ and $t_q$, increase
+        with junction temperature. For a fixed-temperature study parameterize
+        at the worst case (maximum $T_j$); a temperature-dependent model
+        requires making $\tau$ a function of a thermal port variable.
+\end{enumerate}
+
+The extraction methodology follows \cite{ma1997} and \cite{courtay1995}.
+
+\section{Limitations}
+
+The model is behavioural at the latch level: it does not represent the two
+coupled transistor charges of the pnpn structure, so it does not capture
+gate-controlled turn-off (GTO operation), $\mathrm{d}v/\mathrm{d}t$-induced
+triggering through junction capacitance, or the plasma spreading phase at
+turn-on ($\mathrm{d}i/\mathrm{d}t$ limitation). Junction capacitance in the
+blocking state is not included and can be added in parallel externally or as
+an additional charge term. Within its scope --- natural commutation, reverse
+recovery waveforms, snubber and clamp stress, $t_q$ margin studies in
+line-commutated converters --- the two-charge model is well established and
+adequate.
+
+\begin{thebibliography}{9}
+
+\bibitem{lauritzen1991}
+P.~O. Lauritzen and C.~L. Ma,
+``A simple diode model with reverse recovery,''
+\emph{IEEE Transactions on Power Electronics}, vol.~6, no.~2, pp. 188--191,
+Apr. 1991.
+
+\bibitem{ma1993}
+C.~L. Ma and P.~O. Lauritzen,
+``A simple power diode model with forward and reverse recovery,''
+\emph{IEEE Transactions on Power Electronics}, vol.~8, no.~4, pp. 342--346,
+Oct. 1993.
+
+\bibitem{ma1997}
+C.~L. Ma, P.~O. Lauritzen, and J.~Sigg,
+``Modeling of power diodes with the lumped-charge modeling technique,''
+\emph{IEEE Transactions on Power Electronics}, vol.~12, no.~3, pp. 398--405,
+May 1997.
+
+\bibitem{ma1994}
+C.~L. Ma, P.~O. Lauritzen, P.-Y. Lin, I.~Budihardjo, and J.~Sigg,
+``A systematic approach to modeling power semiconductor devices based on
+charge control principles,''
+in \emph{Proc. IEEE Power Electronics Specialists Conference (PESC)}, 1994.
+
+\bibitem{courtay1995}
+A.~Courtay,
+``MAST power diode and thyristor models including automatic parameter
+extraction,''
+\emph{SABER User Group Meeting}, Brighton, UK, Sep. 1995.
+
+\bibitem{baliga2019}
+B.~J. Baliga,
+\emph{Fundamentals of Power Semiconductor Devices}, 2nd~ed.
+Cham: Springer, 2019.
+
+\end{thebibliography}
+
+\end{document}
