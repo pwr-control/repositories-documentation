@@ -3,30 +3,31 @@ component thyristor_rr
 % ---------------------------------------------------------------
 % Piecewise-linear SCR static characteristic + Lauritzen-Ma lumped
 % charge model for reverse recovery, plus latching/holding logic.
+% Default parameters: ABB 5STP 26N6500 (6.5 kV / 2880 A phase-control
+% thyristor), typical values at Tvj = 125 degC.
 %
 % Static PWL characteristic (same form as Thyristor (Piecewise Linear)):
 %   on:  i_s = (v - Vf*(1 - Ron*Goff))/Ron
 %   off: i_s = v*Goff
 %
 % Charge model (as documented for the Simscape Diode block):
-%   qE = (tau + Tm) * i_s              injected charge
-%   Tm * der(qM) = qE - qM - (Tm/tau)*qM*tau ... written below in
-%   standard form:
-%       der(qM) = (qE - qM)/Tm - qM/tau
-%   i  = (qE - qM)/Tm                  terminal current
+%   qE = (tau + Tm) * i_s                injected charge
+%   der(qM) = (qE - qM)/Tm - qM/tau      stored charge
+%   i  = (qE - qM)/Tm                    terminal current
 %
 % In forward steady state i -> i_s. During commutation the extraction
 % of qM produces the reverse recovery current with soft exponential
-% decay (time constant tau_rr = tau*Tm/(tau+Tm)).
+% decay, time constant tau_rr = tau*Tm/(tau+Tm).
 %
 % Latching logic (event variable 'on'):
 %   turn ON  : gate signal G > Vgt while v > 0
-%   stay ON  : latched once i > Il (gate can be removed)
-%   turn OFF : i < Ih while gate is low
-%   re-trigger (tq surrogate): if v > 0 while stored charge qM > Qth,
-%   the device turns back on spontaneously. This reproduces the
-%   physical origin of tq (residual charge in the bases) without an
-%   explicit timer.
+%   turn OFF : i < Ih while gate is low; the turn-off instant is
+%              stored in 'toff'
+%   re-trigger: forward voltage reapplied while EITHER
+%     (a) stored charge qM > Qth  (physical, early phase), OR
+%     (b) time - toff < tq        (explicit timer, enforces the full
+%         datasheet tq, which the two-charge model cannot sustain
+%         through residual charge alone since qM decays with tau_rr)
 %
 % Gate is a physical signal input (simplest robust choice; replace
 % with an electrical gate node + Rg if you need gate-circuit loading).
@@ -37,33 +38,35 @@ component thyristor_rr
   end
 
   inputs
-    G = {0, 'V'}; % G:left
+    G = {0, 'V'}; % G:left  gate command (compare against Vgt)
   end
 
   parameters
-    Vf   = {0.8,   'V'    };  % Forward voltage
-    Ron  = {1e-3,  'Ohm'  };  % On-state resistance
-    Goff = {1e-6,  '1/Ohm'};  % Off-state conductance
-    Vgt  = {1,     'V'    };  % Gate trigger threshold
-    Il   = {0.5,   'A'    };  % Latching current
-    Ih   = {0.2,   'A'    };  % Holding current
-    tau  = {50e-6, 's'    };  % Carrier lifetime (transit time)
-    Tm   = {10e-6, 's'    };  % Charge extraction (cross-over) time constant
-    Qth  = {1e-6,  'C'    };  % Residual-charge threshold for tq re-trigger
+    Vf   = {1.12,    'V'    };  % Forward voltage (VT0, 125 degC)
+    Ron  = {0.29e-3, 'Ohm'  };  % On-state resistance (rT, 125 degC)
+    Goff = {1e-4,    '1/Ohm'};  % Off-state conductance (IRRM/VRRM worst case)
+    Vgt  = {1.2,     'V'    };  % Gate trigger threshold
+    Il   = {0.25,    'A'    };  % Latching current (125 degC)
+    Ih   = {0.075,   'A'    };  % Holding current (125 degC)
+    tau  = {300e-6,  's'    };  % Carrier lifetime (transit time)
+    Tm   = {44.2e-6, 's'    };  % Charge cross-over time constant
+    Qth  = {1e-6,    'C'    };  % Residual-charge re-trigger threshold
+    tq   = {800e-6,  's'    };  % Circuit-commutated turn-off time (timer)
   end
 
   parameters (Access = private)
-    Kq = tau + Tm;            % qE gain so that i -> i_s in steady state
+    Kq = tau + Tm;              % qE gain so that i -> i_s in steady state
   end
 
   variables
-    i  = {0, 'A'};            % Through variable A->K
-    v  = {0, 'V'};            % Across variable A-K
+    i  = {0, 'A'};              % Through variable A->K
+    v  = {0, 'V'};              % Across variable A-K
     qM = {value = {0, 'C'}, priority = priority.high}; % Stored charge
   end
 
   variables (Event = true)
-    on = 0;                   % Latch state: 0 = blocking, 1 = conducting
+    on   = 0;                   % Latch state: 0 = blocking, 1 = conducting
+    toff = {-1, 's'};           % Time of last turn-off event
   end
 
   intermediates
@@ -85,12 +88,14 @@ component thyristor_rr
   end
 
   events
-    when edge((G > Vgt) && (v > 0) && (on < 0.5))
-      on = 1;                       % gate turn-on
-    elsewhen edge((v > 0) && (qM > Qth) && (on < 0.5))
-      on = 1;                       % tq violation: residual charge re-fires
+    when edge((G > Vgt) && (v > {0,'V'}) && (on < 0.5))
+      on = 1;                   % gate turn-on
+    elsewhen edge((v > {0,'V'}) && (on < 0.5) && ...
+                  ((qM > Qth) || (time - toff < tq)))
+      on = 1;                   % tq violation: spontaneous re-fire
     elsewhen edge((i < Ih) && (G < Vgt) && (on > 0.5))
-      on = 0;                       % natural commutation below holding
+      on   = 0;                 % natural commutation below holding
+      toff = time;              % start tq timer
     end
   end
 

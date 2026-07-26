@@ -50,8 +50,11 @@ model, so that the terminal current reproduces the reverse recovery peak
 $I_{rr}$, the stored charge $Q_{rr}$ and the recovery tail. The latching and
 holding behaviour is implemented with an event variable, and the turn-off time
 constraint $t_q$ is reproduced physically through a residual-charge re-trigger
-condition rather than an explicit timer. Parameter extraction from datasheet
-quantities is discussed, and the relevant literature is referenced.
+condition complemented by an explicit timer for the late recombination phase that the
+two-charge model cannot represent. Parameter extraction from datasheet
+quantities is discussed and carried out in full for the ABB 5STP~26N6500
+\SI{6.5}{\kilo\volt}/\SI{2880}{\ampere} phase-control thyristor, and the
+relevant literature is referenced.
 \end{abstract}
 
 \section{Motivation}
@@ -163,21 +166,37 @@ state evolves by discrete events:
   \item \textbf{turn-off}: anode current below the holding current $I_h$ with
         the gate low (natural commutation);
   \item \textbf{$t_q$ re-trigger}: if forward voltage is reapplied while the
-        stored charge $q_M$ exceeds a threshold $Q_{th}$, the device turns
-        back on spontaneously.
+        stored charge $q_M$ exceeds a threshold $Q_{th}$, \emph{or} within a
+        time $t_q$ of the turn-off event, the device turns back on
+        spontaneously.
 \end{itemize}
 
-The last rule reproduces the physical origin of $t_q$ --- residual
-unrecombined base charge --- without an explicit timer. In the blocking state
-$q_M$ decays approximately as $e^{-t/\tau}$, so the effective turn-off time
-realized by the model is
+The charge condition reproduces the physical origin of $t_q$ --- residual
+unrecombined base charge. Note, however, an intrinsic limitation of the
+two-charge model: in the blocking state $q_E \approx 0$, so
+\eqref{eq:charge} reduces to
+$\mathrm{d}q_M/\mathrm{d}t = -q_M(1/T_M + 1/\tau) = -q_M/\tau_{rr}$, i.e.\
+the residual charge decays with the \emph{recovery} time constant
+$\tau_{rr}$, not with the lifetime $\tau$. The effective turn-off time
+realized by the charge mechanism alone is therefore
 
 \begin{equation}
-  t_q \approx \tau \, \ln\!\frac{Q_{rr}}{Q_{th}},
+  t_q^{\,\text{model}} \approx \tau_{rr} \, \ln\!\frac{Q_{rr}}{Q_{th}}.
   \label{eq:tq}
 \end{equation}
 
-which is the design equation for $Q_{th}$ given a datasheet $t_q$.
+For phase-control devices, where the datasheet $t_q$ exceeds $\tau_{rr}$ by
+a factor of 20 or more, \eqref{eq:tq} would require an unphysically small
+$Q_{th}$ (picocoulombs, at solver noise level): in the real device the late
+phase of turn-off is governed by pure recombination ($\tau$) of deep base
+charge that the two-charge model does not separate from the extractable
+charge. The component therefore also carries an explicit timer: the
+turn-off event stores its time in an event variable, and reapplied forward
+voltage within $t_q$ of that instant re-fires the device. The charge
+condition remains active and covers the early phase; the timer enforces the
+full datasheet $t_q$. A more physical alternative is a third, slow charge
+node in the spirit of the multi-node lumped-charge technique
+\cite{ma1997}, fed by $q_M$ and governing only the re-trigger condition.
 
 \section{Simscape language implementation}
 
@@ -203,6 +222,9 @@ Implementation notes:
   \item Always include the commutation (source) inductance in the test
         circuit; without it the current slope is unbounded and the recovery
         transient degenerates.
+  \item The turn-off event stores the event time in the real-valued event
+        variable \texttt{toff}; the $t_q$ timer condition compares
+        \texttt{time - toff} against the parameter \texttt{tq}.
   \item The latching current $I_l$ is declared but the present event logic
         latches directly on gate turn-on. Strict latching behaviour (turn-off
         if the gate is removed before $i > I_l$) requires one additional
@@ -211,30 +233,40 @@ Implementation notes:
 
 \section{Parameter extraction from datasheet data}
 
-Datasheets for phase-controlled thyristors specify $Q_{rr}$, $I_{rr}$ and
-$t_{rr}$ (or $t_q$) as functions of the commutation slope
-$a = |\mathrm{d}i/\mathrm{d}t|$ and junction temperature. A practical
+Datasheets for phase-controlled thyristors specify $Q_{rr}$, $I_{RM}$ and
+$t_q$ at a reference operating point, and $Q_{rr}$, $I_{RM}$ as functions of
+the commutation slope $a = |\mathrm{d}i/\mathrm{d}t|$. A practical
 extraction sequence:
 
 \begin{enumerate}
-  \item \textbf{Initial $\tau$}: from the datasheet $t_q$ using
-        \eqref{eq:tq} with a provisional $Q_{th}$, or the rule of thumb
-        $\tau \approx t_q/3$ as a starting point.
-  \item \textbf{Initial $T_M$}: from the recovery softness. For a linear
-        current ramp $-a$ the recovery peak obeys approximately
-        $I_{rr} \approx a\,\tau_{rr}\,(1 - e^{-t_{rr}/\tau_{rr}})$ with
-        $\tau_{rr} = \tau T_M/(\tau + T_M)$; solve for $\tau_{rr}$ at the
-        datasheet operating point, then $T_M = \tau\,\tau_{rr}/(\tau - \tau_{rr})$.
+  \item \textbf{$\tau_{rr}$ from the reference point.} Decompose the
+        recovered charge into the triangle up to the peak (duration
+        $I_{RM}/a$) plus the exponential tail (charge $I_{RM}\tau_{rr}$):
+        \begin{equation}
+          Q_{rr} = \frac{I_{RM}^2}{2a} + I_{RM}\,\tau_{rr}
+          \quad\Longrightarrow\quad
+          \tau_{rr} = \frac{Q_{rr}}{I_{RM}} - \frac{I_{RM}}{2a}.
+          \label{eq:taurr}
+        \end{equation}
+  \item \textbf{Split $\tau$/$T_M$.} Equation \eqref{eq:taurr} fixes only
+        the parallel combination. The split is constrained by the datasheet
+        curves $Q_{rr}(a)$ and $I_{RM}(a)$: the growth of $Q_{rr}$ with $a$
+        depends mainly on $\tau$ (the charge available at the current zero
+        crossing), the peak shape on $T_M$. Choose a trial $\tau$
+        (lifetime of the device class), set
+        $T_M = \tau\,\tau_{rr}/(\tau - \tau_{rr})$, and iterate on $\tau$
+        against the curves.
   \item \textbf{Validation sweep}: simulate a controlled-$\mathrm{d}i/\mathrm{d}t$
-        commutation test harness (half-bridge or single pulse with series
-        inductance), sweep $a$ over the datasheet range, extract $I_{rr}$ and
+        commutation test harness (single pulse with series inductance),
+        sweep $a$ over the datasheet range, extract $I_{RM}$ and
         $Q_{rr}$ from the waveforms, and compare against the datasheet curves.
-        A power-law fit $I_{rr}(a)$, $Q_{rr}(a)$ of the datasheet points is
+        A power-law fit $I_{RM}(a)$, $Q_{rr}(a)$ of the datasheet points is
         convenient both for the comparison and for extrapolation beyond the
         specified range.
-  \item \textbf{$Q_{th}$}: finalize from \eqref{eq:tq} so that the spurious
-        re-trigger disappears for reapplied forward voltage delayed by more
-        than the datasheet $t_q$.
+  \item \textbf{$t_q$ and $Q_{th}$}: set the timer parameter $t_q$ directly
+        from the datasheet. $Q_{th}$ only shapes the early-phase charge
+        re-trigger and is uncritical; \eqref{eq:tq} gives the turn-off time
+        it realizes on its own.
   \item \textbf{Temperature}: $\tau$, and hence $Q_{rr}$ and $t_q$, increase
         with junction temperature. For a fixed-temperature study parameterize
         at the worst case (maximum $T_j$); a temperature-dependent model
@@ -243,13 +275,100 @@ extraction sequence:
 
 The extraction methodology follows \cite{ma1997} and \cite{courtay1995}.
 
+\subsection{Worked example: ABB 5STP 26N6500}
+
+The ABB 5STP~26N6500 \cite{abb26n6500} is a \SI{6.5}{\kilo\volt} /
+\SI{2880}{\ampere} phase-control press-pack thyristor. The datasheet
+recovery data (all at $T_{vj} = \SI{125}{\celsius}$,
+$I_T = \SI{2000}{\ampere}$, $V_R = \SI{200}{\volt}$,
+$\mathrm{d}i_T/\mathrm{d}t = \SI{-1.5}{\ampere\per\micro\second}$) are:
+$Q_{rr} = 3500/4940/5800~\si{\micro\coulomb}$ (min/typ/max),
+$I_{RM} = 60/77/90~\si{\ampere}$, $t_q \le \SI{800}{\micro\second}$.
+
+\paragraph{Recovery time constant.} Applying \eqref{eq:taurr} at
+$a = \SI{1.5}{\ampere\per\micro\second}$:
+
+\begin{center}
+\begin{tabular}{lccc}
+\toprule
+ & min & typ & max \\
+\midrule
+$Q_{rr}/I_{RM}$ [\si{\micro\second}] & 58.3 & 64.2 & 64.4 \\
+$I_{RM}/2a$ [\si{\micro\second}]     & 20.0 & 25.7 & 30.0 \\
+$\tau_{rr}$ [\si{\micro\second}]     & 38.3 & 38.5 & 34.4 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The three corner values agree within \SI{12}{\percent}, so
+$\tau_{rr} \approx \SI{38.5}{\micro\second}$ (typical) is well constrained.
+Consistency check: time to peak $I_{RM}/a = \SI{51.3}{\micro\second}$,
+triangle charge \SI{2.0}{\milli\coulomb} plus tail charge
+$I_{RM}\tau_{rr} = \SI{2.9}{\milli\coulomb}$ reproduce
+$Q_{rr} = \SI{4.9}{\milli\coulomb}$.
+
+\paragraph{Lifetime split.} As a starting point for a large phase-control
+device, $\tau = \SI{300}{\micro\second}$ gives
+$T_M = \tau\,\tau_{rr}/(\tau - \tau_{rr}) = \SI{44.2}{\micro\second}$. The
+split is to be refined against the datasheet curves $Q_{rr}(a)$ and
+$I_{RM}(a)$ (Figs.~8--9 of \cite{abb26n6500}, $a = 1$ to
+\SI{30}{\ampere\per\micro\second}) with the validation sweep of step~3.
+
+\paragraph{Static and latch parameters.} On-state:
+$V_f = V_{T0} = \SI{1.12}{\volt}$, $R_{on} = r_T = \SI{0.29}{\milli\ohm}$
+(\SI{125}{\celsius}, valid \SIrange{1300}{4000}{\ampere}; for accuracy over
+the full current range the datasheet provides the four-term model
+$V_T = A + B I_T + C \ln(I_T+1) + D\sqrt{I_T}$, which can replace the PWL
+expression in the \texttt{i\_s} intermediate). Off-state conductance from
+the leakage specification $I_{RRM} \le \SI{600}{\milli\ampere}$ at
+\SI{6.5}{\kilo\volt}, \SI{125}{\celsius}:
+$G_{off} \approx \SI{1e-4}{\per\ohm}$ (worst case). Latch:
+$I_h = \SI{75}{\milli\ampere}$, $I_l = \SI{250}{\milli\ampere}$
+(\SI{125}{\celsius}). Gate thresholds $V_{GT} \le \SI{2.6}{\volt}$,
+$I_{GT} \le \SI{400}{\milli\ampere}$ are specified at \SI{25}{\celsius}
+and decrease with temperature; for the signal comparator of the model
+$V_{gt} = \SI{1.2}{\volt}$ is adequate.
+
+\paragraph{Turn-off time.} With $\tau_{rr} = \SI{38.5}{\micro\second}$, the
+ratio $t_q/\tau_{rr} \approx 21$ makes the charge-only mechanism unusable
+(cf.\ \eqref{eq:tq}: $Q_{th}$ would fall to picocoulomb level), which is
+precisely the case discussed in Section~2.2: the timer parameter is set to
+$t_q = \SI{800}{\micro\second}$, and $Q_{th} = \SI{1}{\micro\coulomb}$ keeps
+the physical charge re-trigger active over roughly the first
+$\tau_{rr}\ln(Q_{rr}/Q_{th}) \approx \SI{330}{\micro\second}$.
+
+\paragraph{Resulting configuration.} The complete parameter set (typical
+values, $T_{vj} = \SI{125}{\celsius}$), used as defaults in the component
+listing above:
+
+\begin{center}
+\begin{tabular}{llll}
+\toprule
+Parameter & Value & Unit & Source \\
+\midrule
+$V_f$     & 1.12    & \si{\volt}      & $V_{T0}$ \\
+$R_{on}$  & 0.29    & \si{\milli\ohm} & $r_T$ \\
+$G_{off}$ & $10^{-4}$ & \si{\per\ohm} & $I_{RRM}/V_{RRM}$ \\
+$V_{gt}$  & 1.2     & \si{\volt}      & $V_{GT}$, derated \\
+$I_l$     & 0.25    & \si{\ampere}    & $I_L$, \SI{125}{\celsius} \\
+$I_h$     & 0.075   & \si{\ampere}    & $I_H$, \SI{125}{\celsius} \\
+$\tau$    & 300     & \si{\micro\second} & trial, to refine on $Q_{rr}(a)$ \\
+$T_M$     & 44.2    & \si{\micro\second} & from $\tau$, $\tau_{rr}$ \\
+$Q_{th}$  & 1       & \si{\micro\coulomb} & early-phase re-trigger \\
+$t_q$     & 800     & \si{\micro\second} & datasheet maximum \\
+\bottomrule
+\end{tabular}
+\end{center}
+
 \section{Limitations}
 
 The model is behavioural at the latch level: it does not represent the two
 coupled transistor charges of the pnpn structure, so it does not capture
 gate-controlled turn-off (GTO operation), $\mathrm{d}v/\mathrm{d}t$-induced
-triggering through junction capacitance, or the plasma spreading phase at
-turn-on ($\mathrm{d}i/\mathrm{d}t$ limitation). Junction capacitance in the
+triggering through junction capacitance (the 5STP~26N6500 specifies
+$\mathrm{d}v/\mathrm{d}t_{crit} = \SI{3000}{\volt\per\micro\second}$, not
+enforced by the model), or the plasma spreading phase at turn-on
+($\mathrm{d}i/\mathrm{d}t$ limitation). Junction capacitance in the
 blocking state is not included and can be added in parallel externally or as
 an additional charge term. Within its scope --- natural commutation, reverse
 recovery waveforms, snubber and clamp stress, $t_q$ margin studies in
@@ -287,6 +406,11 @@ A.~Courtay,
 ``MAST power diode and thyristor models including automatic parameter
 extraction,''
 \emph{SABER User Group Meeting}, Brighton, UK, Sep. 1995.
+
+\bibitem{abb26n6500}
+ABB Power Grids Switzerland Ltd, Semiconductors,
+``Phase control thyristor 5STP 26N6500,''
+Datasheet, Doc.\ No.\ 5SYA1001-08, Mar. 2020.
 
 \bibitem{baliga2019}
 B.~J. Baliga,
