@@ -50,8 +50,9 @@
 \newcommand{\code}[1]{\texttt{\small #1}}
 
 \title{A Simplified Simscape IGBT Model with Single-Point Switching
-Energies and a Thermal Port}
-\author{Model documentation --- \code{igbt\_simple.ssc}}
+Energies and Thermal Ports}
+\author{Model documentation --- \code{igbt\_simple.ssc},
+\code{igbt\_simple\_2th.ssc}}
 \date{}
 
 \begin{document}
@@ -65,11 +66,14 @@ studies. Conduction is described by fixed voltage drops. Switching losses are
 described by three single-point energies, $E_\mathrm{on}$, $E_\mathrm{off}$ and
 $E_\mathrm{rr}$, given at one reference operating point and scaled linearly with
 the commutated current and the blocking voltage. The total dissipated power is
-delivered to a thermal conserving port. The document states the equations, the
+delivered to one or two thermal conserving ports: a single-port version lumps
+the two chips, a two-port version separates the transistor and the diode so
+that the two junction temperatures can be evaluated independently. The document states the equations, the
 sampling scheme used to recover the commutated current and voltage, the
 energy-to-power conversion, the parameter extraction from the device datasheet,
-and the validity limits of the model. Default parameters correspond to the
-Mitsubishi Electric CM1200DW-34T (\SI{1700}{\volt}, \SI{1200}{\ampere}
+and the validity limits of the model. Section~\ref{sec:2th} documents the two-port version, including the
+local detection of the diode recovery event. Default parameters correspond to
+the Mitsubishi Electric CM1200DW-34T (\SI{1700}{\volt}, \SI{1200}{\ampere}
 half-bridge module).
 \end{abstract}
 
@@ -91,9 +95,10 @@ the shape of the switching transient. The following assumptions apply.
         junction temperature computed by the thermal network. The user is
         expected to enter the values corresponding to the expected operating
         temperature, typically \SI{125}{\degreeCelsius}.
-  \item The IGBT and the FWD share one thermal port, so the model returns the
-        total loss of one switch position and cannot separate the IGBT junction
-        from the diode junction.
+  \item In the single-port version the IGBT and the FWD share one thermal
+        port, so the model returns the total loss of one switch position and
+        cannot separate the two junctions. The two-port version of
+        Section~\ref{sec:2th} removes this restriction.
 \end{enumerate}
 
 Assumption~3 removes the electro-thermal feedback loop. This is a deliberate
@@ -373,6 +378,13 @@ positions of a leg, which is symmetric over a fundamental period. If the diode
 is modelled as a separate component with its own recovery energy,
 $E_\mathrm{rr,ref}$ must be set to zero here to avoid double counting.
 
+This approximation is acceptable only as long as the two chips share one
+thermal port. As soon as the junction temperatures are computed separately it
+becomes a real error, because the recovery energy would be assigned to the
+diode during the half period in which that diode does not conduct, flattening
+exactly the peak that the calculation is meant to find. The two-port version
+therefore detects the recovery event locally; see Section~\ref{sec:2th}.
+
 \section{From energy steps to dissipated power}
 
 $E_\mathrm{sw}$ is a staircase. Its derivative is a train of Dirac impulses,
@@ -471,11 +483,10 @@ $k$ & {$r_k$ (--)} & {$R_k$ (\si{\milli\kelvin\per\watt})} &
 \noindent
 with $R_k = r_k R_\mathrm{th(j-c)Q}$ and $C_k = \tau_k/R_k$. The same
 normalised coefficients apply to the FWD with
-$R_\mathrm{th(j-c)D} = \SI{43}{\kelvin\per\kilo\watt}$. Because the present
-model has a single thermal port, one network must be chosen for the pair; using
-the IGBT network is the usual choice when the IGBT carries the larger share of
-the loss. Separating the two junctions requires splitting the component into an
-IGBT model and a diode model with independent ports.
+$R_\mathrm{th(j-c)D} = \SI{43}{\kelvin\per\kilo\watt}$. Because the single-port
+model has one thermal port, one network must be chosen for the pair; using the
+IGBT network is the usual choice when the IGBT carries the larger share of the
+loss. The two-port version uses both networks, one per port.
 
 \section{Parameter extraction from the datasheet}
 \label{sec:param}
@@ -505,6 +516,141 @@ of \SI{15}{\ohm}. Entering the tabulated values without correcting for the
 actual gate resistance leads to a gross under-estimate of the turn-on loss. The
 energies must be read at the gate resistance of the actual driver.
 
+\section{Variant with separate thermal ports}
+\label{sec:2th}
+
+The component \code{igbt\_simple\_2th} keeps the equations of
+Sections~3--5 unchanged and splits the loss into two independent paths, one per
+chip. It adds two thermal ports, \code{Ht} for the transistor and \code{Hd} for
+the diode, two power outputs \code{Pt} and \code{Pd}, and one parameter,
+$V_\mathrm{rr,th}$ (default \SI{50}{\volt}), used to detect the recovery event.
+
+\subsection{Loss split}
+
+Conduction separates naturally, since the two branch currents are already
+distinct state variables of the model. The switching energies are accumulated in
+two event variables, $E_\mathrm{t}$ for the transistor and $E_\mathrm{d}$ for
+the diode, each with its own first-order lag:
+\begin{align}
+  P_\mathrm{t} &= v\,i_\mathrm{t}
+    + \frac{E_\mathrm{t} - E_\mathrm{lp,t}}{\tau_\mathrm{p}},
+  & E_\mathrm{t} &\ \text{fed by } E_\mathrm{on},\ E_\mathrm{off},\\
+  P_\mathrm{d} &= v\,i_\mathrm{d}
+    + \frac{E_\mathrm{d} - E_\mathrm{lp,d}}{\tau_\mathrm{p}},
+  & E_\mathrm{d} &\ \text{fed by } E_\mathrm{rr}.
+\end{align}
+The two heat flows are bound to the two ports as
+$Q_\mathrm{t} = -P_\mathrm{t}$ and $Q_\mathrm{d} = -P_\mathrm{d}$ with the sign
+convention of Section~6.
+
+\subsection{Local detection of the recovery event}
+
+The instant at which the diode is commutated off is imposed by the
+complementary switch of the leg and is not directly observable from the
+terminals of a single switch position. It is, however, observable indirectly:
+it is the only instant at which the terminal voltage rises from the diode
+conduction level to the blocking level while the transistor is not the cause of
+the transition. The model therefore triggers on
+\begin{equation}
+  v \uparrow V_\mathrm{rr,th},
+  \qquad V_\mathrm{f} < V_\mathrm{rr,th} \ll V_\mathrm{dc},
+\end{equation}
+and scales $E_\mathrm{rr}$ with a held diode current $i_\mathrm{dh}$ governed by
+a three-branch law:
+\begin{equation}
+  \dot{i}_\mathrm{dh} =
+  \begin{cases}
+    \dfrac{|i_\mathrm{d}| - i_\mathrm{dh}}{\tau_\mathrm{s}},
+      & v < -V_\mathrm{f} \quad\text{(diode conducting: track)},\\[3mm]
+    -\dfrac{i_\mathrm{dh}}{\tau_\mathrm{s}},
+      & g > V_\mathrm{th} \quad\text{(transistor gated on: flush)},\\[3mm]
+    0, & \text{otherwise \quad(dead time: hold)}.
+  \end{cases}
+  \label{eq:idh}
+\end{equation}
+
+The flush branch is what makes the detection self-selecting. The voltage rise
+above $V_\mathrm{rr,th}$ occurs once per switching period in both half periods
+of the output fundamental, but only in one of them does it correspond to a
+recovery, and \eqref{eq:idh} guarantees that $i_\mathrm{dh}$ is non-zero only in
+that one. Table~\ref{tab:halfperiods} follows the two cases.
+
+\begin{table}[h]
+\centering
+\caption{Behaviour of the recovery detection over the two half periods of the
+output current, for one switch position.}
+\label{tab:halfperiods}
+\begin{tabular}{lll}
+\toprule
+ & Diode half period & Transistor half period \\
+\midrule
+Chip carrying the load current & FWD & IGBT \\
+Branch of \eqref{eq:idh} in the on-state & track & flush \\
+$i_\mathrm{dh}$ during the dead time & held & $\approx 0$ \\
+Cause of the voltage rise & complementary turn-on & own turn-off \\
+Energy added at the event & $E_\mathrm{rr}(i_\mathrm{dh})$ & $\approx 0$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The hold branch covers the dead time: the gate is already low while the diode is
+still conducting, and the current must not be lost before the commutation
+actually happens. The order of the branches matters, because during the
+freewheeling interval the gate of the switch position is typically high while
+the current flows in the diode; testing the diode conduction first ensures that
+this interval is tracked and not flushed.
+
+\subsection{Event chain}
+
+The three events are written as a single \code{when}/\code{elsewhen} chain:
+\begin{lstlisting}
+events
+    when edge(g > (Vth + Vhyst))
+        E_t = E_t + Eon_ref *(abs(i_h) /Ic_ref)*(abs(v_h)/Vdc_ref);
+    elsewhen edge(g < (Vth - Vhyst))
+        E_t = E_t + Eoff_ref*(abs(i_h) /Ic_ref)*(abs(v_h)/Vdc_ref);
+    elsewhen edge(v > V_rr_th)
+        E_d = E_d + Err_ref *(abs(i_dh)/Ic_ref)*(abs(v_h)/Vdc_ref);
+    end
+end
+\end{lstlisting}
+The chain form is required for the same reason as in the single-port version:
+separate \code{when} clauses acting on the same event variable are rejected
+because their predicates cannot be proved mutually exclusive. In the transistor
+half period the turn-off predicate and the voltage-rise predicate become true
+almost simultaneously; whether the solver resolves them in one or in two event
+iterations is immaterial, since the recovery term is zero there.
+
+\subsection{Thermal connection}
+
+Each port takes its own junction-to-case network, built from the normalised
+Foster coefficients of Section~6 scaled with
+$R_\mathrm{th(j-c)Q} = \SI{28}{\kelvin\per\kilo\watt}$ for \code{Ht} and
+$R_\mathrm{th(j-c)D} = \SI{43}{\kelvin\per\kilo\watt}$ for \code{Hd}. Both
+networks are connected to a common case node, followed by
+$R_\mathrm{th(c-s)} = \SI{10}{\kelvin\per\kilo\watt}$ per module and by the
+heatsink model. The internal nodes of a Foster network have no physical
+meaning, but its terminal behaviour reproduces the datasheet $Z_\mathrm{th}$,
+and connecting both chips to a shared case node is the usual practice.
+
+\subsection{Use in a dimensioning calculation}
+
+With the two ports available, the peak junction temperature of each chip
+becomes a direct simulation output. Two points are worth checking explicitly.
+
+First, the peak depends on the output frequency. At low fundamental frequency
+the thermal ripple over a half period becomes dominant and is not captured by
+the average loss: the transient at the lowest fundamental frequency of the duty
+profile, not the mean value, is the sizing case.
+
+Second, the diode is not necessarily the less critical chip. It carries the full
+load current during a half period, its junction-to-case resistance is
+significantly higher than that of the transistor, and its recovery loss is
+concentrated in the same half period in which it conducts. A FWD with a lower
+average loss than the IGBT can therefore reach a higher peak junction
+temperature, which is precisely the effect that the single-port version, and the
+approximate attribution of $E_\mathrm{rr}$, would hide.
+
 \section{Validity limits}
 
 The model does not represent:
@@ -516,7 +662,8 @@ The model does not represent:
         energies;
   \item the dependence of the switching energies on the gate resistance, the
         stray inductance and the DC-link decoupling;
-  \item the difference between IGBT and FWD junction temperatures;
+  \item the difference between IGBT and FWD junction temperatures, in the
+        single-port version only;
   \item any short-circuit, desaturation or avalanche behaviour;
   \item the non-linearity of the output characteristic, unless $R_\mathrm{on}$
         and $R_\mathrm{d}$ are set to the datasheet slopes.
@@ -529,8 +676,12 @@ calculator, at fixed junction temperature and identical gate resistance, is the
 recommended acceptance test.
 
 \appendix
-\section{Source listing}
+\section{Source listings}
 
+\subsection{Single thermal port}
 \lstinputlisting{igbt_simple.ssc}
+
+\subsection{Separate thermal ports}
+\lstinputlisting{igbt_simple_2th.ssc}
 
 \end{document}
