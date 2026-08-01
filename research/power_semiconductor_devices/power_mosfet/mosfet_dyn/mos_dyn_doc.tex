@@ -105,10 +105,17 @@ recovery, dimensionamento di snubber e resistenze di gate.
 \noindent Tre terminali esterni ($G$, $D$, $S$) e tre nodi interni
 ($g_i$, $d_i$, $s_i$). Le variabili di stato sono $v_{gs}=v_{g_i}-v_{s_i}$,
 $v_{gd}=v_{g_i}-v_{d_i}$, le correnti nei reofori $i_{dd}$, $i_{ss}$ e la
-carica immagazzinata $q_M$ del diodo di body. La tensione drain-source
-interna è la differenza $v_{ds}=v_{gs}-v_{gd}$: è definita come
-\emph{intermediate}, così non introduce un terzo stato linearmente
-dipendente dagli altri due.
+carica immagazzinata $q_M$ del diodo di body. Anche la tensione
+drain-source interna $v_{ds}=v_{gs}-v_{gd}$ è dichiarata come variabile e
+legata ai potenziali di nodo, pur essendo linearmente dipendente dalle altre
+due: le tre capacità a delta danno tre equazioni differenziali, e Simscape
+richiede che il numero di equazioni contenenti \ssc{der()} coincida con il
+numero di variabili che vi compaiono. Scrivere invece
+$i_{ds}=C_{ds}(\dot v_{gs}-\dot v_{gd})$ con $v_{ds}$ come
+\emph{intermediate} produce l'errore \emph{``Total size of differential
+equations does not match the total size of differential variables''} in fase
+di compilazione della rete. La dipendenza fra i tre stati viene risolta dal
+compilatore per riduzione d'indice.
 
 \medskip
 \noindent \textbf{Nota importante.} $C_{ds}$ \emph{è} la capacità di

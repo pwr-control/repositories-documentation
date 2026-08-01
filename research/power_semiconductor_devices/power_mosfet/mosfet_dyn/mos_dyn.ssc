@@ -97,6 +97,7 @@ variables
     i_av  = {0, 'A'}; % avalanche current
     vgs   = {0, 'V'}; % internal gate-source voltage
     vgd   = {0, 'V'}; % internal gate-drain voltage
+    vds   = {0, 'V'}; % internal drain-source voltage
     qE    = {0, 'C'}; % junction (boundary) charge
     qM    = {0, 'C'}; % total stored charge
 end
@@ -118,7 +119,6 @@ intermediates
     % smooth positive part: sp(x) -> x for x >> 0, -> 0 for x << 0
     spv   = 0.5*((vgs - Vth) + sqrt((vgs - Vth)^2 + Vsm^2));   % forward overdrive
     spr   = 0.5*((vgd - Vth) + sqrt((vgd - Vth)^2 + Vsm^2));   % reverse overdrive
-    vds   = vgs - vgd;                                          % drain-source voltage
     vdsa  = sqrt(vds^2 + Vsm^2);                                % smooth |vds|
     % --- bias-dependent capacitances -------------------------------------
     % depletion law, clamped to the zero-bias (oxide) value for v < 0
@@ -138,6 +138,10 @@ equations
     % --- across variables --------------------------------------------------
     vgs == gi.v - si.v;
     vgd == gi.v - di.v;
+    vds == di.v - si.v;   % dependent on the two above: Simscape reduces the
+                          % index, but the variable must be declared so that
+                          % the number of differential equations and of
+                          % differential variables match (3 capacitors).
 
     % --- leads --------------------------------------------------------------
     G.v  - gi.v == Rg*i_g;
@@ -154,7 +158,7 @@ equations
     % --- displacement currents ------------------------------------------------
     i_gs == Cgs*der(vgs);
     i_gd == Cgd*der(vgd);
-    i_ds == Cds*(der(vgs) - der(vgd));
+    i_ds == Cds*der(vds);
 
     % --- body diode, Lauritzen-Ma diffusion charge -----------------------------
     qE   == Is*taud*(ex - 1);
