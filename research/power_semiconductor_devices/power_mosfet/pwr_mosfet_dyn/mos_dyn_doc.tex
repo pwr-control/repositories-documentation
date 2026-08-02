@@ -74,17 +74,17 @@ recovery, dimensionamento di snubber e resistenze di gate.
 \node[term,label=left:{$G$}] (G) at (0,0) {};
 \draw[wire] (0,0) -- (3,0);
 \node[box] at (1.5,0) {$R_g$};
-\node[term,label=above:{\footnotesize $g_i$}] at (3,0) {};
+\node[term,label=right:{\footnotesize $g_i$}] at (3,0) {};
 
-\node[term,label=above:{$D$}] at (6,4.2) {};
-\draw[wire] (6,4.2) -- (6,2.4);
-\node[box] at (6,3.3) {$R_d,\;L_d$};
-\node[term,label={[shift={(0.45,-0.62)}]\footnotesize $d_i$}] at (6,2.4) {};
+\node[term,label=above:{$D$}] at (5,4.2) {};
+\draw[wire] (5,4.2) -- (5,2.4);
+\node[box] at (5,3.3) {$R_d,\;L_d$};
+\node[term,label={[shift={(0.45,-0.62)}]\footnotesize $d_i$}] at (5,2.4) {};
 
-\node[term,label=below:{$S$}] at (6,-4.2) {};
-\draw[wire] (6,-4.2) -- (6,-2.4);
-\node[box] at (6,-3.3) {$L_s$};
-\node[term,label={[shift={(0.45,-0.05)}]\footnotesize $s_i$}] at (6,-2.4) {};
+\node[term,label=below:{$S$}] at (5,-4.2) {};
+\draw[wire] (5,-4.2) -- (5,-2.4);
+\node[box] at (5,-3.3) {$L_s$};
+\node[term,label={[shift={(0.45,-0.05)}]\footnotesize $s_i$}] at (5,-2.4) {};
 
 % --- gate capacitances -------------------------------------------------
 \draw[wire] (3,0) -- (3,2.4);
