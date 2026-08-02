@@ -1,0 +1,149 @@
+component opamp_cfa
+% Current Feedback Operational Amplifier (CFA)
+%
+% Behavioural macromodel of a wideband, high output current CFA.
+% Default parameters correspond to the Analog Devices (Linear Technology)
+% LT1210 (1.1 A, 35 MHz CFA), typical values at VS = +/-15 V, TA = 25 degC.
+%
+% Internal structure:
+%   1. Input buffer         : V(-) follows V(+) through the series
+%                             resistance Rinv, with offset Vos and input
+%                             bias currents. The (+) input has Rin_p and
+%                             Cin_p to the reference node.
+%   2. Transimpedance stage : Ct*dVz/dt = Ierr - Vz/Rt, where Ierr is the
+%                             current flowing out of the (-) input, soft
+%                             limited to Islew = SR*Ct (slew rate limit).
+%   3. Parasitic pole       : first order lag at f_p2, models the output
+%                             stage roll-off and the gain peaking. With
+%                             f_t = 1/(2*pi*Reff*Ct) and Reff = Rf + G*Rinv,
+%                             the closed loop response is second order with
+%                             f0 = sqrt(f_t*f_p2) and Q = sqrt(f_t/f_p2).
+%                             NOTE: f_t is the loop crossover, NOT the -3 dB
+%                             bandwidth, which is about 1.3*f_t for Q ~ 1.
+%   4. Output buffer        : soft clipping referred to the supply nodes,
+%                             open loop output resistance Ro and smooth
+%                             current limit Ilim.
+%   5. Supply pins          : quiescent current plus load current, so that
+%                             supply power and dissipation are consistent.
+%
+% Because Ct is fixed, the closed loop bandwidth is set by the feedback
+% resistor, f_3dB ~ 1/(2*pi*Rf*Ct), and is nearly independent of the
+% closed loop gain, as in a real CFA. Stray capacitance on the inverting
+% node (which causes peaking) must be added externally as a capacitor.
+%
+% Not modelled: shutdown pin, optional COMP pin, thermal shutdown,
+% distortion, noise, finite CMRR/PSRR, temperature dependence.
+
+nodes
+    p   = foundation.electrical.electrical; % +:left
+    m   = foundation.electrical.electrical; % -:left
+    vsp = foundation.electrical.electrical; % V+:top
+    vsn = foundation.electrical.electrical; % V-:bottom
+    out = foundation.electrical.electrical; % out:right
+end
+
+parameters
+    % --- small signal core ---
+    Rt     = {260,  'kOhm' }; % Open loop transresistance, DC
+    f_t    = {42,   'MHz'  }; % Loop crossover frequency with Rf_nom
+    Rf_nom = {680,  'Ohm'  }; % Feedback resistor used to specify f_t
+    f_p2   = {46,   'MHz'  }; % Parasitic (output stage) pole
+    SR     = {900,  'V/us' }; % Slew rate
+
+    % --- input stage ---
+    Rinv   = {15,   'Ohm'  }; % Inverting input resistance
+    Vos    = {3,    'mV'   }; % Input offset voltage
+    Ib_p   = {2,    'uA'   }; % Noninverting input bias current
+    Ib_m   = {10,   'uA'   }; % Inverting input bias current
+    Rin_p  = {10,   'MOhm' }; % Noninverting input resistance
+    Cin_p  = {2,    'pF'   }; % Noninverting input capacitance
+    Vcm_p  = {1.5,  'V'    }; % Input CM headroom to V+
+    Vcm_n  = {1.5,  'V'    }; % Input CM headroom to V-
+
+    % --- output stage ---
+    Ro     = {1.5,  'Ohm'  }; % Open loop output resistance
+    Ilim   = {1.5,  'A'    }; % Output current limit
+    Vsat_p = {1.8,  'V'    }; % Output saturation voltage to V+, no load
+    Vsat_n = {1.8,  'V'    }; % Output saturation voltage to V-, no load
+    Iq     = {35,   'mA'   }; % Quiescent supply current
+
+    % --- numerics ---
+    dV     = {0.1,  'V'    }; % Smoothing width of the voltage clamps
+    dI     = {1,    'mA'   }; % Smoothing width of the supply current split
+end
+
+variables
+    i_p  = { 0, 'A' }; % Current into the + input
+    i_m  = { 0, 'A' }; % Current into the - input
+    i_o  = { 0, 'A' }; % Current into the output node
+    i_sp = { 0, 'A' }; % Current drawn from V+
+    i_sn = { 0, 'A' }; % Current drawn from V-
+    vc   = { 0, 'V' }; % Voltage on the + input capacitance
+    vz   = { 0, 'V' }; % Transimpedance node voltage
+    v2   = { 0, 'V' }; % Voltage after the parasitic pole
+end
+
+branches
+    i_p  : p.i   -> *;
+    i_m  : m.i   -> *;
+    i_o  : out.i -> *;
+    i_sp : vsp.i -> *;
+    i_sn : vsn.i -> *;
+end
+
+equations
+    assert(Rt    > 0, 'Rt must be positive'   );
+    assert(f_t   > 0, 'f_t must be positive'  );
+    assert(f_p2  > 0, 'f_p2 must be positive' );
+    assert(Ro    > 0, 'Ro must be positive'   );
+    assert(Ilim  > 0, 'Ilim must be positive' );
+
+    let
+        % --- derived constants ---
+        Ct    = 1/(2*pi*f_t*Rf_nom);    % internal compensation capacitance
+        Islew = SR*Ct;                  % error current limit -> slew rate
+        tau2  = 1/(2*pi*f_p2);          % parasitic time constant
+
+        % --- input common mode clamp (soft min then soft max) ---
+        vcm_h = vsp.v - Vcm_p;
+        vcm_l = vsn.v + Vcm_n;
+        vp_a  = 0.5*(p.v  + vcm_h - sqrt((p.v  - vcm_h)^2 + dV^2));
+        vp_e  = 0.5*(vp_a + vcm_l + sqrt((vp_a - vcm_l)^2 + dV^2));
+
+        % --- error current out of the inverting node, slew limited ---
+        i_err = -(i_m - Ib_m);
+        i_lim = Islew*tanh(i_err/Islew);
+
+        % --- output voltage clamp referred to the supply nodes ---
+        vo_h  = vsp.v - Vsat_p;
+        vo_l  = vsn.v + Vsat_n;
+        vo_a  = 0.5*(v2   + vo_h - sqrt((v2   - vo_h)^2 + dV^2));
+        vo_id = 0.5*(vo_a + vo_l + sqrt((vo_a - vo_l)^2 + dV^2));
+
+        % --- smooth output current limit, slope 1/Ro around zero ---
+        xo    = (vo_id - out.v)/(Ro*Ilim);
+        i_ld  = Ilim*xo/sqrt(sqrt(1 + xo^4));
+
+        % --- smooth split of the load current between the rails ---
+        i_pos = 0.5*(i_ld + sqrt(i_ld^2 + dI^2));
+        i_neg = i_ld - i_pos;
+    in
+        % input stage
+        vc  == p.v;
+        i_p == Ib_p + vc/Rin_p + Cin_p*vc.der;
+        m.v == vp_e + Vos + Rinv*i_m;
+
+        % transimpedance stage and parasitic pole
+        Ct*vz.der   == i_lim - vz/Rt;
+        tau2*v2.der == vz - v2;
+
+        % output buffer (i_ld is the current delivered to the load)
+        -i_o == i_ld;
+
+        % supply currents, exact node current balance
+        i_sp ==  Iq + i_pos;
+        i_sn == -Iq + i_neg - i_p - i_m;
+    end
+end
+
+end
