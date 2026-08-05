@@ -1,0 +1,291 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\IfFileExists{italian.ldf}%
+  {\usepackage[italian]{babel}}%
+  {\renewcommand{\figurename}{Figura}%
+   \renewcommand{\tablename}{Tabella}%
+   \renewcommand{\refname}{Riferimenti}%
+   \renewcommand{\contentsname}{Indice}}
+\usepackage[margin=2.4cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage[siunitx,RPvoltages]{circuitikz}
+\usepackage{caption}
+
+\newcommand{\ph}[1]{\underline{#1}}
+
+\title{Circuiti equivalenti alle sequenze\\di un trasformatore trifase}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Ipotesi e notazione}
+
+Si considera un trasformatore trifase costruttivamente simmetrico, alimentato da
+una terna di tensioni di ampiezza qualsiasi (anche squilibrata) alla pulsazione
+$\omega = 2\pi f$. Applicando la trasformazione di Fortescue, la terna di
+tensioni e correnti viene scomposta nelle tre componenti simmetriche:
+diretta (indice $d$ o $1$), inversa (indice $i$ o $2$) e omopolare
+(indice $0$).
+
+Poiché la macchina è simmetrica, le tre reti di sequenza risultano
+\emph{disaccoppiate}: ciascuna sequenza può essere studiata con un proprio
+circuito monofase equivalente. Valgono le seguenti convenzioni:
+
+\begin{itemize}
+  \item tutte le grandezze secondarie sono riportate al primario tramite il
+        rapporto di trasformazione $n = N_1/N_2$ (apice $'$);
+  \item $R_1$, $R_2'$ sono le resistenze degli avvolgimenti,
+        $X_{\sigma 1}$, $X_{\sigma 2}'$ le reattanze di dispersione;
+  \item $R_{fe}$ rappresenta le perdite nel ferro, $X_\mu$ la reattanza di
+        magnetizzazione;
+  \item l'impedenza di cortocircuito è
+        $\ph{Z}_{cc} = R_{cc} + \mathrm{j}X_{cc}
+         = (R_1 + R_2') + \mathrm{j}(X_{\sigma 1} + X_{\sigma 2}')$.
+\end{itemize}
+
+\section{Circuito equivalente alla sequenza diretta}
+
+È il classico circuito a T del trasformatore, identico a quello del
+trasformatore monofase equivalente (potenza pari a $1/3$ della potenza
+trifase, tensioni di fase, correnti di linea).
+
+\begin{figure}[htbp]
+\centering
+\begin{circuitikz}[american, scale=0.95, transform shape]
+  % ramo serie primario
+  \draw (0,0) to[short, o-, i^=$\ph{I}_{1d}$] (1.2,0)
+        to[R, l=$R_1$] (3.2,0)
+        to[L, l=$X_{\sigma 1}$] (5.2,0) coordinate (a);
+  \draw (a) -- (7.4,0) coordinate (b);
+  % ramo serie secondario (riportato al primario)
+  \draw (b) to[L, l=$X_{\sigma 2}'$] (9.4,0)
+        to[R, l=$R_2'$] (11.4,0)
+        to[short, -o, i^=$\ph{I}_{2d}'$] (12.4,0);
+  % ramo derivato
+  \draw (a) to[R, l_=$R_{fe}$] (a |- 0,-3.4);
+  \draw (b) to[L, l=$X_{\mu}$] (b |- 0,-3.4);
+  % rail inferiore
+  \draw (0,-3.4) node[ocirc]{} -- (12.4,-3.4) node[ocirc]{};
+  % tensioni ai morsetti
+  \draw (0.15,0) to[open, v^=$\ph{V}_{1d}$] (0.15,-3.4);
+  \draw (12.25,0) to[open, v_=$\ph{V}_{2d}'$] (12.25,-3.4);
+  \node at (6.3,-4.1) {\small (grandezze di fase, riferite al primario)};
+\end{circuitikz}
+\caption{Circuito equivalente alla sequenza diretta.}
+\label{fig:diretta}
+\end{figure}
+
+Nelle applicazioni di sistema il ramo derivato viene quasi sempre trascurato
+($X_\mu \gg X_{cc}$, corrente a vuoto tipicamente $0{,}2 \div 1\%$ di $I_n$),
+per cui
+
+\begin{equation}
+  \ph{Z}_d = \ph{Z}_{cc} = R_{cc} + \mathrm{j}X_{cc},
+  \qquad
+  \ph{Z}_{cc}^{\,\mathrm{pu}} = \frac{v_{cc}\%}{100}.
+\end{equation}
+
+Nei collegamenti che introducono uno sfasamento (gruppi $\mathrm{Dy}$,
+$\mathrm{Yd}$, $\mathrm{Yz}$), al circuito va aggiunto un trasformatore ideale
+con rapporto complesso $n\,e^{\mathrm{j}\vartheta}$, con
+$\vartheta = -30^\circ \times (\text{indice orario})$.
+
+\section{Circuito equivalente alla sequenza inversa}
+
+Il trasformatore è un componente statico, passivo e simmetrico: non contiene
+elementi il cui comportamento dipenda dal verso ciclico delle fasi. Il circuito
+alla sequenza inversa è quindi \emph{formalmente identico} a quello di
+sequenza diretta e vale
+
+\begin{equation}
+  \ph{Z}_i = \ph{Z}_d .
+\end{equation}
+
+\begin{figure}[htbp]
+\centering
+\begin{circuitikz}[american, scale=0.95, transform shape]
+  \draw (0,0) to[short, o-, i^=$\ph{I}_{1i}$] (1.2,0)
+        to[R, l=$R_1$] (3.2,0)
+        to[L, l=$X_{\sigma 1}$] (5.2,0) coordinate (a);
+  \draw (a) -- (7.4,0) coordinate (b);
+  \draw (b) to[L, l=$X_{\sigma 2}'$] (9.4,0)
+        to[R, l=$R_2'$] (11.4,0)
+        to[short, -o, i^=$\ph{I}_{2i}'$] (12.4,0);
+  \draw (a) to[R, l_=$R_{fe}$] (a |- 0,-3.4);
+  \draw (b) to[L, l=$X_{\mu}$] (b |- 0,-3.4);
+  \draw (0,-3.4) node[ocirc]{} -- (12.4,-3.4) node[ocirc]{};
+  \draw (0.15,0) to[open, v^=$\ph{V}_{1i}$] (0.15,-3.4);
+  \draw (12.25,0) to[open, v_=$\ph{V}_{2i}'$] (12.25,-3.4);
+\end{circuitikz}
+\caption{Circuito equivalente alla sequenza inversa: stessi parametri della
+sequenza diretta.}
+\label{fig:inversa}
+\end{figure}
+
+L'unica differenza riguarda lo sfasamento dei gruppi $\mathrm{Dy}$/$\mathrm{Yd}$:
+se alla sequenza diretta corrisponde il fattore $e^{\mathrm{j}\vartheta}$, alla
+sequenza inversa corrisponde il coniugato $e^{-\mathrm{j}\vartheta}$.
+
+\section{Circuito equivalente alla sequenza omopolare}
+
+Alla sequenza omopolare le tre correnti di fase sono in fase tra loro:
+possono circolare solo se esiste un percorso di ritorno (neutro accessibile e
+messo a terra) oppure un avvolgimento a triangolo in cui possano richiudersi.
+Il circuito è quindi lo stesso a T, ma completato da:
+
+\begin{itemize}
+  \item due interruttori $S_1$, $S_2$ che rappresentano la possibilità (o meno)
+        di circolazione della corrente omopolare ai due lati;
+  \item l'impedenza $3\ph{Z}_{N}$ in serie, se il neutro è messo a terra
+        attraverso un'impedenza $\ph{Z}_N$ (il fattore 3 nasce dal fatto che
+        nel neutro fluisce $3\ph{I}_0$);
+  \item parametri di magnetizzazione omopolari $X_{\mu 0}$, $R_{fe0}$ molto
+        diversi da quelli di sequenza diretta, perché il flusso omopolare è in
+        fase nelle tre colonne e deve richiudersi fuori dal nucleo.
+\end{itemize}
+
+\begin{figure}[htbp]
+\centering
+\begin{circuitikz}[american, scale=0.82, transform shape]
+  \draw (0,0) to[short, o-, i^=$\ph{I}_{10}$] (0.9,0)
+        to[nos, l=$S_1$] (2.3,0)
+        to[generic, l=$3\ph{Z}_{N1}$] (4.3,0)
+        to[R, l=$R_1$] (6.3,0)
+        to[L, l=$X_{\sigma 1,0}$] (8.3,0) coordinate (a);
+  \draw (a) -- (10.5,0) coordinate (b);
+  \draw (b) to[L, l=$X_{\sigma 2,0}'$] (12.5,0)
+        to[R, l=$R_2'$] (14.5,0)
+        to[generic, l=$3\ph{Z}_{N2}'$] (16.5,0)
+        to[nos, l=$S_2$] (17.9,0)
+        to[short, -o, i^=$\ph{I}_{20}'$] (18.8,0);
+  \draw (a) to[R, l_=$R_{fe0}$] (a |- 0,-3.4);
+  \draw (b) to[L, l=$X_{\mu 0}$] (b |- 0,-3.4);
+  \draw (0,-3.4) node[ocirc]{} -- (18.8,-3.4) node[ocirc]{};
+  \draw (0.15,0) to[open, v^=$\ph{V}_{10}$] (0.15,-3.4);
+  \draw (18.65,0) to[open, v_=$\ph{V}_{20}'$] (18.65,-3.4);
+  \node at (9.4,-4.1)
+    {\small $S_1$, $S_2$ chiusi solo se il collegamento consente la
+     circolazione della corrente omopolare};
+\end{circuitikz}
+\caption{Circuito equivalente alla sequenza omopolare (forma generale).}
+\label{fig:omopolare}
+\end{figure}
+
+\subsection{Dipendenza dal tipo di collegamento}
+
+La configurazione degli interruttori di Fig.~\ref{fig:omopolare} dipende
+esclusivamente dai collegamenti degli avvolgimenti, come riassunto in
+Tab.~\ref{tab:collegamenti}. Il triangolo si comporta come un cortocircuito
+\emph{interno} per la sequenza omopolare: la corrente vi circola ma non esce
+ai morsetti, quindi il ramo corrispondente va chiuso verso il nodo di
+riferimento e il morsetto esterno resta aperto.
+
+\begin{table}[htbp]
+\centering
+\caption{Rete di sequenza omopolare in funzione del collegamento
+($\mathrm{N}$ = neutro accessibile e a terra).}
+\label{tab:collegamenti}
+\begin{tabular}{llll}
+\toprule
+Collegamento & $S_1$ (primario) & $S_2$ (secondario) &
+$\ph{Z}_0$ vista dal primario \\
+\midrule
+$\mathrm{YNyn}$ & chiuso & chiuso & rete completa a T \\
+$\mathrm{YNd}$  & chiuso & chiuso su nodo di rif. &
+  $\ph{Z}_{1,0} + (\ph{Z}_{2,0}' \parallel \mathrm{j}X_{\mu 0}) \approx \ph{Z}_{cc0}$ \\
+$\mathrm{YNy}$  & chiuso & aperto &
+  $\ph{Z}_{1,0} + \mathrm{j}X_{\mu 0}$ (elevata) \\
+$\mathrm{Dyn}$  & aperto & chiuso &
+  $\infty$ dal primario; $\approx \ph{Z}_{cc0}$ dal secondario \\
+$\mathrm{Yy}$, $\mathrm{Yd}$, $\mathrm{Dd}$ & aperto & --- &
+  $\infty$ (nessun percorso) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+I due casi di gran lunga più frequenti nei sistemi di distribuzione sono
+riportati in Fig.~\ref{fig:casi}.
+
+\begin{figure}[htbp]
+\centering
+\begin{minipage}{0.48\textwidth}
+\centering
+\begin{circuitikz}[american, scale=0.72, transform shape]
+  \draw (0,0) to[short, o-] (0.8,0)
+        to[generic, l=$3\ph{Z}_{N}$] (2.8,0)
+        to[generic, l=$\ph{Z}_{1,0}$] (5.0,0) coordinate (a);
+  \draw (a) to[generic, l=$\ph{Z}_{2,0}'$] (7.2,0) -- (8.0,0)
+        -- (8.0,-3.0);
+  \draw (a) to[L, l_=$X_{\mu 0}$] (a |- 0,-3.0);
+  \draw (0,-3.0) node[ocirc]{} -- (8.0,-3.0);
+  \node at (4.0,-3.9) {\small (a) $\mathrm{YNd}$};
+\end{circuitikz}
+\end{minipage}
+\hfill
+\begin{minipage}{0.48\textwidth}
+\centering
+\begin{circuitikz}[american, scale=0.72, transform shape]
+  \draw (0,0) to[short, o-] (0.8,0)
+        to[generic, l=$3\ph{Z}_{N}$] (2.8,0)
+        to[generic, l=$\ph{Z}_{1,0}$] (5.0,0) coordinate (a);
+  \draw (a) -- (7.2,0) to[open] (8.0,0);
+  \draw (a) to[L, l_=$X_{\mu 0}$] (a |- 0,-3.0);
+  \draw (0,-3.0) node[ocirc]{} -- (8.0,-3.0);
+  \node at (7.6,0.55) {\small aperto};
+  \node at (4.0,-3.9) {\small (b) $\mathrm{YNy}$};
+\end{circuitikz}
+\end{minipage}
+\caption{Reti omopolari semplificate: (a) il triangolo cortocircuita il
+secondario, (b) senza percorso al secondario resta solo il ramo di
+magnetizzazione.}
+\label{fig:casi}
+\end{figure}
+
+\subsection{Valori tipici dei parametri omopolari}
+
+\begin{itemize}
+  \item \textbf{Nucleo a tre colonne (core type):} il flusso omopolare non
+        trova un percorso magnetico chiuso nel nucleo e si richiude in aria e
+        attraverso la cassa. La riluttanza è elevata, quindi $X_{\mu 0}$ è
+        \emph{bassa}, tipicamente dell'ordine di alcune unità di
+        $\ph{Z}_{cc}$ (indicativamente $0{,}3 \div 1$~p.u.).
+  \item \textbf{Nucleo a cinque colonne, corazzato o banco di tre monofasi:}
+        esiste un percorso magnetico per il flusso omopolare, quindi
+        $X_{\mu 0}$ è dello stesso ordine di $X_\mu$ (decine di p.u.) e il
+        ramo derivato è di fatto un circuito aperto.
+  \item Per un $\mathrm{YNd}$ si assume comunemente
+        $X_0 \approx (0{,}85 \div 1{,}0)\,X_{cc}$.
+  \item Le reattanze di dispersione omopolari differiscono in genere poco da
+        quelle di sequenza diretta: $X_{\sigma,0} \approx X_\sigma$.
+\end{itemize}
+
+\section{Riepilogo}
+
+\begin{table}[htbp]
+\centering
+\caption{Sintesi delle tre reti di sequenza.}
+\label{tab:riepilogo}
+\begin{tabular}{lll}
+\toprule
+Sequenza & Circuito & Impedenza equivalente \\
+\midrule
+Diretta  & T completo (Fig.~\ref{fig:diretta})  & $\ph{Z}_d = \ph{Z}_{cc}$ \\
+Inversa  & identico alla diretta (Fig.~\ref{fig:inversa}) & $\ph{Z}_i = \ph{Z}_d$ \\
+Omopolare& T con $S_1$, $S_2$, $3\ph{Z}_N$, $X_{\mu 0}$
+           (Fig.~\ref{fig:omopolare}) & dipende dai collegamenti \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Le tre reti si collegano tra loro secondo le note regole delle componenti
+simmetriche in corrispondenza del punto di guasto (serie per il guasto
+monofase a terra, parallelo diretta--inversa per il guasto bifase, ecc.),
+mentre restano indipendenti in condizioni di funzionamento equilibrato, dove
+è attiva la sola rete di sequenza diretta.
+
+\end{document}
