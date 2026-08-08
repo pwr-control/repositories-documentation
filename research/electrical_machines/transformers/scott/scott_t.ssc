@@ -1,0 +1,138 @@
+component scott_t
+% Scott-T Transformer (Three-Phase to Two-Phase)
+%
+% Scott connection of two single-phase transformers that converts a
+% three-phase system (A, B, C) into a balanced two-phase system whose
+% phase voltages are equal in magnitude and 90 degrees apart.
+%
+% The MAIN transformer primary is connected between A and B and is
+% centre-tapped at the internal node O. The TEASER transformer primary is
+% connected between C and O and has sqrt(3)/2 times the turns of the main
+% primary. Both secondaries have the same number of turns, so
+%
+%     V(a1,a2) = V2 * exp(j*30deg)   (main,   in phase with V_AB)
+%     V(b1,b2) = V2 * exp(j*120deg)  (teaser, leads the main by 90deg)
+%
+% for a balanced primary supply of line-to-line rms voltage V1.
+%
+% Both secondaries are galvanically separate. Tie a2 to b2 externally to
+% obtain a two-phase three-wire system with a common return.
+%
+% Winding resistances, leakage inductances, magnetizing inductance and
+% core-loss resistance are entered in per unit. The base is defined by the
+% rated apparent power Sr (total, three-phase), the primary line-to-line
+% rated voltage V1, the secondary rated phase voltage V2 and the rated
+% frequency fr. Each of the two transformers processes Sr/2, therefore the
+% secondary base impedance is Zb2 = 2*V2^2/Sr.
+%
+% Positive current is taken into A, B, C on the primary side and out of
+% a1 and b1 on the secondary side. Magnetic saturation and hysteresis are
+% not modelled; the magnetizing branch is linear.
+
+nodes
+    A  = foundation.electrical.electrical; % A:left
+    B  = foundation.electrical.electrical; % B:left
+    C  = foundation.electrical.electrical; % C:left
+    a1 = foundation.electrical.electrical; % a1:right
+    a2 = foundation.electrical.electrical; % a2:right
+    b1 = foundation.electrical.electrical; % b1:right
+    b2 = foundation.electrical.electrical; % b2:right
+end
+
+% Internal centre tap of the main primary winding. If your Simscape
+% release rejects Access=private on nodes, replace the attribute by
+% ExternalAccess=none.
+nodes(Access=private)
+    O = foundation.electrical.electrical;
+end
+
+parameters
+    Sr  = {100e3, 'V*A'};  % Rated apparent power (three-phase total)
+    V1  = {400,   'V'  };  % Primary rated line-to-line voltage (rms)
+    V2  = {230,   'V'  };  % Secondary rated phase voltage (rms)
+    fr  = {50,    'Hz' };  % Rated frequency
+    r1  = {0.005, '1'  };  % Primary winding resistance (pu)
+    l1  = {0.030, '1'  };  % Primary leakage inductance (pu)
+    r2  = {0.005, '1'  };  % Secondary winding resistance (pu)
+    l2  = {0.030, '1'  };  % Secondary leakage inductance (pu)
+    lm  = {100,   '1'  };  % Magnetizing inductance (pu)
+    rfe = {500,   '1'  };  % Core-loss resistance (pu)
+end
+
+parameters(Access=private)
+    n    = V1/V2;              % main primary / secondary turns ratio
+    nt   = sqrt(3)/2*V1/V2;    % teaser primary / secondary turns ratio
+    wb   = {2*pi,'rad'}*fr;    % rated angular frequency
+    Zb2  = 2*V2^2/Sr;          % secondary base impedance (Sr/2 per phase)
+    Zb1m = (V1/V2)^2*Zb2;      % main primary base impedance
+    Zb1t = 3/4*(V1/V2)^2*Zb2;  % teaser primary base impedance
+    R1h  = r1*Zb1m/2;          % resistance of one half of the main primary
+    L1h  = l1*Zb1m/wb/2;       % leakage of one half of the main primary
+    R1t  = r1*Zb1t;            % teaser primary resistance
+    L1t  = l1*Zb1t/wb;         % teaser primary leakage inductance
+    R2   = r2*Zb2;             % secondary resistance (both transformers)
+    L2   = l2*Zb2/wb;          % secondary leakage inductance
+    Lm   = lm*Zb2/wb;          % magnetizing inductance, secondary referred
+    Rfe  = rfe*Zb2;            % core-loss resistance, secondary referred
+end
+
+variables
+    i1a = {0, 'A'};  % current A -> O, first half of the main primary
+    i1b = {0, 'A'};  % current O -> B, second half of the main primary
+    i1t = {0, 'A'};  % current C -> O, teaser primary
+    i2m = {0, 'A'};  % main secondary current, out of a1
+    i2t = {0, 'A'};  % teaser secondary current, out of b1
+end
+
+variables(Access=private)
+    em  = {0, 'V'};  % main secondary induced emf
+    et  = {0, 'V'};  % teaser secondary induced emf
+    iLm = {0, 'A'};  % main magnetizing current, secondary referred
+    iLt = {0, 'A'};  % teaser magnetizing current, secondary referred
+end
+
+branches
+    i1a : A.i  -> O.i;
+    i1b : O.i  -> B.i;
+    i1t : C.i  -> O.i;
+    i2m : a2.i -> a1.i;
+    i2t : b2.i -> b1.i;
+end
+
+equations
+    assert(Sr  > 0, 'Rated power must be positive')
+    assert(V1  > 0, 'Primary voltage must be positive')
+    assert(V2  > 0, 'Secondary voltage must be positive')
+    assert(fr  > 0, 'Rated frequency must be positive')
+    assert(r1 >= 0 && r2 >= 0, 'Winding resistances must be non-negative')
+    assert(l1 >= 0 && l2 >= 0, 'Leakage inductances must be non-negative')
+    assert(lm  > 0, 'Magnetizing inductance must be positive')
+    assert(rfe > 0, 'Core-loss resistance must be positive')
+
+    % Primary loop equations. The two halves of the main primary carry
+    % different currents: their sum drives the main core, their difference
+    % is the teaser return current and produces no net main-core mmf.
+    A.v - O.v == R1h*i1a + L1h*der(i1a) + n/2*em;
+    O.v - B.v == R1h*i1b + L1h*der(i1b) + n/2*em;
+    C.v - O.v == R1t*i1t + L1t*der(i1t) + nt*et;
+
+    % Secondary loop equations
+    a1.v - a2.v == em - R2*i2m - L2*der(i2m);
+    b1.v - b2.v == et - R2*i2t - L2*der(i2t);
+
+    % Magneto-motive force balance, referred to the secondary windings
+    n/2*(i1a + i1b) - i2m == iLm + em/Rfe;
+    nt*i1t          - i2t == iLt + et/Rfe;
+
+    % Magnetizing branches
+    em == Lm*der(iLm);
+    et == Lm*der(iLt);
+end
+
+annotations
+    UILayout = [
+        UIGroup('Ratings', Sr, V1, V2, fr)
+        UIGroup('Impedances', r1, l1, r2, l2, lm, rfe)];
+end
+
+end

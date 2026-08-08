@@ -1,0 +1,386 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+%\usepackage{lmodern}
+\usepackage[margin=25mm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{siunitx}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage[siunitx,RPvoltages]{circuitikz}
+\usepackage{tikz}
+\usepackage{hyperref}
+\usepackage{caption}
+
+\hypersetup{colorlinks=true,linkcolor=black,citecolor=black,urlcolor=blue}
+\sisetup{per-mode=symbol}
+
+\title{The Scott-T Transformer:\\Three-Phase to Two-Phase Conversion\\and its Simscape Implementation}
+\author{}
+\date{}
+
+\newcommand{\ph}[1]{\underline{#1}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This note describes the Scott connection, which converts a three-phase system
+into a two-phase system whose two voltages have equal magnitude and are
+displaced by \SI{90}{\degree}. The connection rule and the
+$\sqrt{3}/2$ turns ratio of the teaser winding are derived, the current
+relations and the symmetrical-component behaviour under unbalanced two-phase
+load are given, and the equations implemented in the accompanying Simscape
+component \texttt{scott\_t.ssc} are documented together with its per-unit
+parameterisation and sign conventions.
+\end{abstract}
+
+\section{Introduction}
+
+A three-phase to two-phase transformation is required whenever a load or a
+source that is intrinsically two-phase, or a pair of single-phase loads that
+must be seen as balanced by the supply, has to be interfaced to a three-phase
+network. Typical applications are AC railway substations feeding two adjacent
+single-phase catenary sections, induction furnaces and electric arc furnaces,
+two-phase servo and control motors, and laboratory supplies for two-phase test
+benches.
+
+The classical solution is the Scott connection, introduced by C.~F.~Scott at
+the end of the nineteenth century and still described in standard transformer
+texts \cite{fitzgerald,winders}. It uses two single-phase transformers, called
+the \emph{main} and the \emph{teaser}, and produces two secondary voltages of
+equal magnitude in exact quadrature. A functionally equivalent alternative, the
+Le~Blanc connection, achieves the same result on a single three-limb core at
+the cost of a more complex winding arrangement \cite{chenguo}.
+
+The answer to the question that motivated this note is therefore affirmative:
+the two secondary phases of a Scott-connected transformer are displaced by
+exactly \SI{90}{\degree}, and this is a property of the connection geometry, not
+an approximation.
+
+\section{Connection}
+
+Figure~\ref{fig:conn} shows the arrangement. The main transformer primary,
+with $N_1$ turns, is connected between lines A and B and is centre-tapped at
+node~O. The teaser transformer primary, with $N_{1t}$ turns, is connected
+between line C and the centre tap~O. Both secondaries have $N_2$ turns.
+
+\begin{figure}[htbp]
+\centering
+\begin{circuitikz}[scale=1.0,transform shape,american]
+
+% --- main transformer -------------------------------------------------
+\draw (0,4.2) node[circle,fill,inner sep=1.2pt]{} node[above]{A}
+      to[L=$N_1/2$] (0,2.6) -- (0,2.1) coordinate (O);
+\draw (O) -- (0,1.6) to[L=$N_1/2$] (0,0) node[circle,fill,inner sep=1.2pt]{}
+      node[below]{B};
+\draw (O) node[circle,fill,inner sep=1.2pt]{} node[right=1pt]{O};
+% main core
+\draw[very thick] (0.95,-0.2) -- (0.95,4.4);
+\draw[very thick] (1.15,-0.2) -- (1.15,4.4);
+% main secondary
+\draw (1.7,4.2) node[circle,fill,inner sep=1.2pt]{} node[above]{$a_1$}
+      to[L=$N_2$] (1.7,0) node[circle,fill,inner sep=1.2pt]{}
+      node[below]{$a_2$};
+\node at (2.9,0.6) {\small main};
+
+% --- teaser transformer -----------------------------------------------
+\draw (-6.2,2.1) node[circle,fill,inner sep=1.2pt]{} node[left]{C}
+      to[L={$N_{1t}=\tfrac{\sqrt{3}}{2}N_1$}] (-3.4,2.1) -- (O);
+% teaser core
+\draw[very thick] (-6.4,1.55) -- (-3.2,1.55);
+\draw[very thick] (-6.4,1.35) -- (-3.2,1.35);
+% teaser secondary
+\draw (-6.2,0.4) node[circle,fill,inner sep=1.2pt]{} node[left]{$b_1$}
+      to[L=$N_2$] (-3.4,0.4) node[circle,fill,inner sep=1.2pt]{}
+      node[right]{$b_2$};
+\node at (-4.8,3.0) {\small teaser};
+
+\end{circuitikz}
+\caption{Scott connection. The teaser primary is returned to the centre tap of
+the main primary, so that its current splits equally between the two halves of
+the main winding and produces no net magneto-motive force in the main core.}
+\label{fig:conn}
+\end{figure}
+
+The essential feature is the centre tap. The teaser current returns through the
+two halves of the main primary in opposite winding senses, so the two
+contributions to the main-core magneto-motive force cancel. The two magnetic
+circuits are therefore decoupled even though the electrical circuits are not.
+
+\section{Voltage relations and the teaser turns ratio}
+
+Let the primary be supplied by a balanced positive-sequence system of phase
+voltages
+\begin{equation}
+\ph{V}_A = V\!\angle 0^\circ,\quad
+\ph{V}_B = V\!\angle\!-\!120^\circ,\quad
+\ph{V}_C = V\!\angle 120^\circ .
+\end{equation}
+Neglecting winding impedances, the voltage impressed on the main primary is
+\begin{equation}
+\ph{V}_{AB} = \ph{V}_A - \ph{V}_B = \sqrt{3}\,V\!\angle 30^\circ .
+\end{equation}
+Because the two halves of the main primary are identical and carry the same
+induced voltage, the centre tap sits at the mean of the two line potentials,
+\begin{equation}
+\ph{V}_O = \tfrac{1}{2}\left(\ph{V}_A + \ph{V}_B\right) = -\tfrac{1}{2}\ph{V}_C ,
+\end{equation}
+where the last equality uses $\ph{V}_A+\ph{V}_B+\ph{V}_C = 0$. The voltage
+impressed on the teaser primary is therefore
+\begin{equation}
+\ph{V}_{CO} = \ph{V}_C - \ph{V}_O = \tfrac{3}{2}\,\ph{V}_C
+            = \tfrac{3}{2}\,V\!\angle 120^\circ .
+\end{equation}
+
+Two facts follow immediately. First, $\ph{V}_{CO}$ leads $\ph{V}_{AB}$ by
+exactly \SI{90}{\degree}: the quadrature is geometric and holds for any balanced
+supply. Second, the two primary voltages are \emph{not} equal in magnitude,
+their ratio being $\tfrac{3}{2}V / \sqrt{3}V = \sqrt{3}/2$. To obtain equal
+secondary voltages with equal secondary turns, the teaser primary must have
+\begin{equation}
+\boxed{\;N_{1t} = \frac{\sqrt{3}}{2}\,N_1 \approx 0.8660\,N_1\;}
+\end{equation}
+Denoting $n = N_1/N_2$ and $V_1 = \sqrt{3}V$ the primary line-to-line rms
+voltage, the secondary voltages are
+\begin{align}
+\ph{V}_a &= \frac{\ph{V}_{AB}}{n} = \frac{V_1}{n}\angle 30^\circ, &
+\ph{V}_b &= \frac{\ph{V}_{CO}}{N_{1t}/N_2} = \frac{V_1}{n}\angle 120^\circ .
+\end{align}
+The rated secondary phase voltage is thus $V_2 = V_1/n$ and $\ph{V}_b$ leads
+$\ph{V}_a$ by \SI{90}{\degree}. The phasor construction is shown in
+Fig.~\ref{fig:phasor}.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[scale=1.5,>=stealth]
+% primary phasors
+\draw[->,thick] (0,0) -- (30:1.732) node[right]{$\ph{V}_{AB}$};
+\draw[->,thick] (0,0) -- (120:1.5)  node[above left]{$\ph{V}_{CO}$};
+\draw[->,gray]  (0,0) -- (0:1)      node[below right]{$\ph{V}_{A}$};
+\draw[->,gray]  (0,0) -- (-120:1)   node[below]{$\ph{V}_{B}$};
+\draw[->,gray]  (0,0) -- (120:1)    node[left]{$\ph{V}_{C}$};
+% right angle mark
+\draw (30:0.42) arc (30:120:0.42);
+\node at (75:0.60) {\footnotesize $90^\circ$};
+\draw[dashed] (0,0) -- (30:0.42);
+\end{tikzpicture}
+\caption{Phasor diagram. The main primary sees the line-to-line voltage
+$\ph{V}_{AB}$, the teaser primary sees $\tfrac{3}{2}\ph{V}_{C}$; the two are in
+quadrature and their magnitudes are in the ratio $2/\sqrt{3}$.}
+\label{fig:phasor}
+\end{figure}
+
+\section{Current relations}
+
+Let $\ph{I}_a$ and $\ph{I}_b$ be the currents delivered by the main and teaser
+secondaries and let magnetizing currents be neglected. Magneto-motive force
+balance on the two cores gives
+\begin{align}
+\frac{N_1}{2}\left(\ph{I}_{1a} + \ph{I}_{1b}\right) &= N_2 \ph{I}_a, &
+N_{1t}\,\ph{I}_C &= N_2 \ph{I}_b ,
+\end{align}
+where $\ph{I}_{1a}$ is the current from A to O and $\ph{I}_{1b}$ the current
+from O to B, so that $\ph{I}_{1a} = \ph{I}_A$ and $\ph{I}_{1b} = -\ph{I}_B$.
+With Kirchhoff's current law at node~O, $\ph{I}_A+\ph{I}_B+\ph{I}_C = 0$, the
+line currents are
+\begin{align}
+\ph{I}_A &= \frac{1}{n}\left(\ph{I}_a - \tfrac{1}{\sqrt{3}}\ph{I}_b\right), &
+\ph{I}_B &= \frac{1}{n}\left(-\ph{I}_a - \tfrac{1}{\sqrt{3}}\ph{I}_b\right), &
+\ph{I}_C &= \frac{2}{\sqrt{3}\,n}\,\ph{I}_b .
+\label{eq:lines}
+\end{align}
+For a balanced two-phase load, $\ph{I}_b = \mathrm{j}\ph{I}_a$, and
+\eqref{eq:lines} reduces to a balanced three-phase set of magnitude
+$2\lvert\ph{I}_a\rvert/(\sqrt{3}n)$.
+
+\subsection*{Behaviour under unbalanced two-phase load}
+
+Applying the symmetrical-component transformation to \eqref{eq:lines} yields
+the compact result
+\begin{align}
+\ph{I}_{+} &= \frac{e^{-\mathrm{j}30^\circ}}{\sqrt{3}\,n}
+              \left(\ph{I}_a - \mathrm{j}\ph{I}_b\right), &
+\ph{I}_{-} &= \frac{e^{+\mathrm{j}30^\circ}}{\sqrt{3}\,n}
+              \left(\ph{I}_a + \mathrm{j}\ph{I}_b\right).
+\label{eq:seq}
+\end{align}
+The negative-sequence current vanishes if and only if
+$\ph{I}_b = \mathrm{j}\ph{I}_a$, that is, only for a two-phase load that is
+balanced both in magnitude and in phase angle. The Scott connection does not
+by itself compensate an unbalanced load; it only maps a balanced two-phase load
+onto a balanced three-phase supply. In traction substations this is the reason
+why the two catenary sections must be loaded symmetrically, or why additional
+compensation is required \cite{chenguo}.
+
+\subsection*{Rating}
+
+Each transformer carries one half of the total apparent power, $S_r/2$. The
+main transformer is rated for $V_1$ on the primary and the teaser for
+$(\sqrt{3}/2)V_1$, both for the same secondary voltage $V_2$. The two units are
+therefore not interchangeable. In practice the two windings are often made
+identical up to the tap position, and both are provided with the
+$\sqrt{3}/2 \approx 0.866$ tap plus the centre tap, so that either unit can act
+as main or as teaser.
+
+\section{Simscape model}
+
+The component \texttt{scott\_t.ssc} implements the connection as a single
+Simscape block with seven external electrical nodes: \texttt{A}, \texttt{B},
+\texttt{C} on the primary side and \texttt{a1}, \texttt{a2}, \texttt{b1},
+\texttt{b2} on the secondary side. The centre tap \texttt{O} is an internal
+private node. The two secondaries are galvanically separate; tying
+\texttt{a2} to \texttt{b2} externally produces a two-phase three-wire system
+with a common return.
+
+\subsection{Equations}
+
+Winding resistances and leakage inductances are lumped in series with each
+winding, and each core is represented by a linear magnetizing inductance in
+parallel with a core-loss resistance, both referred to the secondary. Denoting
+by $e_m$ and $e_t$ the secondary induced electromotive forces, the implemented
+equations are
+
+\begin{align}
+v_A - v_O &= R_{1h}\,i_{1a} + L_{1h}\,\frac{\mathrm{d}i_{1a}}{\mathrm{d}t}
+             + \frac{n}{2}\,e_m ,\\[2pt]
+v_O - v_B &= R_{1h}\,i_{1b} + L_{1h}\,\frac{\mathrm{d}i_{1b}}{\mathrm{d}t}
+             + \frac{n}{2}\,e_m ,\\[2pt]
+v_C - v_O &= R_{1t}\,i_{1t} + L_{1t}\,\frac{\mathrm{d}i_{1t}}{\mathrm{d}t}
+             + n_t\,e_t ,\\[2pt]
+v_{a1} - v_{a2} &= e_m - R_2\,i_{2m}
+             - L_2\,\frac{\mathrm{d}i_{2m}}{\mathrm{d}t} ,\\[2pt]
+v_{b1} - v_{b2} &= e_t - R_2\,i_{2t}
+             - L_2\,\frac{\mathrm{d}i_{2t}}{\mathrm{d}t} ,
+\end{align}
+with the magneto-motive force balance referred to the secondary windings,
+\begin{align}
+\frac{n}{2}\left(i_{1a} + i_{1b}\right) - i_{2m}
+   &= i_{Lm} + \frac{e_m}{R_{fe}} , &
+n_t\,i_{1t} - i_{2t} &= i_{Lt} + \frac{e_t}{R_{fe}} ,
+\end{align}
+and the magnetizing branches
+\begin{align}
+e_m &= L_m\,\frac{\mathrm{d}i_{Lm}}{\mathrm{d}t} , &
+e_t &= L_m\,\frac{\mathrm{d}i_{Lt}}{\mathrm{d}t} .
+\end{align}
+Here $n = N_1/N_2 = V_1/V_2$ and $n_t = N_{1t}/N_2 = (\sqrt{3}/2)\,n$.
+Kirchhoff's current law at the internal node,
+$i_{1a} + i_{1t} = i_{1b}$, is enforced automatically by the branch
+declarations.
+
+Two points are worth noting. First, the main primary is split into two halves
+of $N_1/2$ turns each, with half the total resistance and half the total
+leakage inductance; the two halves are not mutually coupled through their
+leakage paths, which is the usual approximation. Second, the sum
+$i_{1a}+i_{1b}$ drives the main core while their difference, equal to the
+teaser return current, does not. The centre-tap cancellation is thus a property
+of the equations and does not need to be imposed separately.
+
+\subsection{Parameters}
+
+The impedances are entered in per unit. Each transformer processes $S_r/2$, so
+the secondary base impedance is
+\begin{equation}
+Z_{b2} = \frac{V_2^2}{S_r/2} = \frac{2V_2^2}{S_r} ,
+\end{equation}
+and the primary bases follow from the respective turns ratios,
+$Z_{b1,\text{main}} = n^2 Z_{b2}$ and
+$Z_{b1,\text{teaser}} = n_t^2 Z_{b2} = \tfrac{3}{4}n^2 Z_{b2}$. With this
+choice the same per-unit value applies to both units. Table~\ref{tab:par}
+lists the parameters.
+
+\begin{table}[htbp]
+\centering
+\caption{Parameters of the \texttt{scott\_t} component.}
+\label{tab:par}
+\begin{tabular}{llll}
+\toprule
+Name & Description & Unit & Default \\
+\midrule
+\texttt{Sr}  & Rated apparent power, three-phase total & \si{\volt\ampere} & \num{100e3} \\
+\texttt{V1}  & Primary rated line-to-line voltage, rms & \si{\volt} & 400 \\
+\texttt{V2}  & Secondary rated phase voltage, rms      & \si{\volt} & 230 \\
+\texttt{fr}  & Rated frequency                         & \si{\hertz} & 50 \\
+\texttt{r1}  & Primary winding resistance              & pu & 0.005 \\
+\texttt{l1}  & Primary leakage inductance              & pu & 0.030 \\
+\texttt{r2}  & Secondary winding resistance            & pu & 0.005 \\
+\texttt{l2}  & Secondary leakage inductance            & pu & 0.030 \\
+\texttt{lm}  & Magnetizing inductance                  & pu & 100 \\
+\texttt{rfe} & Core-loss resistance                    & pu & 500 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Sign conventions}
+
+Positive current enters the component at \texttt{A}, \texttt{B} and \texttt{C}
+and leaves it at \texttt{a1} and \texttt{b1}. With a balanced positive-sequence
+supply of line-to-line rms voltage \texttt{V1} applied with phase sequence
+A--B--C, the open-circuit secondary voltages are
+\begin{align}
+v_{a1}-v_{a2} &= \sqrt{2}\,V_2\cos(\omega t + 30^\circ), &
+v_{b1}-v_{b2} &= \sqrt{2}\,V_2\cos(\omega t + 120^\circ),
+\end{align}
+so the teaser secondary leads the main secondary by \SI{90}{\degree}. Reversing
+the phase sequence at the primary reverses the sign of the quadrature, which is
+the expected behaviour and a useful check.
+
+\subsection{Limitations}
+
+The magnetic model is linear: saturation, hysteresis and frequency-dependent
+core losses are not represented, and no thermal port is provided. Inrush
+phenomena are therefore not reproduced. Leakage coupling between the two halves
+of the main primary is neglected, which slightly underestimates the impedance
+seen by the teaser return current. If saturation is required, the two
+magnetizing relations $e = L_m\,\mathrm{d}i_L/\mathrm{d}t$ can be replaced by a
+flux-linkage formulation $e = \mathrm{d}\lambda/\mathrm{d}t$ with a nonlinear
+$\lambda(i_L)$ characteristic, at the cost of one additional differential
+variable per core.
+
+\section{Suggested verification}
+
+A minimal test model consists of a balanced three-phase voltage source
+connected to \texttt{A}, \texttt{B}, \texttt{C}, with \texttt{a2} tied to
+\texttt{b2} and a resistive load on each secondary. Three checks are
+sufficient:
+\begin{enumerate}
+\item \emph{No load.} The two secondary voltages must be equal in rms value and
+in exact quadrature, and the magnetizing currents must be in the ratio
+$1:1$ referred to the secondary.
+\item \emph{Balanced load.} With equal resistive loads on both secondaries, the
+three line currents must form a balanced positive-sequence set; by
+\eqref{eq:seq} the negative-sequence component must be zero to within the
+magnetizing current.
+\item \emph{Single-phase load.} Loading only the main secondary must produce a
+negative-sequence line current of magnitude equal to the positive-sequence one,
+in agreement with \eqref{eq:seq} for $\ph{I}_b = 0$.
+\end{enumerate}
+
+\begin{thebibliography}{9}
+
+\bibitem{fitzgerald}
+A.~E.~Fitzgerald, C.~Kingsley~Jr., and S.~D.~Umans,
+\emph{Electric Machinery}, 6th ed. New York, NY, USA: McGraw-Hill, 2003.
+
+\bibitem{winders}
+J.~J.~Winders~Jr.,
+\emph{Power Transformer Principles and Applications}.
+New York, NY, USA: Marcel Dekker, 2002.
+
+\bibitem{chenguo}
+B.-K.~Chen and B.-S.~Guo,
+``Three-phase models of specially connected transformers,''
+\emph{IEEE Trans. Power Del.}, vol.~11, no.~1, pp.~323--330, Jan. 1996.
+
+\bibitem{ieee}
+\emph{IEEE Standard for General Requirements for Liquid-Immersed Distribution,
+Power, and Regulating Transformers}, IEEE Std C57.12.00.
+
+\bibitem{simscape}
+The MathWorks, Inc., \emph{Simscape Language Guide}, Natick, MA, USA.
+
+\end{thebibliography}
+
+\end{document}
