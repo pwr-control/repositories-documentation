@@ -1,0 +1,134 @@
+% ------------------------------------------------------------------
+% preamble_generated.tex -- produced by tools/merge_tex.py
+% Union of the preambles of every source document.
+% Edit preamble.tex (hand written) rather than this file.
+% ------------------------------------------------------------------
+
+% --- packages ---
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{array}
+% (handled in preamble.tex) \usepackage{babel}
+\usepackage{booktabs}
+\usepackage{caption}
+\usepackage{circuitikz}
+\usepackage{cite}
+\usepackage{enumitem}
+% (handled in preamble.tex) \usepackage{fancyhdr}
+\usepackage{float}
+% (handled in preamble.tex) \usepackage{fontenc}
+% (handled in preamble.tex) \usepackage{geometry}
+\usepackage{graphicx}
+% (handled in preamble.tex) \usepackage{hyperref}
+% (handled in preamble.tex) \usepackage{inputenc}
+\usepackage{listings}
+\usepackage{longtable}
+\usepackage{pgfplots}
+\usepackage{siunitx}
+\usepackage{subcaption}
+\usepackage{tikz}
+\usepackage{times}
+\usepackage{xcolor}
+
+\usetikzlibrary{arrows.meta,calc,decorations.pathreplacing,patterns,positioning}
+
+% --- macros and settings collected from the sources ---
+\pgfplotsset{compat=1.16}
+\sisetup{output-decimal-marker={,},per-mode=symbol,range-phrase={~a~},range-units=single}
+\renewcommand{\contentsname}{Indice}
+\renewcommand{\refname}{Riferimenti bibliografici}
+\renewcommand{\figurename}{Fig.}
+\renewcommand{\tablename}{Tab.}
+\renewcommand{\abstractname}{Sommario}
+\hypersetup{colorlinks=true,linkcolor=black,citecolor=black,urlcolor=blue}
+\definecolor{pcol}{RGB}{253,232,232}
+\definecolor{ncol}{RGB}{228,238,253}
+\definecolor{ccol}{RGB}{25,80,170}
+\definecolor{vcol}{RGB}{175,35,35}
+\definecolor{fncol}{RGB}{15,120,60}
+\definecolor{fpcol}{RGB}{205,110,0}
+\newcommand{\bandbg}[2]{
+  \fill[pcol] (0,#1) rectangle (2.5,#2);
+  \fill[ncol] (2.5,#1) rectangle (7,#2);
+  \fill[pcol] (7,#1) rectangle (9.5,#2);
+  \fill[ncol] (9.5,#1) rectangle (12,#2);
+  \draw[gray!55,dashed] (2.5,#1)--(2.5,#2) (7,#1)--(7,#2) (9.5,#1)--(9.5,#2);
+  \draw[gray!55] (0,#1) rectangle (12,#2);
+  \node[anchor=south,font=\small] at (1.25,#2)  {$p_1$ ($p^{+}$)};
+  \node[anchor=south,font=\small] at (4.75,#2)  {$n_1$ ($n^{-}$)};
+  \node[anchor=south,font=\small] at (8.25,#2)  {$p_2$};
+  \node[anchor=south,font=\small] at (10.75,#2) {$n_2$ ($n^{+}$)};
+  \node[anchor=north,font=\scriptsize] at (2.5,#1) {$J_1$};
+  \node[anchor=north,font=\scriptsize] at (7,#1)   {$J_2$};
+  \node[anchor=north,font=\scriptsize] at (9.5,#1) {$J_3$};
+  \node[anchor=north,font=\scriptsize] at (0.6,#1)  {anodo};
+  \node[anchor=north,font=\scriptsize] at (11.4,#1) {catodo};
+}
+% [dropped duplicate from igbtfermi] \definecolor{ncol}{RGB}{20,70,160}
+% [dropped duplicate from igbtfermi] \definecolor{pcol}{RGB}{170,30,30}
+\definecolor{oxcol}{RGB}{200,160,20}
+\tikzset{
+  Eband/.style   = {line width=1.0pt, black},
+  Emid/.style    = {line width=0.4pt, black!45, dash pattern=on 1.5pt off 1.5pt},
+  Ef/.style      = {line width=0.9pt, black!70, dashed},
+  Efn/.style     = {line width=0.9pt, ncol, dashed},
+  Efp/.style     = {line width=0.9pt, pcol, dashed},
+  sep/.style     = {line width=0.3pt, black!30, dotted},
+  reglab/.style  = {font=\scriptsize\sffamily, black!70},
+  enlab/.style   = {font=\scriptsize},
+  eflow/.style   = {-{Latex[length=2mm]}, ncol, line width=0.8pt},
+  hflow/.style   = {-{Latex[length=2mm]}, pcol, line width=0.8pt},
+}
+\newcommand{\EG}{1.12}
+\sisetup{per-mode=symbol, detect-weight=true}
+\sisetup{per-mode=symbol}
+\newcommand{\ph}[1]{\underline{#1}}
+\DeclareSIUnit{\voltampere}{VA}
+\pgfplotsset{compat=1.17}
+\sisetup{per-mode=symbol,range-units=single}
+\sisetup{
+  per-mode = symbol,
+  range-units = single,
+  detect-weight = true
+}
+\newcommand{\Vces}{V_{\mathrm{CES}}}
+\newcommand{\Vdc}{V_{\mathrm{DC}}}
+\newcommand{\Vpk}{V_{\mathrm{pk}}}
+\newcommand{\Ls}{L_{\sigma}}
+\newcommand{\Tvj}{T_{\mathrm{vj}}}
+\sisetup{
+  output-decimal-marker={,},
+  per-mode=symbol,
+  group-separator={\,}
+}
+\newcommand{\dif}{\mathrm{d}}
+\hypersetup{colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue}
+\pgfplotsset{compat=1.18}
+\sisetup{per-mode=symbol, range-units=single, detect-all}
+\definecolor{codegray}{gray}{0.95}
+\lstset{
+  language=Matlab,
+  basicstyle=\ttfamily\footnotesize,
+  keywordstyle=\color{blue!60!black},
+  commentstyle=\color{green!40!black},
+  stringstyle=\color{red!60!black},
+  backgroundcolor=\color{codegray},
+  frame=single,
+  breaklines=true,
+  columns=fullflexible,
+  showstringspaces=false,
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  xleftmargin=6mm
+}
+\newcommand{\Eon}{E_{\mathrm{on}}}
+\newcommand{\Eoff}{E_{\mathrm{off}}}
+\newcommand{\Err}{E_{\mathrm{rr}}}
+\newcommand{\vce}{v_{\mathrm{CE}}}
+\newcommand{\ic}{i_{\mathrm{C}}}
+\newcommand{\IL}{I_{\mathrm{L}}}
+\sisetup{output-decimal-marker={,}, per-mode=symbol, detect-all}
+\renewcommand{\headrulewidth}{0.4pt}
+\newcommand{\Uc}{U_{\mathrm{c}}}
+\newcommand{\Un}{U_{\mathrm{n}}}
+

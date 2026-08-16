@@ -1,0 +1,316 @@
+% chapters/en50160.tex
+% generated from en50160.tex
+\chapter{EN 50160 -- voltage characteristics of public distribution networks}
+\label{ch:en50160}
+\begin{center}
+\fbox{\begin{minipage}{0.92\textwidth}
+\small\textit{Documento di sintesi a uso interno. I valori riportati sono ripresi dalla
+letteratura tecnica corrente e hanno carattere indicativo: per ogni verifica formale
+di conformità fa fede esclusivamente il testo ufficiale della norma
+EN 50160:2022 (+A1:2025) e i relativi recepimenti nazionali (CEI EN 50160 in Italia).}
+\end{minipage}}
+\end{center}
+
+\vspace{4mm}
+
+\section{Scopo e campo di applicazione}
+
+La EN 50160 descrive le \emph{caratteristiche attese} della tensione al punto di
+consegna dell'utente nelle reti pubbliche di distribuzione in corrente alternata,
+in condizioni normali di esercizio. È una norma di \emph{prodotto-elettricità}:
+definisce che cosa il cliente può aspettarsi dalla rete, non che cosa il cliente
+può iniettare in rete.
+
+\begin{itemize}[itemsep=2pt]
+  \item \textbf{Edizione corrente:} EN 50160:2022, approvata da CENELEC nel novembre 2022,
+        che sostituisce la EN 50160:2010 e tutte le sue varianti
+        (A1:2015, A2:2019, A3:2019); successivamente integrata dall'emendamento A1:2025.
+  \item \textbf{Livelli di tensione coperti:} BT ($\Un \le \SI{1}{kV}$),
+        MT ($\SI{1}{kV} < \Un \le \SI{36}{kV}$), AT e --- novità dell'edizione 2022 ---
+        AAT. L'edizione 2022 dedica un capitolo separato a ciascun livello.
+  \item \textbf{Esclusioni:} reti industriali e private, impianti in condizioni eccezionali
+        (guasti di forza maggiore, condizioni meteorologiche estreme, azioni di terzi,
+        distacchi per emergenza di sistema, atti di autorità), reti in isola non pubbliche.
+  \item \textbf{Natura statistica:} i limiti non sono soglie istantanee, ma percentili
+        valutati su intervalli di osservazione tipicamente settimanali
+        (95\,\% o 99\,\% dei valori aggregati). Ciò è il punto in cui la norma si
+        differenzia sostanzialmente dai livelli di compatibilità EMC.
+\end{itemize}
+
+\subsection*{Definizioni essenziali}
+
+\begin{description}[style=nextline,leftmargin=0pt,itemsep=2pt]
+  \item[Tensione nominale $\Un$] valore con cui il sistema è designato
+        (es. \SI{230}{V} fase--neutro, \SI{400}{V} concatenata in BT).
+  \item[Tensione dichiarata $\Uc$] normalmente coincide con $\Un$; può differire se
+        concordata contrattualmente tra distributore e utente. In MT/AT è il
+        riferimento usato per i limiti.
+  \item[Condizioni normali di esercizio] esercizio in cui il carico è alimentato,
+        con manovre di rete ed eliminazione automatica dei guasti, in assenza di
+        eventi eccezionali.
+  \item[Valore aggregato] valore efficace su \SI{10}{\minute} (armoniche, squilibrio,
+        ampiezza) o su 10/12 cicli, secondo le regole di aggregazione della
+        IEC/EN 61000-4-30.
+\end{description}
+
+\section{Frequenza di alimentazione}
+
+Valore misurato come media su \SI{10}{\second}, riferito a $f_\mathrm{n}=\SI{50}{Hz}$.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Tipo di rete} & \textbf{Intervallo} & \textbf{Percentile / periodo} \\
+\midrule
+Interconnessa & \SI{50}{Hz}\,$\pm\,1\%$ (\SIrange{49.5}{50.5}{Hz}) & 99,5\,\% dell'anno \\
+Interconnessa & $+4\%\,/\,-6\%$ (\SIrange{47}{52}{Hz}) & 100\,\% del tempo \\
+Non interconnessa (isola) & \SI{50}{Hz}\,$\pm\,2\%$ & 95\,\% della settimana \\
+Non interconnessa (isola) & \SI{50}{Hz}\,$\pm\,15\%$ & 100\,\% del tempo \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent
+La finestra \SIrange{47}{52}{Hz} è il riferimento pratico per il campo di aggancio
+di un PLL di rete e per la logica di protezione di interfaccia (che tuttavia segue
+le norme di connessione, non la EN 50160).
+
+\section{Ampiezza della tensione di alimentazione}
+
+Valutata su valori efficaci aggregati su \SI{10}{\minute}, su un periodo di osservazione
+di una settimana.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Livello} & \textbf{Limite} & \textbf{Criterio} \\
+\midrule
+BT / MT & $\Uc \pm 10\%$ & 95\,\% dei valori \SI{10}{\minute} settimanali \\
+BT & $+10\%\,/\,-15\%$ & 100\,\% dei valori \SI{10}{\minute} settimanali \\
+AT / AAT & valori indicativi o contrattuali & secondo accordo con il gestore \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent
+Per le reti non interconnesse e per alcune situazioni particolari sono ammesse
+deroghe nazionali (Allegato E, ``A-deviations'').
+
+\section{Variazioni rapide di tensione e flicker}
+
+\begin{itemize}[itemsep=2pt]
+  \item \textbf{Variazioni rapide (RVC):} in BT e MT generalmente inferiori al 5\,\% di $\Un$;
+        in condizioni particolari sono ammessi eventi occasionali fino al 10\,\% di $\Un$.
+        L'edizione 2022 dettaglia i valori indicativi nell'Allegato B.
+  \item \textbf{Severità del flicker a lungo termine:} $P_{lt} \le 1$ per il 95\,\% del tempo
+        su una settimana, in BT e MT ($P_{lt}$ calcolato su blocchi di \SI{2}{\hour}
+        a partire dai $P_{st}$ su \SI{10}{\minute}, secondo IEC 61000-4-15).
+\end{itemize}
+
+\section{Buchi di tensione e interruzioni}
+
+Fenomeni imprevedibili e in larga misura casuali: la norma non fissa limiti prescrittivi
+ma fornisce \emph{valori indicativi} basati su statistiche di rete, con classificazione
+per profondità e durata (tabella tipo UNIPEDE).
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{p{0.32\textwidth}p{0.60\textwidth}}
+\toprule
+\textbf{Fenomeno} & \textbf{Valori indicativi} \\
+\midrule
+Buchi di tensione ($U < 90\%\,\Uc$, durata \SIrange{10}{60000}{ms}) &
+da alcune decine fino a circa un migliaio di eventi all'anno; la maggior parte
+con durata $<\SI{1}{\second}$ e profondità $<60\%$. \\
+\addlinespace
+Interruzioni brevi ($\le \SI{3}{\minute}$) &
+tipicamente da alcune decine a alcune centinaia all'anno; circa il 70\,\% con
+durata inferiore a \SI{1}{\second}. \\
+\addlinespace
+Interruzioni lunghe ($> \SI{3}{\minute}$) &
+tipicamente meno di 10 fino a 50 eventi all'anno, con forte dipendenza dalla
+struttura di rete (aerea o in cavo) e dall'area geografica. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent
+Le interruzioni programmate, preavvisate all'utente, sono contabilizzate separatamente.
+
+\section{Sovratensioni}
+
+\begin{itemize}[itemsep=2pt]
+  \item \textbf{Temporanee a frequenza industriale (TOV):} originate tipicamente da
+        guasti a monte; in BT generalmente non superano \SI{1.5}{kV} efficaci, con
+        entità dipendente dallo stato del neutro della rete MT.
+  \item \textbf{Transitorie:} impulsive o oscillatorie, da manovra o da fulminazione;
+        in BT generalmente inferiori a \SI{6}{kV} di picco, con tempi di salita
+        da microsecondi a millisecondi. Il coordinamento dell'isolamento e la scelta
+        degli SPD si basano sulle categorie di sovratensione della EN 60664-1
+        e sulla EN 62305, non sulla EN 50160.
+\end{itemize}
+
+\section{Squilibrio della tensione}
+
+Rapporto tra componente di sequenza inversa e componente di sequenza diretta,
+su valori aggregati a \SI{10}{\minute}:
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{Limite} & \textbf{Criterio} \\
+\midrule
+$u_2 \le 2\%$ & 95\,\% dei valori \SI{10}{\minute} su una settimana \\
+$u_2 \le 3\%$ & ammesso in alcune aree con forte presenza di carichi monofase \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent
+Nelle reti con neutro distribuito può essere presente anche componente omopolare,
+non oggetto di limite esplicito nella norma.
+
+\section{Armoniche e interarmoniche}
+
+Valori efficaci delle singole armoniche riferiti alla fondamentale, aggregati su
+\SI{10}{\minute}: il limite deve essere rispettato dal 95\,\% dei valori settimanali.
+La distorsione totale, calcolata fino al 40\textsuperscript{o} ordine, deve rispettare
+$\mathrm{THD}_U \le 8\%$ in BT e MT.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{cc cc cc}
+\toprule
+\multicolumn{2}{c}{\textbf{Dispari non multiple di 3}} &
+\multicolumn{2}{c}{\textbf{Dispari multiple di 3}} &
+\multicolumn{2}{c}{\textbf{Pari}} \\
+\cmidrule(lr){1-2}\cmidrule(lr){3-4}\cmidrule(lr){5-6}
+$h$ & $U_h/U_1$ & $h$ & $U_h/U_1$ & $h$ & $U_h/U_1$ \\
+\midrule
+5  & 6,0\,\%  & 3  & 5,0\,\%  & 2         & 2,0\,\% \\
+7  & 5,0\,\%  & 9  & 1,5\,\%  & 4         & 1,0\,\% \\
+11 & 3,5\,\%  & 15 & 0,5\,\%  & 6\dots24  & 0,5\,\% \\
+13 & 3,0\,\%  & 21 & 0,5\,\%  &           &         \\
+17 & 2,0\,\%  &    &          &           &         \\
+19 & 1,5\,\%  &    &          &           &         \\
+23 & 1,5\,\%  &    &          &           &         \\
+25 & 1,5\,\%  &    &          &           &         \\
+\bottomrule
+\end{tabular}
+\caption*{\small Valori indicativi delle singole armoniche di tensione in BT e MT.
+Per gli ordini superiori al 25\textsuperscript{o} la norma storicamente non fissava
+valori, essendo generalmente ridotti e poco prevedibili per effetto delle risonanze
+di rete; l'edizione 2022 amplia la trattazione degli ordini elevati.}
+\end{table}
+
+\begin{itemize}[itemsep=2pt]
+  \item \textbf{Interarmoniche:} livelli in crescita per effetto di convertitori e
+        di generazione distribuita; storicamente trattate in modo informativo,
+        con attenzione all'interazione con i sistemi di telecomando centralizzato.
+  \item \textbf{Banda \SIrange{2}{150}{kHz} (``supraarmoniche''):} introdotta con
+        l'emendamento A2:2019 e recepita nell'edizione 2022 tra gli
+        ``altri fenomeni'' (Allegato C). È il punto di contatto diretto con
+        l'emissione condotta dei convertitori a commutazione ad alta frequenza,
+        in particolare con dispositivi SiC/GaN.
+\end{itemize}
+
+\section{Tensioni di segnale sulla rete (mains signalling)}
+
+Segnali di telecomando (ripple control, carrier, marcatori di rete) sovrapposti
+alla tensione di alimentazione. Il criterio è espresso come curva di ampiezza
+ammessa in funzione della frequenza, verificata sul 99\,\% di un giorno con
+valori medi su \SI{3}{\second}: ordine di grandezza pari a circa il 9\,\% di $\Uc$
+alle frequenze più basse (centinaia di Hz), con andamento decrescente fino a
+qualche punto percentuale nella banda dei kHz e a valori dell'ordine dell'1\,\%
+oltre i \SI{10}{kHz}.
+
+\section{Misura e valutazione della conformità}
+
+\begin{itemize}[itemsep=2pt]
+  \item Metodi di misura secondo \textbf{IEC/EN 61000-4-30}, classe A per la
+        valutazione contrattuale e normativa, classe S per il monitoraggio statistico.
+  \item Intervallo base 10 cicli (\SI{50}{Hz}), aggregazione a \SI{150}{\second},
+        \SI{10}{\minute} e \SI{2}{\hour}.
+  \item Periodo di osservazione: una settimana per la maggior parte dei parametri,
+        un anno per la frequenza.
+  \item Marcatura dei dati (\emph{flagging}): i valori acquisiti durante buchi,
+        sovratensioni o interruzioni sono marcati ed esclusi dalle statistiche
+        degli altri parametri, per evitare doppi conteggi.
+\end{itemize}
+
+\section{Relazione con le altre norme}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{p{0.30\textwidth}p{0.62\textwidth}}
+\toprule
+\textbf{Norma} & \textbf{Ruolo} \\
+\midrule
+EN 50160 & Caratteristiche della tensione fornita (\emph{che cosa arriva} all'utente). \\
+EN 61000-2-2 / -2-4 / -2-12 & Livelli di compatibilità in BT pubblica, in impianti
+industriali e in MT. Sono i valori di riferimento per la progettazione EMC. \\
+EN 61000-3-2 / -3-12 & Limiti di emissione di corrente armonica per apparecchi
+$\le \SI{16}{A}$ e \SIrange{16}{75}{A} per fase. \\
+IEC/TS 61000-3-4, IEC/TR 61000-3-6 & Valutazione dell'emissione di apparecchi e
+impianti di grande potenza, allocazione delle quote di emissione al PCC. \\
+EN 61000-4-30 & Metodi di misura della qualità della tensione. \\
+CEI 0-16 / CEI 0-21 (Italia) & Regole di connessione alle reti MT/AT e BT: definiscono
+gli obblighi lato utente (protezione di interfaccia, campi di frequenza e tensione,
+LVFRT), complementari alla EN 50160. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Implicazioni per la progettazione di convertitori connessi alla rete}
+
+\begin{enumerate}[itemsep=3pt]
+  \item \textbf{Dimensionamento del campo di tensione.} La banda
+        $\Uc\,+10\%/-15\%$ (100\,\% del tempo in BT), sommata alla caduta sul filtro
+        e all'ondulazione, determina la tensione minima di bus DC per mantenere il
+        controllo di corrente in condizioni di massima tensione di rete e, in
+        contrapposizione, la tensione massima di blocco dei dispositivi.
+  \item \textbf{PLL e stima di frequenza.} Il campo \SIrange{47}{52}{Hz} definisce il
+        range di aggancio; la banda passante del PLL va scelta come compromesso tra
+        reiezione dello squilibrio (componente $2\omega$ dovuta a $u_2$ fino al 2--3\,\%)
+        e prontezza durante i buchi. Uso pratico di DSOGI-PLL o DDSRF-PLL.
+  \item \textbf{Squilibrio.} Con $u_2$ fino al 2--3\,\%, un controllo di sola sequenza
+        diretta genera ripple di potenza a \SI{100}{Hz} sul bus DC; se il ripple non
+        è accettabile, occorre un anello dedicato di sequenza inversa o un controllo
+        risonante multi-frequenza.
+  \item \textbf{Armoniche di tensione preesistenti.} Un $\mathrm{THD}_U$ fino all'8\,\%
+        con quinta al 6\,\% è un disturbo di ingresso, non un errore di controllo:
+        richiede risonanti a $6k\pm1$ nel riferimento sincrono oppure una struttura
+        di reiezione a banda larga, e va considerato nella verifica di stabilità
+        del filtro LCL con impedenza di rete variabile.
+  \item \textbf{Buchi e interruzioni brevi.} La statistica dei buchi
+        (in maggioranza $<\SI{1}{\second}$ e $<60\%$ di profondità) definisce il
+        requisito realistico di ride-through, l'energia da immagazzinare nel bus DC
+        e la logica di ripresa sincronizzata.
+  \item \textbf{Banda \SIrange{2}{150}{kHz}.} Con dispositivi a banda larga e frequenze
+        di commutazione elevate, l'emissione in questa banda va valutata già in fase
+        di progetto del filtro EMI: è l'area in cui la normativa è in evoluzione e in
+        cui l'interazione tra più convertitori sullo stesso feeder è meno prevedibile.
+  \item \textbf{Distinzione fondamentale.} La EN 50160 non è un limite di emissione:
+        la conformità dell'apparecchio si dimostra rispetto alle EN 61000-3-x e alle
+        regole di connessione nazionali. La EN 50160 fornisce invece le
+        \emph{condizioni ambientali} da assumere in ingresso al progetto.
+\end{enumerate}
+
+\section*{Riferimenti}
+
+\begin{itemize}[itemsep=2pt]
+  \item EN 50160:2022, \textit{Voltage characteristics of electricity supplied by
+        public electricity networks}, CENELEC, con emendamento A1:2025.
+  \item IEC/EN 61000-4-30, \textit{Testing and measurement techniques ---
+        Power quality measurement methods}.
+  \item IEC/EN 61000-4-15, \textit{Flickermeter --- Functional and design specifications}.
+  \item EN 61000-2-2, EN 61000-2-4, EN 61000-2-12, \textit{Compatibility levels}.
+  \item CEI 0-16 e CEI 0-21, regole tecniche di connessione alle reti di distribuzione
+        italiane.
+\end{itemize}
+

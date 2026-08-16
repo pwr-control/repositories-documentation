@@ -1,0 +1,143 @@
+# manifest.yaml -- order of the book
+#
+# Format (deliberately simple, read by tools/merge_tex.py without PyYAML):
+#
+#   - part: <part title>          starts a new \part
+#   - file: <name>.tex            source file, relative to --src
+#     title: <chapter title>      optional; falls back to the \title{} of the file
+#     slug:  <label-prefix>       optional; falls back to the file name
+#
+# Filenames below are my best guess from our previous sessions -- rename the
+# `file:` values to whatever your files are actually called. Any entry whose
+# file is missing is skipped and reported at the end of the run, so you can
+# start with a subset and grow the book.
+#
+# Selection rules already applied:
+#   * thyristor gate driver: only the latest version is listed (one entry)
+#   * where an English and an Italian version exist, the English one is listed
+#   * documents that only ever existed in Italian are marked  [IT]  below;
+#     they compile fine, they are just not in English yet
+
+- part: Power semiconductor devices
+
+- file: power_diode.tex
+  title: The PIN power diode
+  slug: pindiode
+  # [IT] Italian text with English technical terms
+
+- file: tiristore_bande_fermi.tex
+  title: Fermi levels in a thyristor
+  slug: thyfermi
+  # [IT]
+
+- file: igbt_fermi.tex
+  title: Fermi levels in an IGBT
+  slug: igbtfermi
+  # [IT]
+
+- file: gto_igct.tex
+  title: GTO and IGCT devices
+  slug: gtoigct
+
+- part: Device models for circuit simulation
+
+- file: igbt_loss.tex
+  title: IGBT loss model
+  slug: igbtloss
+
+- file: igbt_dyn.tex
+  title: IGBT and diode switching-dynamics models
+  slug: igbtdyn
+  # [IT]
+
+- file: mos_dyn.tex
+  title: Power MOSFET switching-dynamics model
+  slug: mosdyn
+  # [IT]
+
+- file: mos_simple_2th.tex
+  title: Power MOSFET loss model
+  slug: mosloss
+
+- file: thyristor_rr.tex
+  title: Thyristor model with Lauritzen-Ma reverse recovery
+  slug: thyrr
+
+- file: opamp_cfa.tex
+  title: Current-feedback operational amplifier model
+  slug: opampcfa
+  # [IT]
+
+- file: scott_t.tex
+  title: Scott-T three-phase to two-phase transformer model
+  slug: scottt
+  # [IT]
+
+- part: Gate drivers and firing circuits
+
+- file: thyristor_gate_driver.tex
+  title: Thyristor gate driver design guidelines
+  slug: thygate
+
+- file: ocem_e637.tex
+  title: The O.C.E.M. E637 firing card
+  slug: e637
+  # [IT]
+
+- part: Converters and applications
+
+- file: cycloconverter.tex
+  title: Cycloconverters
+  slug: cyclo
+
+- file: soft_starter.tex
+  title: Thyristor soft starters
+  slug: softstart
+
+- file: snubber_design.tex
+  title: Snubber design for a 2400 A half-bridge leg
+  slug: snubber
+
+- file: afe_16_7hz.tex
+  title: Single-phase AFE for a 16.7 Hz traction grid
+  slug: afe167
+  # [IT]
+
+- file: apd_fullbridge_control.tex
+  title: Energy control of a full-bridge active power decoupler
+  slug: apdfb
+  # [IT]
+
+- file: dclink_2w_ripple_phase.tex
+  title: Phase relationship of the DC-link ripple at twice the line frequency
+  slug: dcripple
+  # [IT]
+
+- file: ps_25V_12kA.tex
+  title: A 25 V / 12 kA phase-shifted full-bridge power supply
+  slug: psfb
+
+- part: Measurement, standards and system analysis
+
+- file: dpt_energy_extraction.tex
+  title: Extracting Eon, Eoff and Err from double pulse tests
+  slug: dpt
+
+- file: en50160.tex
+  title: EN 50160 -- voltage characteristics of public distribution networks
+  slug: en50160
+  # [IT]
+
+- file: trafo_sequenze.tex
+  title: Sequence equivalent circuits of a three-phase transformer
+  slug: trafoseq
+  # [IT]
+
+- file: pmsm_torque_ripple.tex
+  title: Torque ripple and cogging in PMSM drives
+  slug: ripple
+
+- file: igbt_aging.tex
+  title: Aging estimation of an IGBT drive
+  slug: aging
+  # [IT]

@@ -1,0 +1,448 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[italian]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{geometry}
+\usepackage[protrusion=true,expansion=false]{microtype}
+\usepackage[colorlinks=true,linkcolor=black,urlcolor=blue]{hyperref}
+
+\geometry{margin=2.6cm}
+
+% --- abbreviazioni unità ---
+\newcommand{\un}[1]{\,\mathrm{#1}}
+
+\title{Calcolo dell'induttanza di dispersione\\di un trasformatore trifase dai dati di targa}
+\author{Nota tecnica}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent
+Il documento ricava l'induttanza di dispersione (leakage inductance) di un trasformatore
+trifase a partire dai soli dati di targa $S_n$ (o $P_n$), $U_n$, $I_n$, $u_{cc}$, con
+l'aggiunta opzionale delle perdite di cortocircuito $P_{cc}$. Vengono trattati: il sistema
+per unità, la separazione fra parte resistiva e reattiva, la ripartizione fra primario e
+secondario, il riporto fra i due lati, le insidie legate al collegamento
+stella/triangolo, una verifica geometrica indipendente con la formula di Rogowski e una
+serie di note pratiche utili in fase di progetto (convertitori, filtri, protezioni).
+\end{abstract}
+
+\tableofcontents
+
+%======================================================================
+\section{Dati di targa e ipotesi}
+
+I dati considerati sono quelli minimi di targa:
+
+\begin{center}
+\begin{tabular}{llp{7.6cm}}
+\toprule
+Simbolo & Unità & Significato \\
+\midrule
+$S_n$      & VA & Potenza apparente nominale (trifase, somma delle tre fasi) \\
+$U_n$      & V  & Tensione nominale \emph{concatenata} (lato considerato) \\
+$I_n$      & A  & Corrente nominale \emph{di linea} (lato considerato) \\
+$u_{cc}$   & \% & Tensione di cortocircuito percentuale \\
+$P_{cc}$   & W  & Perdite di cortocircuito (nel rame) a corrente nominale --- opzionale \\
+$f$        & Hz & Frequenza nominale \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\paragraph{Nota su $P_{nom}$.} Sulla targa dei trasformatori di potenza il dato
+è la potenza \emph{apparente} $S_n$ in kVA. Se il dato disponibile è una potenza
+\emph{attiva} $P_n$ con fattore di potenza $\cos\varphi$, si usa
+\begin{equation}
+S_n = \frac{P_n}{\cos\varphi}.
+\end{equation}
+Tutte le grandezze che seguono si basano su $S_n$: usare $P_n$ al suo posto porta a
+sottostimare l'impedenza di base e quindi l'induttanza.
+
+\paragraph{Ipotesi.} Si assume funzionamento simmetrico ed equilibrato, per cui il
+trasformatore si rappresenta con il circuito monofase equivalente \emph{a stella},
+indipendentemente dal collegamento fisico degli avvolgimenti. Le tre grandezze di targa
+sono legate da
+\begin{equation}
+S_n = \sqrt{3}\, U_n I_n
+\qquad\Longrightarrow\qquad
+I_n = \frac{S_n}{\sqrt{3}\,U_n}.
+\label{eq:Sn}
+\end{equation}
+$I_n$ è quindi ridondante: serve come verifica di coerenza dei dati.
+
+%======================================================================
+\section{Impedenza di base e sistema per unità}
+
+Nel circuito monofase equivalente a stella, la tensione di fase è $U_n/\sqrt{3}$ e la
+corrente di fase coincide con quella di linea $I_n$. L'impedenza di base è quindi
+\begin{equation}
+Z_b \;=\; \frac{U_n/\sqrt{3}}{I_n} \;=\; \frac{U_n}{\sqrt{3}\,I_n} \;=\; \frac{U_n^2}{S_n}.
+\label{eq:Zb}
+\end{equation}
+Le tre espressioni sono equivalenti grazie alla \eqref{eq:Sn}. L'ultima è la più comoda:
+richiede solo tensione concatenata e potenza apparente.
+
+L'induttanza di base, utile per esprimere risultati in p.u., vale
+\begin{equation}
+L_b = \frac{Z_b}{\omega} = \frac{U_n^2}{2\pi f\, S_n}, \qquad \omega = 2\pi f .
+\end{equation}
+
+%======================================================================
+\section{Significato fisico di $u_{cc}$}
+
+$u_{cc}$ è definita dalla prova di cortocircuito: si cortocircuitano i morsetti di un
+lato e si alimenta l'altro con una tensione ridotta, aumentata fino a far circolare la
+corrente nominale. Il rapporto fra questa tensione e quella nominale è $u_{cc}$.
+
+Poiché in tali condizioni la tensione applicata è piccola, il flusso nel nucleo è piccolo
+e il ramo magnetizzante ($L_\mu$, $R_{fe}$) è trascurabile: il circuito si riduce alla
+sola impedenza serie. Ne segue direttamente
+\begin{equation}
+\boxed{\;Z_{cc} \;=\; \frac{u_{cc}}{100}\; Z_b \;=\; \frac{u_{cc}}{100}\cdot\frac{U_n^2}{S_n}
+\;=\;\frac{u_{cc}}{100}\cdot\frac{U_n}{\sqrt{3}\,I_n}\;}
+\label{eq:Zcc}
+\end{equation}
+ovvero, in per unità, $z_{cc} = u_{cc}/100$.
+
+$Z_{cc}$ è l'impedenza \emph{totale} di cortocircuito, cioè la serie di primario e
+secondario riportati allo stesso lato. È la grandezza che conta per: corrente di guasto,
+caduta di tensione sotto carico, $\mathrm{d}i/\mathrm{d}t$ imposto a un convertitore,
+commutazione di un raddrizzatore.
+
+%======================================================================
+\section{Separazione fra resistenza e reattanza}
+
+\subsection{Caso 1: $P_{cc}$ noto (preferibile)}
+
+Le perdite di cortocircuito sono perdite Joule sulle tre fasi a corrente nominale:
+\begin{equation}
+P_{cc} = 3\,R_{cc}\,I_n^2
+\qquad\Longrightarrow\qquad
+R_{cc} = \frac{P_{cc}}{3 I_n^2},
+\label{eq:Rcc}
+\end{equation}
+oppure, in forma p.u. (più robusta perché indipendente dal lato considerato),
+\begin{equation}
+u_R = \frac{P_{cc}}{S_n}\cdot 100 \;[\%],
+\qquad R_{cc} = \frac{u_R}{100} Z_b .
+\end{equation}
+La reattanza si ottiene per differenza pitagorica:
+\begin{equation}
+\boxed{\;X_{cc} = \sqrt{Z_{cc}^2 - R_{cc}^2}
+= \frac{Z_b}{100}\sqrt{u_{cc}^2 - u_R^2}\;}
+\label{eq:Xcc}
+\end{equation}
+
+\subsection{Caso 2: $P_{cc}$ non noto}
+
+Si può approssimare $X_{cc}\simeq Z_{cc}$. L'errore commesso è
+\begin{equation}
+\frac{X_{cc}}{Z_{cc}} = \sqrt{1-\left(\frac{R_{cc}}{X_{cc}}\right)^2\!\!\Big/\!\left(1+\left(\frac{R_{cc}}{X_{cc}}\right)^2\right)}
+\;\simeq\; 1-\frac{1}{2}\left(\frac{R_{cc}}{Z_{cc}}\right)^2 ,
+\end{equation}
+quindi inferiore all'$1\%$ se $R_{cc}/Z_{cc}<0{,}14$. Valori tipici di $u_R$:
+
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+Taglia & $u_R$ tipico [\%] & $u_{cc}$ tipico [\%] \\
+\midrule
+$\le 100$ kVA (distribuzione)      & $1{,}5\div3$   & $4$ \\
+$160\div1000$ kVA (distribuzione)  & $1{,}0\div1{,}5$ & $4\div6$ \\
+$1\div10$ MVA                      & $0{,}5\div1{,}0$ & $6\div8$ \\
+$>10$ MVA (potenza)                & $0{,}2\div0{,}5$ & $8\div16$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Sulle macchine grandi l'approssimazione $X_{cc}\simeq Z_{cc}$ è quindi eccellente; sui
+piccoli trasformatori di distribuzione introduce qualche punto percentuale di errore.
+
+%======================================================================
+\section{Induttanza di dispersione totale}
+
+Dalla reattanza si ricava immediatamente
+\begin{equation}
+\boxed{\;L_{cc} = \frac{X_{cc}}{2\pi f}
+= \frac{1}{2\pi f}\cdot\frac{u_{cc}}{100}\cdot\frac{U_n^2}{S_n}\cdot
+\sqrt{1-\left(\frac{u_R}{u_{cc}}\right)^{2}}\;}
+\label{eq:Lcc}
+\end{equation}
+$L_{cc}$ è l'induttanza di dispersione \emph{totale per fase}, riferita al lato di cui si
+sono usati $U_n$ e $S_n$, nel circuito equivalente a stella.
+
+Formula compatta trascurando la resistenza:
+\begin{equation}
+L_{cc} \simeq \frac{u_{cc}}{100}\cdot\frac{U_n^2}{2\pi f\, S_n}
+\qquad\text{(errore }<1\%\text{ se } u_R/u_{cc}<0{,}14\text{)}.
+\end{equation}
+
+%======================================================================
+\section{Ripartizione fra primario e secondario}
+
+I dati di targa forniscono solo la \emph{somma} $L_{cc}=L_{\sigma 1}+L'_{\sigma 2}$: la
+prova di cortocircuito non permette in alcun modo di distinguere i due contributi. La
+separazione richiede o dati costruttivi, o misure aggiuntive, o una FEM.
+
+La convenzione usuale, valida con buona approssimazione per avvolgimenti concentrici di
+uguale altezza, è la ripartizione simmetrica \emph{in p.u.}:
+\begin{equation}
+L_{\sigma 1} = L'_{\sigma 2} = \frac{L_{cc}}{2}.
+\end{equation}
+
+Riportando al secondario con il rapporto di trasformazione del circuito equivalente
+(rapporto fra tensioni \emph{concatenate})
+\begin{equation}
+a = \frac{U_{n1}}{U_{n2}},
+\qquad
+L_{\sigma 2} = \frac{L'_{\sigma 2}}{a^{2}} = \frac{L_{cc}}{2\,a^{2}} .
+\end{equation}
+
+In alternativa, e in modo del tutto equivalente, si può ripartire l'errore ricalcolando
+tutto direttamente sul lato secondario con la \eqref{eq:Lcc} usando $U_{n2}$: il valore
+p.u. $u_{cc}$ è invariante rispetto al lato.
+
+\paragraph{Attenzione.} Il rapporto $a$ del circuito equivalente \emph{non} coincide in
+generale con il rapporto spire reale $N_1/N_2$. Per un Dyn11, ad esempio,
+$a = U_{n1}/U_{n2}$ mentre $N_1/N_2 = U_{n1}/(U_{n2}/\sqrt{3}) = \sqrt{3}\,a$.
+
+%======================================================================
+\section{Collegamento a triangolo: fattore 3}
+\label{sec:delta}
+
+Tutte le formule precedenti danno l'induttanza del circuito equivalente \emph{a stella}.
+Se l'avvolgimento è fisicamente a triangolo e serve l'induttanza dell'avvolgimento reale
+(ad esempio per un modello circuitale dettagliato, per una simulazione dei transitori di
+commutazione o per il dimensionamento di uno snubber), vale la trasformazione
+stella--triangolo:
+\begin{equation}
+\boxed{\;L_{\sigma,\Delta} = 3\, L_{\sigma,Y\text{-eq}}\;}
+\end{equation}
+
+Analogamente, se si misura l'induttanza di cortocircuito con un LCR fra due morsetti di
+linea (l'altro lato cortocircuitato), su un avvolgimento a stella si legge
+\begin{equation}
+L_{cc,\,LL} = 2\,L_{cc,\,fase}\, ,
+\end{equation}
+mentre su un triangolo si legge il parallelo fra un ramo e la serie degli altri due:
+$L_{cc,LL} = \tfrac{2}{3}L_{\sigma,\Delta} = 2 L_{\sigma,Y\text{-eq}}$, cioè lo stesso
+valore --- come deve essere, perché il comportamento ai morsetti non dipende dal
+collegamento interno.
+
+%======================================================================
+\section{Esempio numerico}
+
+Trasformatore di distribuzione in olio:
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+$S_n = 630$ kVA & $U_{n1}=20$ kV & $U_{n2}=400$ V \\
+$u_{cc}=6\%$ & $P_{cc}=6500$ W & $f=50$ Hz \\
+Collegamento Dyn11 & & \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection*{Correnti nominali}
+\begin{align}
+I_{n1} &= \frac{630\cdot 10^3}{\sqrt{3}\cdot 20\cdot 10^3} = 18{,}19\un{A}\\
+I_{n2} &= \frac{630\cdot 10^3}{\sqrt{3}\cdot 400} = 909{,}3\un{A}
+\end{align}
+
+\subsection*{Lato MT (primario)}
+\begin{align}
+Z_{b1} &= \frac{U_{n1}^2}{S_n} = \frac{(20\cdot10^3)^2}{630\cdot10^3} = 634{,}9\un{\Omega}\\
+Z_{cc1} &= 0{,}06\cdot 634{,}9 = 38{,}10\un{\Omega}\\
+u_R &= \frac{6500}{630\cdot10^3}\cdot100 = 1{,}032\,\% \;\Rightarrow\;
+R_{cc1} = 0{,}01032\cdot634{,}9 = 6{,}55\un{\Omega}\\
+X_{cc1} &= \sqrt{38{,}10^2-6{,}55^2} = 37{,}53\un{\Omega}
+\qquad (u_X = 5{,}91\,\%)\\
+L_{cc1} &= \frac{37{,}53}{2\pi\cdot 50} = 119{,}5\un{mH}
+\end{align}
+Si noti che trascurare $R_{cc}$ avrebbe dato $L_{cc1}=121{,}3$ mH, con un errore del
+$+1{,}5\%$: accettabile nella maggior parte dei casi.
+
+\subsection*{Ripartizione e riporto}
+\begin{align}
+L_{\sigma 1} = L'_{\sigma 2} &= \frac{119{,}5}{2} = 59{,}7\un{mH}\\
+a &= \frac{20000}{400} = 50\\
+L_{\sigma 2} &= \frac{59{,}7\cdot10^{-3}}{50^2} = 23{,}9\un{\mu H}
+\end{align}
+Verifica dal lato BT: $Z_{b2}=400^2/630\cdot10^3 = 0{,}2540\ \Omega$,
+$X_{cc2}=0{,}0591\cdot0{,}2540 = 15{,}01\ \mathrm{m\Omega}$,
+$L_{cc2}=47{,}8\ \mu\mathrm{H}$, metà $=23{,}9\ \mu$H. \checkmark
+
+\subsection*{Avvolgimento MT fisico (triangolo)}
+Il primario è a triangolo, quindi l'induttanza di dispersione dell'avvolgimento reale di
+una colonna, riferita al primario, è
+\begin{equation}
+L_{cc,\Delta} = 3\cdot 119{,}5 = 358{,}6\un{mH},
+\qquad L_{\sigma 1,\Delta} = 3\cdot 59{,}7 = 179{,}3\un{mH}.
+\end{equation}
+
+\subsection*{Corrente di cortocircuito}
+Trascurando l'impedenza di rete a monte (rete di potenza infinita):
+\begin{equation}
+I_{cc} = \frac{I_n}{u_{cc}/100} = \frac{I_n}{0{,}06} = 16{,}7\,I_n
+\quad\Rightarrow\quad
+I_{cc1}=303\un{A},\qquad I_{cc2}=15{,}2\un{kA}.
+\end{equation}
+Il valore di picco asimmetrico può arrivare a $\sqrt2\,\kappa\,I_{cc}$ con
+$\kappa\simeq1{,}8$ per $X/R\simeq 5{,}7$, cioè circa $38$ kA di picco lato BT.
+
+%======================================================================
+\section{Verifica geometrica indipendente: formula di Rogowski}
+
+L'induttanza di dispersione è un parametro essenzialmente \emph{geometrico}: il flusso
+disperso si richiude nel canale fra gli avvolgimenti, cioè in aria/olio. Per avvolgimenti
+concentrici della stessa altezza vale la classica formula
+\begin{equation}
+\boxed{\;L_{\sigma} = \mu_0 N_1^2 \,\frac{\pi D_m}{h_w}\,
+\left(a_{12} + \frac{a_1+a_2}{3}\right) K_R \;}
+\label{eq:rogowski}
+\end{equation}
+dove $N_1$ è il numero di spire dell'avvolgimento a cui si riferisce il risultato,
+$D_m$ il diametro medio del canale, $h_w$ l'altezza degli avvolgimenti, $a_{12}$ lo
+spessore radiale del canale fra gli avvolgimenti, $a_1,a_2$ gli spessori radiali dei due
+avvolgimenti, e
+\begin{equation}
+K_R = 1 - \frac{a_{12}+a_1+a_2}{\pi h_w}
+\end{equation}
+è il fattore di Rogowski, che corregge l'ipotesi di campo puramente assiale ai bordi.
+
+\paragraph{Applicazione all'esempio.} Con dimensioni plausibili per un 630 kVA
+($N_1 = 1900$ spire lato MT a triangolo, $D_m = 0{,}28$ m, $h_w = 0{,}45$ m,
+$a_{12}=20$ mm, $a_1=25$ mm, $a_2=30$ mm):
+\begin{align}
+a_{12}+\frac{a_1+a_2}{3} &= 0{,}020 + 0{,}0183 = 0{,}0383\un{m}\\
+K_R &= 1-\frac{0{,}075}{\pi\cdot0{,}45} = 0{,}947\\
+L_\sigma &= 4\pi\!\cdot\!10^{-7}\cdot 1900^2\cdot\frac{\pi\cdot0{,}28}{0{,}45}\cdot
+0{,}0383\cdot 0{,}947 = 0{,}322\un{H}
+\end{align}
+da confrontare con i $358{,}6$ mH ricavati dalla targa (avvolgimento a triangolo,
+Sez.~\ref{sec:delta}): scarto di circa il $10\%$, del tutto ragionevole avendo
+\emph{ipotizzato} la geometria. Il confronto ha valore soprattutto come controllo di
+ordine di grandezza e come verifica che si stia confrontando la stessa grandezza (stella
+equivalente contro avvolgimento fisico).
+
+Dalla \eqref{eq:rogowski} discendono alcune conseguenze progettuali utili:
+\begin{itemize}
+  \item $L_\sigma \propto N^2$ e $\propto 1/h_w$: avvolgimenti alti e sottili
+        riducono la dispersione;
+  \item $L_\sigma \propto a_{12}$: il canale di isolamento fra MT e BT domina, ed è
+        imposto dalla tenuta dielettrica. Da qui il legame fra classe di tensione e
+        $u_{cc}$ tipica (tabella precedente);
+  \item per aumentare deliberatamente $L_\sigma$ (trasformatori per DAB, LLC, forni ad
+        arco, saldatrici) si allarga il canale o si inseriscono shunt magnetici;
+  \item per ridurla si interlacciano gli avvolgimenti (interleaving), che riduce
+        $L_\sigma$ circa con $1/p^2$ dove $p$ è il numero di sezioni.
+\end{itemize}
+
+%======================================================================
+\section{Note pratiche e casi particolari}
+
+\paragraph{L'induttanza di dispersione non satura.} Il flusso disperso si richiude
+prevalentemente in aria/olio, quindi $L_{cc}$ è sostanzialmente costante anche in
+cortocircuito franco, quando il nucleo è invece ampiamente saturo. Questa è la ragione per
+cui il modello a impedenza costante resta valido per il calcolo delle correnti di guasto.
+
+\paragraph{Dipendenza dalla frequenza.} A 50/60 Hz $L_{cc}$ è praticamente costante. Sopra
+qualche kHz (armoniche di convertitore, transitori di manovra) l'effetto pelle e di
+prossimità riducono leggermente $L_{cc}$ (il flusso viene espulso dai conduttori) e
+aumentano fortemente $R_{cc}$. Per studi EMI/transitori occorre inoltre includere le
+capacità parassite: la frequenza di risonanza propria dell'avvolgimento è spesso nel range
+$10\div500$ kHz.
+
+\paragraph{Variatore di prese.} $u_{cc}$ è riferita alla presa principale. Sulle prese
+estreme può variare di $\pm10\div20\%$ (ampiezza che dipende dalla posizione fisica delle
+spire di regolazione). Se il dato è critico, va richiesto il valore di $u_{cc}$ su tutte
+le prese.
+
+\paragraph{Temperatura.} Secondo IEC 60076-1 le perdite si riferiscono a una temperatura
+convenzionale (75\,°C o 115\,°C secondo la classe). Solo $R_{cc}$ dipende dalla
+temperatura:
+\begin{equation}
+R_{cc}(\vartheta) = R_{cc}(\vartheta_0)\,\frac{235+\vartheta}{235+\vartheta_0}
+\quad\text{(rame)},
+\end{equation}
+mentre $X_{cc}$ e quindi $L_{cc}$ ne sono indipendenti. È un ulteriore motivo per
+preferire il calcolo di $L$ via $X_{cc}$ anziché via $Z_{cc}$.
+
+\paragraph{Sequenza omopolare.} $L_{cc}$ calcolata qui è quella di \emph{sequenza
+diretta}. L'impedenza omopolare $Z_0$ dipende dal collegamento e dal tipo di nucleo:
+\begin{itemize}
+  \item Dyn: $Z_0 \simeq (0{,}85\div1{,}0)\,Z_{cc}$ (il triangolo offre un percorso alle
+        correnti di circolazione);
+  \item YNyn su nucleo a 3 colonne: $Z_0 \simeq (0{,}3\div1{,}0)\,Z_{cc}$, fortemente
+        dipendente dal ritorno di flusso in cassa;
+  \item YNyn su banco di tre monofase o nucleo a 5 colonne: $Z_0$ molto elevata
+        ($10\div100$ p.u.).
+\end{itemize}
+Per i calcoli di guasto a terra il dato va richiesto esplicitamente al costruttore.
+
+\paragraph{Trasformatori a tre avvolgimenti.} Con tre avvolgimenti la targa riporta tre
+tensioni di cortocircuito $u_{12}, u_{13}, u_{23}$ (ciascuna riferita alla propria base di
+potenza, da riportare a una base comune). Il modello è una stella di tre impedenze:
+\begin{equation}
+Z_1 = \tfrac{1}{2}(Z_{12}+Z_{13}-Z_{23}),\quad
+Z_2 = \tfrac{1}{2}(Z_{12}+Z_{23}-Z_{13}),\quad
+Z_3 = \tfrac{1}{2}(Z_{13}+Z_{23}-Z_{12}).
+\end{equation}
+Uno dei tre può risultare negativo: è un artificio matematico del modello, non un errore.
+
+\paragraph{Uso in elettronica di potenza.} Nei convertitori grid-tied la dispersione del
+trasformatore di accoppiamento è spesso usata come induttanza di filtro lato rete. Con
+$u_{cc}=6\%$ si ha per definizione $x = 0{,}06$ p.u.: è già un valore adeguato per un
+filtro L (tipicamente $0{,}05\div0{,}15$ p.u.), ma va verificato il ripple:
+\begin{equation}
+\Delta i_{pp} \simeq \frac{U_{dc}}{8 f_{sw} L_{cc}} \quad\text{(PWM a due livelli, per fase)} .
+\end{equation}
+Nei DAB/LLC, invece, $L_{cc}$ è l'elemento di trasferimento di potenza e va progettata,
+non subita: in quel caso il dato di targa serve solo come punto di partenza.
+
+\paragraph{Misura diretta.} In laboratorio, senza dati di targa:
+\begin{enumerate}
+  \item cortocircuitare saldamente il lato BT (barre di sezione adeguata: la resistenza
+        del cortocircuito entra direttamente nella misura);
+  \item alimentare il lato MT a tensione ridotta, sinusoidale, alla frequenza nominale;
+  \item misurare $U$, $I$, $P$ trifase e ricavare
+        $Z_{cc}=U/(\sqrt3 I)$, $R_{cc}=P/(3I^2)$, $X_{cc}=\sqrt{Z_{cc}^2-R_{cc}^2}$;
+  \item se possibile portarsi vicino a $I_n$: a corrente molto ridotta il fattore di
+        potenza è basso ($\cos\varphi \simeq 0{,}17$) e la misura di $P$ è critica.
+\end{enumerate}
+Un LCR meter a 50--100 Hz è accettabile per una stima rapida, ma sottostima
+sistematicamente $R_{cc}$ (misura a corrente bassissima, senza effetto pelle
+significativo).
+
+%======================================================================
+\section{Riepilogo delle formule}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Grandezza & Formula & Esempio (630 kVA, lato MT)\\
+\midrule
+Corrente nominale     & $I_n = S_n/(\sqrt3 U_n)$              & $18{,}19$ A \\
+Impedenza di base     & $Z_b = U_n^2/S_n$                      & $634{,}9\ \Omega$ \\
+Impedenza di cc       & $Z_{cc} = (u_{cc}/100) Z_b$            & $38{,}10\ \Omega$ \\
+Resistenza di cc      & $R_{cc} = P_{cc}/(3I_n^2)$             & $6{,}55\ \Omega$ \\
+Reattanza di cc       & $X_{cc} = \sqrt{Z_{cc}^2-R_{cc}^2}$    & $37{,}53\ \Omega$ \\
+Induttanza totale     & $L_{cc} = X_{cc}/(2\pi f)$             & $119{,}5$ mH \\
+Per avvolgimento      & $L_{\sigma 1}=L'_{\sigma 2}=L_{cc}/2$  & $59{,}7$ mH \\
+Riporto al secondario & $L_{\sigma 2} = L'_{\sigma 2}/a^2$     & $23{,}9\ \mu$H \\
+Avvolgimento a $\Delta$ & $L_\Delta = 3 L_{Y\text{-eq}}$       & $179{,}3$ mH \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Formula unica, trascurando la resistenza:
+\begin{equation}
+\boxed{\;L_{cc} \simeq \frac{u_{cc}}{100}\cdot \frac{U_n^2}{2\pi f\,S_n}\;}
+\end{equation}
+
+\end{document}

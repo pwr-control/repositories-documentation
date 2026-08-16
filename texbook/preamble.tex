@@ -1,0 +1,76 @@
+% ------------------------------------------------------------------
+% preamble.tex -- hand written, book-level settings.
+% This file is never touched by tools/merge_tex.py.
+% Everything harvested from the source documents goes into
+% preamble_generated.tex, which is loaded right after this one.
+%
+% Deliberately avoided: babel (no italian data files on this install),
+% lmodern, biblatex, mhchem. The bibliography is a plain thebibliography.
+% ------------------------------------------------------------------
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[a4paper,inner=28mm,outer=24mm,top=25mm,bottom=28mm]{geometry}
+
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{siunitx}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{enumitem}
+% expansion=false keeps microtype working on installs without scalable
+% (Type 1 / cm-super) fonts -- protrusion alone is the safe subset
+\usepackage[protrusion=true,expansion=false]{microtype}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\usepackage{circuitikz}
+\usepackage{listings}
+\usepackage{fancyhdr}
+\usepackage[hidelinks,breaklinks]{hyperref}
+
+\pgfplotsset{compat=1.18}
+
+% figures are looked up in the chapter folders as well as ./figs
+\graphicspath{{figs/}{./}{chapters/}{src/}}
+
+% ---------------------------------------------------------------- layout
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{2}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\nouppercase{\leftmark}}
+\fancyhead[R]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancypagestyle{plain}{\fancyhf{}\fancyfoot[C]{\thepage}%
+  \renewcommand{\headrulewidth}{0pt}}
+
+% ------------------------------------------------- chapter-opening summary
+% Source documents written as articles often start with an abstract.
+% merge_tex.py rewrites abstract -> chapabstract so it survives in a book.
+\newenvironment{chapabstract}
+  {\begin{quotation}\noindent\small\itshape}
+  {\end{quotation}\par\medskip}
+
+% ------------------------------------------------------------- code style
+\lstdefinestyle{plain}{
+  basicstyle=\ttfamily\footnotesize,
+  keywordstyle=\bfseries,
+  commentstyle=\itshape\color{gray},
+  numbers=left, numberstyle=\tiny, numbersep=8pt,
+  breaklines=true, frame=single, framerule=0.3pt,
+  showstringspaces=false, tabsize=2, captionpos=b,
+}
+\lstset{style=plain}
+
+% ------------------------------------------------------------ misc tweaks
+\numberwithin{equation}{chapter}
+\numberwithin{figure}{chapter}
+\numberwithin{table}{chapter}
+\sisetup{per-mode=symbol, range-units=single, detect-weight=true}
