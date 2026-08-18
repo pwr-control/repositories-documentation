@@ -1,0 +1,82 @@
+component varistor_mov
+% Metal-Oxide Varistor (MOV) : 1.5
+% Power-law metal-oxide varistor for surge and clamping simulations.
+%
+% Equivalent circuit: series inductance Ls and bulk resistance Rb feeding
+% the ZnO core, modeled as the parallel of:
+%   - nonlinear resistor  i_nl = I1*(vc/V1)*(|vc|/V1)^(alpha-1)
+%   - leakage resistance  Rp
+%   - capacitance         C
+% The nonlinearity exponent is derived from two datasheet points:
+%   alpha = ln(I2/I1)/ln(V2/V1)
+% so the component is parameterized directly with the varistor voltage
+% (V1, I1) and the tabulated clamping point (V2, I2). V2 > V1 and
+% I2 > I1 are required. The characteristic is symmetric.
+%
+% Region coverage:
+%   - leakage region: Rp (the power law underestimates real leakage)
+%   - normal (clamping) region: power law, exact at the two fit points
+%   - upturn region: Rb (default is a placeholder; refit it on the
+%     datasheet V/I curve if surge currents above ~10 kA matter)
+%
+% Absorbed (dissipated) energy is integrated in e_abs and can be checked
+% against the single-pulse rating Wmax (set check_energy = 1). The check
+% compares the CUMULATIVE dissipated energy, so it is meaningful for
+% single-event simulations.
+%
+% Keep Ls > 0: the series inductance defines the current state and also
+% represents the physical terminal/lead inductance.
+%
+% Default parameters: EPCOS SIOV-B80K680 block varistor (HighE series,
+% datasheet 04/02): V1 = 1100 V @ 1 mA, V2 = 1815 V @ 800 A (8/20 us),
+% C = 5200 pF, Wmax = 3600 J (2 ms pulse).
+
+  nodes
+    p = foundation.electrical.electrical; % +:left
+    n = foundation.electrical.electrical; % -:right
+  end
+
+  parameters
+    V1   = {1100,     'V'  }; % Varistor voltage V1 at reference current I1
+    I1   = {1e-3,     'A'  }; % Reference current I1
+    V2   = {1815,     'V'  }; % Clamping voltage V2 at surge current I2
+    I2   = {800,      'A'  }; % Surge current I2
+    C    = {5200e-12, 'F'  }; % Parallel capacitance
+    Rp   = {100e6,    'Ohm'}; % Leakage (parallel) resistance
+    Rb   = {1e-3,     'Ohm'}; % Series bulk resistance (upturn region)
+    Ls   = {50e-9,    'H'  }; % Series inductance (element + terminals)
+    Wmax = {3600,     'J'  }; % Max single-pulse energy
+    check_energy = 0;         % Assert when e_abs exceeds Wmax (0/1)
+  end
+
+  variables
+    i     = {0, 'A'}; % Terminal current (through)
+    v     = {0, 'V'}; % Terminal voltage (across)
+    vc    = {0, 'V'}; % Voltage across the ZnO core (C || Rnl || Rp)
+    e_abs = {0, 'J'}; % Dissipated energy (core + Rb)
+  end
+
+  branches
+    i : p.i -> n.i;
+  end
+
+  equations
+    assert(V2 > V1, 'V2 must be greater than V1')
+    assert(I2 > I1, 'I2 must be greater than I1')
+    assert(check_energy == 0 || e_abs < Wmax, ...
+           'Absorbed energy exceeds the single-pulse rating Wmax')
+    let
+      alpha = log(I2/I1)/log(V2/V1);
+      % Odd-symmetric power law, differentiable at vc = 0
+      i_nl  = I1*(vc/V1)*(abs(vc)/V1)^(alpha-1);
+      i_p   = vc/Rp;
+      i_c   = i - i_nl - i_p;
+    in
+      v == p.v - n.v;
+      v == Ls*i.der + Rb*i + vc;
+      i_c == C*vc.der;
+      e_abs.der == vc*(i_nl + i_p) + Rb*i^2;
+    end
+  end
+
+end
