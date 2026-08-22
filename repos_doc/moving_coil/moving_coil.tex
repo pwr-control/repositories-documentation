@@ -1,152 +1,133 @@
 %\documentclass[11pt,a4paper]{article}
-\documentclass[11pt,a4paper]{scrartcl}
-%\documentclass[11pt,a4paper,oneside]{book}
-\usepackage[british,UKenglish,USenglish,english,american]{babel}
-%\usepackage[a4paper, total={16cm, 23cm}]{geometry}
-\usepackage[tmargin = 1.25in,bmargin = 1.25in,lmargin = 0.75in,rmargin = 0.75in]{geometry}
-\usepackage{tikz}
-\usepackage{graphicx}
-\usepackage{pgfplots}
-\pgfplotsset{width=12cm,compat=1.9}
-\usepackage{setspace}
-\usepackage{chemmacros}
-\usepackage{chemfig}
-%\usepackage{ghsystem}
-\usechemmodule{redox}
-%\usepackage{chemnum}
-%\usepackage{bohr}
-%\usepackage{elements}
-%\usepackage{endiagram}
-%\usepackage{modiagram}
-%\usepackage{chemgreek}
-%\usepackage{mhchem}
-\usepackage{esint}
-\usepackage{tabularray}
+\documentclass[12pt,a4paper]{scrartcl}
+%\documentclass[12pt,a4paper,oneside]{book}
+\input{../../AAA_template_latex_settings/settings}
 
-\usepackage{makeidx}
-\usepackage{epstopdf}
+% =============================================================
+%  
+% =============================================================
 
-\usepackage{amssymb}
-\usepackage{mathrsfs}
-%\usepackage{minted}
-\usepackage{bm}
-\usepackage{amsmath}
-\usepackage{enumitem}
-\usepackage[english]{varioref}
-\usepackage[english]{babel}
-\usepackage{lipsum}
-\usepackage{fancyhdr}
-\pagestyle{fancy} 
-\usepackage{float}
-\usepackage{empheq}
-\usepackage[framemethod=tikz]{mdframed}
-\usepackage{epstopdf}
-\numberwithin{equation}{section}
-\usepackage{eso-pic}
-\usepackage{calc}
-\usepackage{nccmath}
-\usepackage{caption}
-\usepackage{subcaption}
-\usepackage{gensymb}
-\usepackage{amsfonts,amsthm,epsfig,epstopdf,titling,url,array}
-\usepackage{siunitx}
-\sisetup{input-digits = 0123456789\pi}
-\usepackage[symbol]{footmisc}
-\usepackage{xcolor}
-\usepackage{multicol}
-\usepackage{boondox-cal}
-\DeclareSIUnit\atm{atm}
-\setcounter{secnumdepth}{3}
-\setcounter{tocdepth}{3}
-\usepackage{booktabs}
-\usepackage{blindtext}
-\usepackage{changepage}
+\newcommand{\DocCategory}{Technical Research Report}
+\newcommand{\DocField}{Power Electronics and Control Systems}
 
-% \usepackage{draftwatermark}
-% \SetWatermarkText{DRAFT}
-% \SetWatermarkScale{5}
-
-\DeclareSIUnit\atm{atm}
-
-\pagestyle{fancy} 
-\fancypagestyle{firstpage}{
-\rhead{\includegraphics[height=0.75cm]{figures/pwr-control_logo_doc.png}}
+\newcommand{\DocTitle}{%
+	{\fontsize{20}{24}\selectfont\bfseries Moving Coil:} \\[16pt]
+	{\fontsize{16}{20}\selectfont\bfseries modelization and control system design.}
 }
-\fancyhead[L]{\small\slshape\nouppercase{\leftmark}}
-\chead{}
-\rhead{\includegraphics[height=0.75cm]{figures/pwr-control_logo_doc.png}}
-\lfoot{\textit{}}
-\cfoot{-\ \thepage\ -}
-\rfoot{\textit{}}
 
-\DeclareMathOperator{\rank}{rank}
-\DeclareMathOperator{\atantwo}{atan2}
-\DeclareMathOperator{\arctantwo}{arctan2}
-\DeclareMathOperator{\spn}{span}
-
-\renewcommand{\headrulewidth}{0.4pt}
-\renewcommand{\footrulewidth}{0.4pt}
-\newcommand{\abs}[1]{\left|#1\right|}
-\definecolor{mycolor1}{rgb}{0.97, 0.97, 0.97}
-\definecolor{mycolor2}{rgb}{0.97, 0.97, 0.97}
-\definecolor{tableShade}{gray}{0.9}
-\newcommand{\sign}{\text{sign}}
-\newcommand{\centered}[1]{\begin{tabular}{@{}l@{}} #1 \end{tabular}}
-\theoremstyle{it}
-\newtheorem{defn}{Definition}[section]
-\newtheorem{assumption}{Assumption}[section]
-\newtheorem{thm}{Theorem}[section]
-\newtheorem{lemma}{Lemma}[section]
-\newtheorem{corollary}{Corollary}[section]
-\theoremstyle{definition}
-%\theoremstyle{it}
-\newtheorem{example}{Example}[section]
-\let\eqrefn\eqref
-\renewcommand{\eqref}[1]{Eq.~(\ref{#1})}
-
-\newenvironment{myitemize_1}
-{ \begin{itemize}[topsep=4pt]
-		\setlength{\topsep}{2pt}		
-		\setlength{\itemsep}{2pt}
-		\setlength{\parskip}{2pt}
-		\setlength{\parsep}{2pt}     }
-	{ \end{itemize}                  }
-
-
-\newmdenv[innerlinewidth=0.5pt, roundcorner=4pt,backgroundcolor=mycolor2, 
-linecolor=mycolor1,innerleftmargin=6pt,
-innerrightmargin=6pt,innertopmargin=6pt,innerbottommargin=6pt]{mybox}
-
-\title{\textbf{ 
-	\begin{LARGE}
-		Moving Coil:
-	\end{LARGE} \\[24pt]
-	\begin{Large}
-		Mathematical Model and Control
-	\end{Large}}
+\newcommand{\DocSubtitle}{%
+	Case studies on moving coil actuator. 
 }
-\author{\textbf{Davide Bagnara}}
 
+\newcommand{\DocAuthor}{Davide Bagnara}
+\newcommand{\DocDate}{October 2022}
+
+\newcommand{\DocAbstract}{%
+	Moving coil modelization control results in a very prepedeutic physical system for learing. Follows modelization and control sytstem design. 
+}
+
+% Tre righe metadati in fondo (label small caps + valore)
+\newcommand{\MetaLabelA}{Project Repository}
+\newcommand{\MetaValueA}{https://github.com/pwr-control/modelization-and-control.git}
+\newcommand{\MetaValueAUrl}{https://github.com/pwr-control/modelization-and-control.git}
+\newcommand{\MetaValueALabel}{modelization-and-control.git}
+
+\newcommand{\MetaLabelB}{Framework}
+\newcommand{\MetaValueB}{MATLAB/Simulink/Simscape}
+
+\newcommand{\MetaLabelC}{Architecture}
+\newcommand{\MetaValueC}{SiC, EiceDRIVER, Customized Power Supplies}
+
+% =============================================================
+%  FRONTESPIZIO
+% =============================================================
 \begin{document}
-	\thispagestyle{empty}
-	\begin{mybox}
-		\maketitle
-		\vspace{150mm}
-	\end{mybox}
-%	\let\clearpage\relax
+	\titlepage
+	% ---- Intestazione centrata ----
+	\begin{center}
+		{\Large\scshape \DocCategory}\\[8pt]
+		{\large\scshape \DocField}
+	\end{center}
+	
+	\vspace{36pt}
+	\noindent\rule{\linewidth}{0.8pt}
+	
+	% ---- Titolo ----
+	%\vspace{28pt}
+	\begin{center}
+		\DocTitle
+	\end{center}
+	
+	\vspace{4pt}
+	\noindent\rule{\linewidth}{2.2pt}
+	
+	% ---- Sottotitolo ----
+	%\vspace{14pt}
+	\begin{center}
+		\begin{onehalfspace}
+			{\large\itshape \DocSubtitle}
+		\end{onehalfspace}
+	\end{center}
+	
+	% ---- Spazio prima di Autore/Data ----
+	\vspace{36pt}
+	
+	% ---- Author / Date su due colonne ----
+	\begin{minipage}{0.92\linewidth}
+		\noindent
+		\begin{minipage}[t]{0.48\linewidth}
+			\textbf{Author:}\\[2pt]
+			\DocAuthor
+		\end{minipage}%
+		\hfill
+		\begin{minipage}[t]{0.48\linewidth}
+			\raggedleft
+			\textbf{Date:}\\[2pt]
+			\DocDate
+		\end{minipage}
+	\end{minipage}
+	% ---- Spazio prima dell'abstract ----
+	\vspace{36pt}
+	
+	% ---- Abstract indentato ----
+	\begin{center}
+		\begin{minipage}{0.85\linewidth}
+			%    \small
+			\footnotesize 
+			\begin{onehalfspace}
+				\textbf{Abstract:} \DocAbstract
+			\end{onehalfspace}
+		\end{minipage}
+	\end{center}
+	
+	% ---- Spazio prima dei metadati ----
+	\vfill
+	
+	% ---- Metadati in fondo ----
+	\noindent
+	\begin{tabular}{@{} r @{\quad} l @{}}
+		%		\textsc{\MetaLabelA:} & {\url{\MetaValueA}} \\[3pt]
+		\textsc{\MetaLabelA:} & {\href{\MetaValueAUrl}{\MetaValueALabel}} \\[3pt]
+		\textsc{\MetaLabelB:} & {\MetaValueB}       \\[3pt]
+		%		\textsc{\small\MetaLabelC:} & {\small\MetaValueC}       \\
+	\end{tabular}
+	
+	% =============================================================
+	%  Fine frontespizio
+	% =============================================================
 	\newpage
-	\tableofcontents%
-	\listoffigures%
+	\pagenumbering{arabic}
+	\setcounter{page}{1}
+	\tableofcontents
+	\listoffigures	
 	\listoftables
-%	\let\clearpage\LaTeXStandardClearpage
 	\newpage
 	
-\begin{onehalfspace}
+	\begin{onehalfspace}
 	
 	\pagebreak
 \section{Moving Coil: mathematical model}\label{moving_coil_jackson_section}
-The moving coil was already studied at the beginning of this document. Here we 
-want to represent the moving coil model using a different approach, we would 
+Here we want to represent the moving coil model using a different approach, we would 
 like to use a more mathematical (and less physical) approach to show a more 
 formal representation. Most of the following material has been taken from the 
 monumental work of \cite{furlani}.
