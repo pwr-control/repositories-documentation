@@ -1,0 +1,458 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
+
+\newcommand{\dq}{\ensuremath{dq}}
+
+\title{Even Harmonics in Three-Phase Active Front-End Rectifiers:\\
+Origins, Mechanisms, and Mitigation}
+\author{Davide Bagnara}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Even-order current harmonics are non-characteristic for a three-phase active
+front-end (AFE) rectifier: under ideal half-wave symmetry they cannot exist.
+Their appearance in the field is therefore always a symptom of a symmetry-breaking
+mechanism in the measurement chain, in the power stage, in the modulator, or in
+the grid itself. This note reviews the physical and control-theoretic origins of
+even harmonics in grid-connected voltage-source converters, with emphasis on the
+DC-offset\,$\rightarrow$\,second-harmonic chain, asymmetric switching delays,
+DC injection with transformer half-cycle saturation, asynchronous low-ratio
+modulation, and interactions with an unbalanced or pre-distorted grid. The
+relevant emission and compatibility limits from power-system standards are
+summarized, and practical mitigation measures are given.
+\end{abstract}
+
+\section{Introduction}
+
+A three-phase AFE rectifier operated with a symmetric modulation strategy and an
+ideal power stage draws line currents containing only the characteristic
+harmonic families of a balanced six-switch converter: the low-frequency
+characteristic orders $h = 6k \pm 1$ ($k = 1, 2, \dots$) when the converter is
+current-source-like or line-commutated, and, for a PWM voltage-source converter,
+sidebands clustered around integer multiples of the switching frequency
+\cite{mohan,holmes}. Even-order components ($h = 2, 4, 6, \dots$) and a DC
+component are \emph{non-characteristic}: they are forbidden by the waveform
+symmetry of the ideal converter.
+
+In practice, small even-order components---most often a second harmonic
+accompanied by a DC component---are routinely measured on high-power AFE
+installations. Because they are non-characteristic, they carry diagnostic
+information: each possible origin corresponds to a specific defect or asymmetry.
+This note collects these origins in one place and links the converter-level
+(power electronics) view to the network-level (power systems) view, where even
+harmonics interact with transformer saturation, protection relaying, and
+compatibility limits.
+
+\section{Half-Wave Symmetry and Non-Characteristic Harmonics}
+
+\subsection{Fourier condition}
+
+A periodic waveform $f(t)$ with period $T$ has \emph{half-wave symmetry} if
+%
+\begin{equation}
+f\!\left(t + \tfrac{T}{2}\right) = -f(t).
+\label{eq:hws}
+\end{equation}
+%
+Writing the Fourier series $f(t) = \sum_n \left[a_n \cos n\omega_1 t
++ b_n \sin n\omega_1 t\right]$ and imposing \eqref{eq:hws} gives
+%
+\begin{equation}
+a_n = b_n = 0 \qquad \text{for all even } n \text{ (including } n=0\text{)}.
+\end{equation}
+%
+Hence a waveform satisfying \eqref{eq:hws} contains \emph{no} DC component and
+\emph{no} even harmonics. In a balanced three-phase converter the modulating
+signals, the switching pattern, and the resulting line-to-line voltages all
+satisfy \eqref{eq:hws} in the ideal case; the line currents inherit the
+property through the linear grid impedance. Every observed even harmonic is
+therefore the signature of a violated symmetry: the positive and negative
+half-cycles are no longer mirror images of each other. DC and even orders are
+two faces of the same defect and almost always appear together
+\cite{arrillaga,wakileh}.
+
+\subsection{Frequency mapping between \texorpdfstring{$abc$}{abc} and
+\texorpdfstring{\dq}{dq} frames}
+
+Many of the mechanisms below are best understood through the frequency mapping
+of the synchronous ($\dq$) reference frame rotating at the fundamental
+angular frequency $\omega_1$. A positive-sequence component at frequency
+$\omega$ in the stationary frame appears at $\omega - \omega_1$ in the
+$\dq$ frame; a negative-sequence component at $\omega$ appears at
+$\omega + \omega_1$. The mappings relevant to this note are:
+%
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+$abc$ (stationary) & sequence & $\dq$ (synchronous) \\
+\midrule
+DC offset                & --            & $1\omega_1$ ripple \\
+fundamental              & positive      & DC \\
+fundamental              & negative      & $2\omega_1$ ripple \\
+2nd harmonic             & negative      & $3\omega_1$ ripple \\
+2nd harmonic             & positive      & $1\omega_1$ ripple \\
+5th (neg.) and 7th (pos.)& --            & $6\omega_1$ ripple \\
+\bottomrule
+\end{tabular}
+\end{center}
+%
+Two entries deserve attention. First, a DC offset in the measured $abc$
+currents and a positive-sequence second harmonic \emph{both} map to a
+$1\omega_1$ ripple in $\dq$; a synchronous-frame current controller cannot
+distinguish them and, worse, converts one into the other, as shown in
+Section~\ref{sec:offset}. Second, grid unbalance (negative-sequence
+fundamental) maps to $2\omega_1$ in $\dq$, which explains the well-known
+$2\omega_1$ DC-bus ripple under unbalanced conditions \cite{yazdani,teodorescu}.
+
+\section{Origin Mechanisms}
+
+\subsection{DC offset in the current (or voltage) measurements}
+\label{sec:offset}
+
+The most common single cause of second-harmonic emission in AFE converters is a
+DC offset in the current-sensing chain (Hall sensor, burden resistor, analog
+conditioning, or ADC). The mechanism is a closed-loop chain:
+%
+\begin{enumerate}
+\item A sensor offset adds a spurious DC component to the measured $abc$
+currents.
+\item After the Park transformation, this DC error appears as a
+$1\omega_1$ ripple superimposed on the $\dq$ current feedback.
+\item The current controller, whose bandwidth normally exceeds $\omega_1$ by a
+comfortable margin, reacts to this fictitious ripple and injects a real
+$1\omega_1$ component into the $\dq$ voltage reference.
+\item Transformed back to $abc$, a $1\omega_1$ component in $\dq$ produces a
+DC component \emph{and} a second-harmonic component in the actual converter
+voltages and hence in the line currents.
+\end{enumerate}
+%
+The chain \emph{offset $\rightarrow$ DC $+$ 2nd harmonic} is so repeatable that
+the simultaneous presence of a DC component and a second harmonic in the line
+current is practically a diagnostic fingerprint of measurement offset. The
+analogous mechanism in motor drives, where offset and gain errors of the current
+sensors produce first- and second-harmonic torque ripple, was analyzed by Chung
+and Sul \cite{chungsul}; the AFE case is formally identical with the grid
+replacing the machine. Gain \emph{mismatch} between phase sensors, by contrast,
+creates a spurious negative-sequence fundamental ($2\omega_1$ in $\dq$) and
+leads to odd, not even, distortion---the distinction between offset errors
+(even orders) and gain errors (odd orders) is useful in commissioning.
+
+Voltage-measurement offsets act similarly through the PLL and the feedforward
+path: an offset on the grid-voltage measurement modulates the PLL angle at
+$1\omega_1$, which again produces DC and second-harmonic components in the
+synthesized converter voltage.
+
+\subsection{Asymmetric switching delays and dead time}
+
+Every switching event of a converter leg introduces a volt-second error with
+respect to the ideal waveform. With dead time $t_d$, turn-on delay
+$t_{on}$, and turn-off delay $t_{off}$, the average voltage error of one leg
+over a switching period $T_{sw}$ has magnitude
+%
+\begin{equation}
+\Delta V \;=\; \frac{t_d + t_{on} - t_{off}}{T_{sw}}\, V_{dc}
+\;\cdot\; \operatorname{sign}(i),
+\label{eq:deadtime}
+\end{equation}
+%
+where the sign follows the leg current polarity. As long as the error is
+\emph{identical} for both current polarities---i.e., the top and bottom devices
+and their gate drivers are matched---the distortion in \eqref{eq:deadtime} is an
+odd function of the current and preserves half-wave symmetry: the classical
+dead-time distortion therefore contains only odd harmonics (predominantly 5th
+and 7th in a three-phase system, since triplen components cancel)
+\cite{jeong,choi}.
+
+Even harmonics appear when the error is \emph{different} between the two
+half-cycles:
+%
+\begin{itemize}
+\item unequal propagation delays of the top and bottom gate-driver channels;
+\item asymmetric dead-time insertion (different $t_d$ for rising and falling
+edges);
+\item parameter spread between the top and bottom devices ($t_{on}$,
+$t_{off}$, $V_{CE,\mathrm{sat}}$ or $R_{DS,\mathrm{on}}$);
+\item unequal snubber or gate-resistor values after service or rework.
+\end{itemize}
+%
+Any such top/bottom asymmetry adds a polarity-independent term to
+\eqref{eq:deadtime}, i.e.\ a DC voltage error per leg, plus even-order
+distortion. At high power levels with low switching frequency the relative
+weight of a fixed nanosecond-scale mismatch grows with $1/T_{sw}$ being small,
+but the volt-second error per event is applied fewer times per fundamental
+period; in practice, mismatches of tens to hundreds of nanoseconds between
+driver channels are measurable in the line-current spectrum of megawatt
+converters.
+
+\subsection{DC injection and transformer half-cycle saturation}
+
+Whatever its origin, a DC component injected by the converter flows through the
+line-side magnetics. A transformer offers essentially no impedance to DC other
+than its winding resistance, so even a small DC voltage bias drives a
+substantial DC magnetizing current. The flux is displaced from its symmetric
+trajectory and the core saturates on one half-cycle only. The resulting
+magnetizing current is a train of unipolar peaks, extremely rich in
+second-harmonic content---the same phenomenon as transformer inrush, which is
+precisely why differential protection relays use second-harmonic restraint to
+distinguish inrush from internal faults \cite{guzman}.
+
+Two aspects make this mechanism particularly relevant:
+%
+\begin{itemize}
+\item \textbf{Self-reinforcement.} Half-cycle saturation itself produces even
+harmonics and DC in the current, which can interact with the converter control
+and with other transformers in the network, sustaining or amplifying the
+asymmetry.
+\item \textbf{Regulatory limits on DC injection.} Interconnection standards
+constrain the DC current a converter may inject: IEEE Std 1547 limits it to
+0.5\,\% of rated current \cite{ieee1547}. The limit exists largely because of
+the saturation mechanism above, including its effect on distribution
+transformers and on residual-current devices.
+\end{itemize}
+%
+The same physics operates at network scale during geomagnetic disturbances:
+geomagnetically induced currents (GIC) are quasi-DC currents that drive
+transmission transformers into half-cycle saturation, generating large even
+(and odd) harmonic currents and reactive-power consumption across entire
+networks \cite{pirjola}. An AFE installed on a grid affected by transformer
+saturation---whatever the cause---will see a background second-harmonic voltage
+and respond to it (Section~\ref{sec:background}).
+
+\subsection{Low and asynchronous modulation ratio}
+
+At the power levels typical of megawatt AFE converters the switching frequency
+is low and the frequency-modulation ratio $m_f = f_{sw}/f_1$ may be below
+$\sim 21$. In this regime the classical PWM harmonic theory \cite{holmes}
+prescribes \emph{synchronous} modulation with $m_f$ an odd integer (ideally an
+odd multiple of three): the carrier is phase-locked to the fundamental, the
+pulse pattern repeats identically every fundamental period, and half-wave
+symmetry of the switched voltage is guaranteed, so no even harmonics and no
+sub- or interharmonics are produced.
+
+If the modulation is asynchronous (fixed carrier not locked to the grid) with a
+small non-integer $m_f$, the pulse pattern drifts with respect to the
+fundamental. The switched waveform is no longer periodic over one fundamental
+cycle, half-wave symmetry is lost on a cycle-by-cycle basis, and the spectrum
+contains even harmonics, subharmonics, and interharmonics whose amplitude grows
+as $m_f$ decreases. The remedy is structural, not a tuning matter: lock the
+carrier to the PLL angle and enforce an odd (preferably triplen-odd) $m_f$, or
+adopt an optimized synchronous pattern (selective harmonic elimination) that
+embeds half-wave and quarter-wave symmetry by construction.
+
+\subsection{Grid unbalance and control interaction}
+
+Grid unbalance is frequently blamed for even harmonics, but the mapping must be
+kept precise. A negative-sequence fundamental component (unbalance) appears as
+a $2\omega_1$ ripple in the $\dq$ frame and as a $2\omega_1$ power/voltage
+ripple on the DC bus. If the DC-bus voltage controller is fast enough to chase
+this ripple, it modulates the $d$-axis current reference at $2\omega_1$; back
+in the stationary frame this produces a \emph{third} harmonic (positive
+sequence) and an additional negative-sequence fundamental---odd components, not
+even ones \cite{yazdani,teodorescu}.
+
+The correct attribution is therefore:
+%
+\begin{itemize}
+\item \textbf{Offset-type asymmetries} (sensor offsets, top/bottom leg
+asymmetry, DC injection) $\rightarrow$ DC and \emph{even} harmonics;
+\item \textbf{Gain-type asymmetries and unbalance} (sensor gain mismatch,
+negative-sequence grid voltage, fast DC-bus loop) $\rightarrow$
+negative-sequence fundamental and \emph{odd} harmonics (3rd in particular).
+\end{itemize}
+%
+Keeping the two families separate greatly accelerates root-cause analysis on
+site: the parity of the dominant non-characteristic harmonic identifies the
+class of defect before any hardware is opened.
+
+\subsection{Background distortion of the grid}
+\label{sec:background}
+
+Finally, the converter may simply be responding to a grid that already carries
+even-harmonic voltage distortion. Sources on the network side include
+half-wave-rectifier loads, cycloconverters and other asymmetrically fired
+line-commutated converters, transformer energization (inrush) events nearby,
+arc furnaces during unstable arcing, and GIC-driven transformer saturation
+\cite{arrillaga,bollen,taskforce}. An AFE presents a low impedance around the
+fundamental and its controller bandwidth; a background second-harmonic voltage
+therefore drives a second-harmonic current through the converter admittance
+unless the control actively rejects it. In emission assessments this
+distinction matters: the measured even-harmonic current at the point of common
+coupling is the superposition of the converter's own emission and its response
+to background voltage distortion, and the two must be separated before
+compliance is judged \cite{iec61000_3_6}.
+
+\section{Standards Perspective}
+
+Power-system standards treat even harmonics more strictly than odd ones,
+precisely because they are non-characteristic and symptomatic of defects:
+%
+\begin{itemize}
+\item \textbf{IEEE Std 519} limits even current harmonics to 25\,\% of the
+corresponding odd-harmonic limits in each frequency range, and additionally
+restricts DC injection \cite{ieee519}.
+\item \textbf{IEC 61000-3-6} provides planning levels and the methodology for
+apportioning emission limits to distorting installations connected to MV, HV,
+and EHV systems, with dedicated (lower) indicative planning levels for even
+orders \cite{iec61000_3_6}.
+\item \textbf{EN 50160} specifies the voltage-quality characteristics at the
+supply terminals of public networks, including individual even-harmonic voltage
+limits that are markedly lower than those of neighboring odd orders (e.g.\
+2\,\% for $h=2$ and 1\,\% for $h=4$, against 5--6\,\% for the low odd orders)
+\cite{en50160}.
+\item \textbf{IEEE Std 1547} limits DC injection of distributed resources to
+0.5\,\% of rated output current, addressing the transformer-saturation chain
+described above \cite{ieee1547}.
+\end{itemize}
+
+\section{Mitigation}
+
+The countermeasures follow directly from the mechanisms:
+%
+\begin{itemize}
+\item \textbf{Offset auto-calibration.} Measure and store the ADC/sensor
+offsets at every start-up with the converter gated off, and track slow offset
+drift online (e.g.\ by averaging the measured currents over an integer number
+of fundamental periods during operation).
+\item \textbf{Resonant compensation.} Add a resonant term at $1\omega_1$ in the
+$\dq$-frame current controller (equivalently, at DC and $2\omega_1$ in the
+stationary frame). This simultaneously rejects residual measurement offset
+effects, DC injection, and background second-harmonic voltage. Repetitive
+control achieves the same result for all harmonic orders at once.
+\item \textbf{Gate-path symmetry.} Match propagation delays of top and bottom
+driver channels, use symmetric dead-time insertion, and apply dead-time /
+delay compensation based on current polarity. Verify after any driver or
+device replacement.
+\item \textbf{Synchronous modulation.} At low $m_f$, lock the carrier to the
+grid angle and use an odd (triplen) integer ratio, or an offline-optimized
+symmetric pattern.
+\item \textbf{DC suppression loop.} For transformer-coupled converters, close a
+dedicated slow loop on the estimated DC component of the line current (or on
+the transformer magnetizing asymmetry) and trim the modulator offset
+accordingly \cite{buticchi}.
+\item \textbf{Decoupled sequence control.} Under unbalanced grid conditions,
+use dual (positive/negative) sequence current control and limit the DC-bus
+voltage loop bandwidth well below $2\omega_1$, so that unbalance is not
+converted into additional low-order distortion.
+\end{itemize}
+
+\section{Conclusion}
+
+Even harmonics in a three-phase AFE are never intrinsic: they always indicate a
+broken half-wave symmetry. The practically dominant chain is measurement DC
+offset producing DC plus second harmonic through the synchronous-frame current
+controller; the remaining mechanisms---top/bottom leg asymmetry, DC injection
+with transformer half-cycle saturation, asynchronous low-ratio modulation, and
+background network distortion---each leave a distinguishable signature. Because
+offset-type defects generate even orders while gain-type defects and unbalance
+generate odd orders, the parity of the observed non-characteristic harmonics is
+itself a powerful diagnostic. Standards on both the emission side (IEEE 519,
+IEC 61000-3-6) and the compatibility side (EN 50160) reflect this by assigning
+even orders limits far below those of odd orders, and by constraining DC
+injection directly.
+
+\begin{thebibliography}{99}
+
+\bibitem{mohan}
+N.~Mohan, T.~M. Undeland, and W.~P. Robbins,
+\emph{Power Electronics: Converters, Applications, and Design}, 3rd~ed.
+Hoboken, NJ: Wiley, 2003.
+
+\bibitem{holmes}
+D.~G. Holmes and T.~A. Lipo,
+\emph{Pulse Width Modulation for Power Converters: Principles and Practice}.
+Piscataway, NJ: IEEE Press / Wiley-Interscience, 2003.
+
+\bibitem{yazdani}
+A.~Yazdani and R.~Iravani,
+\emph{Voltage-Sourced Converters in Power Systems: Modeling, Control, and
+Applications}. Hoboken, NJ: Wiley / IEEE Press, 2010.
+
+\bibitem{teodorescu}
+R.~Teodorescu, M.~Liserre, and P.~Rodr\'iguez,
+\emph{Grid Converters for Photovoltaic and Wind Power Systems}.
+Chichester, UK: Wiley / IEEE Press, 2011.
+
+\bibitem{chungsul}
+D.-W. Chung and S.-K. Sul,
+``Analysis and compensation of current measurement error in vector-controlled
+AC motor drives,'' \emph{IEEE Trans. Ind. Appl.}, vol.~34, no.~2,
+pp. 340--345, Mar./Apr. 1998.
+
+\bibitem{jeong}
+S.-G. Jeong and M.-H. Park,
+``The analysis and compensation of dead-time effects in PWM inverters,''
+\emph{IEEE Trans. Ind. Electron.}, vol.~38, no.~2, pp. 108--114, Apr. 1991.
+
+\bibitem{choi}
+J.-W. Choi and S.-K. Sul,
+``Inverter output voltage synthesis using novel dead time compensation,''
+\emph{IEEE Trans. Power Electron.}, vol.~11, no.~2, pp. 221--227, Mar. 1996.
+
+\bibitem{buticchi}
+G.~Buticchi, E.~Lorenzani, and G.~Franceschini,
+``A DC offset current compensation strategy in transformerless grid-connected
+power converters,'' \emph{IEEE Trans. Power Del.}, vol.~26, no.~4,
+pp. 2743--2751, Oct. 2011.
+
+\bibitem{arrillaga}
+J.~Arrillaga and N.~R. Watson,
+\emph{Power System Harmonics}, 2nd~ed. Chichester, UK: Wiley, 2003.
+
+\bibitem{wakileh}
+G.~J. Wakileh,
+\emph{Power Systems Harmonics: Fundamentals, Analysis and Filter Design}.
+Berlin, Germany: Springer, 2001.
+
+\bibitem{bollen}
+M.~H.~J. Bollen,
+\emph{Understanding Power Quality Problems: Voltage Sags and Interruptions}.
+Piscataway, NJ: IEEE Press, 2000.
+
+\bibitem{taskforce}
+Task Force on Harmonics Modeling and Simulation,
+``Modeling and simulation of the propagation of harmonics in electric power
+networks---Part I: Concepts, models, and simulation techniques,''
+\emph{IEEE Trans. Power Del.}, vol.~11, no.~1, pp. 452--465, Jan. 1996.
+
+\bibitem{guzman}
+A.~Guzm\'an, S.~Zocholl, G.~Benmouyal, and H.~J. Altuve,
+``A current-based solution for transformer differential protection---Part I:
+Problem statement,'' \emph{IEEE Trans. Power Del.}, vol.~16, no.~4,
+pp. 485--491, Oct. 2001.
+
+\bibitem{pirjola}
+R.~Pirjola,
+``Geomagnetically induced currents during magnetic storms,''
+\emph{IEEE Trans. Plasma Sci.}, vol.~28, no.~6, pp. 1867--1873, Dec. 2000.
+
+\bibitem{ieee519}
+\emph{IEEE Standard for Harmonic Control in Electric Power Systems},
+IEEE Std 519-2022, 2022.
+
+\bibitem{iec61000_3_6}
+\emph{Electromagnetic Compatibility (EMC)---Part 3-6: Limits---Assessment of
+Emission Limits for the Connection of Distorting Installations to MV, HV and
+EHV Power Systems}, IEC/TR 61000-3-6, 2008.
+
+\bibitem{en50160}
+\emph{Voltage Characteristics of Electricity Supplied by Public Electricity
+Networks}, EN 50160, CENELEC, 2010.
+
+\bibitem{ieee1547}
+\emph{IEEE Standard for Interconnection and Interoperability of Distributed
+Energy Resources with Associated Electric Power Systems Interfaces},
+IEEE Std 1547-2018, 2018.
+
+\end{thebibliography}
+
+\end{document}
