@@ -1,3 +1,7 @@
+\ifdefined\PWRCONTROLSETTINGSLOADED
+\endinput
+\fi
+\def\PWRCONTROLSETTINGSLOADED{1}
 % ===================== PACKAGES =====================
 \usepackage[british]{babel}
 \usepackage[tmargin=1in, bmargin=1in, lmargin=0.75in, rmargin=0.75in]{geometry}
@@ -19,7 +23,8 @@
 \usepackage{bm}
 \usepackage{amsmath}
 \usepackage{enumitem}
-\usepackage[english]{varioref}
+%\usepackage[english]{varioref}
+\usepackage{physics}
 \usepackage{lipsum}
 \usepackage{fancyhdr}
 \usepackage{float}
@@ -41,7 +46,7 @@
 \sisetup{input-digits=0123456789\pi}
 \usepackage[symbol]{footmisc}
 \usepackage{multicol}
-\usepackage{boondox-cal}
+%\usepackage{boondox-cal}
 \usepackage{blindtext}
 \usepackage{changepage}
 \usepackage{nomencl}
@@ -62,12 +67,12 @@
 \sisetup{detect-weight=true, detect-inline-weight=math}
 
 % ===================== MATH OPERATORS =====================
-\DeclareMathOperator{\rank}{rank}
+%\DeclareMathOperator{\rank}{rank}
 \DeclareMathOperator{\atantwo}{atan2}
 \DeclareMathOperator{\spn}{span}
 
 % ===================== COMMANDS =====================
-\newcommand{\abs}[1]{\left|#1\right|}
+%\newcommand{\abs}[1]{\left|#1\right|}
 \newcommand{\sign}{\text{sign}}
 \newcommand{\centered}[1]{\begin{tabular}{@{}l@{}} #1 \end{tabular}}
 
