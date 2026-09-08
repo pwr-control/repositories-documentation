@@ -1,0 +1,449 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{xcolor}
+\usepackage[hidelinks]{hyperref}
+
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\verify}{\textsuperscript{\textcolor{red}{(v)}}}
+\renewcommand{\arraystretch}{1.15}
+
+\title{Nomenclature of Line-Commutated Converter Connections\\
+\large DIN 41761, IEC 60146, ANSI/IEEE circuit numbers, textbook and industrial usage,\\
+with a note on Active Front Ends (AFE / AIC)}
+\author{Working note}
+\date{September 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This note collects the designation systems used to name rectifier and line-commutated converter connections: the German DIN 41761 letter code (\code{M3}, \code{B6C}, \code{B6HK}, \code{(B6)A(B6)C}, \ldots), the IEC 60146-1-1 descriptive terminology and structural parameters ($p$, $q$, $r$, $s$), the ANSI/IEEE ``circuit numbers'' used in North-American rectifier and rectifier-transformer standards, and the textbook and vendor names in common use. A dedicated section discusses whether an equivalent designation exists for self-commutated PWM rectifiers (Active Front End), pointing to the IEC~TS~62578 ``Active Infeed Converter'' (AIC) classification. Items marked~\verify{} are reproduced from memory and should be verified against the current edition of the standard before being used in a contractual document.
+\end{abstract}
+
+\tableofcontents
+
+%======================================================================
+\section{Scope and reading guide}
+
+Three families of nomenclature coexist in the literature and in data sheets:
+
+\begin{enumerate}
+\item \textbf{Structural letter codes} (DIN 41761, adopted in most German-language and much European literature, and used loosely in IEC documents): a compact code such as \code{B6C} identifies topology (bridge/midpoint), pulse number and degree of control. This is the only system that is compact enough to appear on a name plate.
+\item \textbf{Descriptive terms} (IEC 60146-1-1, IEEE, textbooks): ``three-phase double-way connection, six-pulse, fully controlled''. Precise but verbose.
+\item \textbf{Circuit numbers} (ANSI C34.2, IEEE Std 444, IEEE C57.18.10): a number (e.g.\ ``circuit 23'') referring to a table of standard rectifier connections, mainly used for rectifier transformers and electrochemical/traction rectifiers in North America.
+\end{enumerate}
+
+The AFE case is treated separately in Section~\ref{sec:afe}, because line-commutated designation systems do not extend naturally to self-commutated converters.
+
+%======================================================================
+\section{Common structural concepts}
+
+\subsection{Single-way vs.\ double-way (midpoint vs.\ bridge)}
+
+IEC 60146-1-1 distinguishes:
+\begin{itemize}
+\item \textbf{single-way connection} (German \emph{Mittelpunktschaltung}, \emph{Einwegschaltung}): current in each transformer secondary winding flows in one direction only; a neutral (midpoint) conductor is required. DIN letter \code{M}. US usage: ``half-wave'', ``star'', ``wye'', ``double-wye''.
+\item \textbf{double-way connection} (German \emph{Brückenschaltung}, \emph{Zweiwegschaltung}): current in each winding flows in both directions; no neutral needed. DIN letter \code{B}. US usage: ``bridge'', ``full-wave bridge''.
+\end{itemize}
+
+\subsection{Pulse number and commutation structure (IEC 60146-1-1)}
+
+IEC 60146-1-1 defines the following integers, which fully characterise a line-commutated connection:
+\begin{itemize}
+\item $q$ -- \textbf{commutation number}: number of commutations per period within one commutating group (number of valves that commutate in sequence within a group, e.g.\ $q=3$ for a three-phase star group, $q=2$ for a single-phase centre-tap group);
+\item $r$ -- number of commutating groups connected in \textbf{parallel} (in phase-shifted arrangement);
+\item $s$ -- number of commutating groups connected in \textbf{series};
+\item $p$ -- \textbf{pulse number}: number of non-simultaneous commutations per period of the a.c.\ supply, $p = q \cdot r \cdot s$ (when the groups are correctly phase-displaced).
+\end{itemize}
+
+Table~\ref{tab:pqrs} lists the classical connections.
+
+\begin{table}[htb]
+\centering
+\caption{Structural parameters of standard connections (IEC 60146-1-1 sense).}
+\label{tab:pqrs}
+\begin{tabular}{llcccc}
+\toprule
+DIN code & Connection & $q$ & $r$ & $s$ & $p$ \\
+\midrule
+\code{M1}  & single-phase, single-way (half-wave)          & 1 & 1 & 1 & 1 \\
+\code{M2}  & single-phase, centre-tap                     & 2 & 1 & 1 & 2 \\
+\code{B2}  & single-phase bridge                          & 2 & 1 & 2 & 2 \\
+\code{M3}  & three-phase star (three-pulse midpoint)      & 3 & 1 & 1 & 3 \\
+\code{M6}  & six-phase star (six-pulse midpoint)          & 6 & 1 & 1 & 6 \\
+\code{M3.2}& double star with interphase reactor          & 3 & 2 & 1 & 6 \\
+\code{B6}  & three-phase bridge (Graetz)                  & 3 & 1 & 2 & 6 \\
+\code{B6.2S} & two B6 in series (12-pulse series)         & 3 & 1 & 4 & 12 \\
+\code{B6.2P} & two B6 in parallel with IPR (12-pulse par.)& 3 & 2 & 2 & 12 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Degree of control and quadrants}
+
+\begin{itemize}
+\item \textbf{Uncontrolled} (diodes): one quadrant, $U_d>0$, $I_d>0$.
+\item \textbf{Half-controlled} (thyristors + diodes): one quadrant; $U_d \ge 0$ only, no inverter operation; inherent free-wheeling.
+\item \textbf{Fully controlled} (all thyristors): two quadrants, $U_d \gtrless 0$, $I_d>0$ (rectifier and inverter mode).
+\item \textbf{Reversible} (two fully controlled converters in anti-parallel or cross connection): four quadrants (``dual converter'', German \emph{Umkehrstromrichter}).
+\end{itemize}
+
+The 1Q/2Q/4Q shorthand is common in drive literature (\emph{Einquadrant-}, \emph{Zweiquadrant-}, \emph{Vierquadrantenbetrieb}).
+
+%======================================================================
+\section{DIN 41761 designation system}
+
+DIN 41761 (\emph{Stromrichter-Schaltungen; Benennungen, Kurzzeichen, Kennwerte}) is the origin of the \code{B6C}-style codes. Although formally a German standard (later largely superseded by DIN EN 60146 for characteristic values), the code system survives in textbooks (Möltgen, Heumann, Michel, Schröder, Specovius), in Siemens/ABB/Infineon documentation and in most European engineering practice. The general form of a code is
+\[
+\underbrace{\code{X}}_{\text{topology}}\;
+\underbrace{\code{n}}_{\text{pulse no.}}\;
+\underbrace{\code{.mS/.mP}}_{\text{series/parallel groups (optional)}}\;
+\underbrace{\code{U/H/C}}_{\text{control}}\;
+\underbrace{\code{K/Z/F}}_{\text{variant suffixes (optional)}}
+\]
+
+\subsection{Topology letters}
+
+\begin{table}[htb]
+\centering
+\caption{DIN 41761 topology letters.}
+\begin{tabular}{clp{3.2cm}p{5.5cm}}
+\toprule
+Letter & German & English & Notes \\
+\midrule
+\code{M} & Mittelpunktschaltung & midpoint / single-way & requires neutral \\
+\code{B} & Brückenschaltung & bridge / double-way & \\
+\code{E} & Einwegschaltung & (older) single-way & older editions used \code{E}; \code{M} is current\verify \\
+\code{W} & Wechselstromsteller & a.c.\ controller (a.c.\ switch) & \code{W1C}, \code{W3C} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Control letters}
+
+\begin{table}[htb]
+\centering
+\caption{DIN 41761 control letters.}
+\begin{tabular}{clll}
+\toprule
+Letter & German & English & Devices \\
+\midrule
+\code{U} & ungesteuert & uncontrolled & diodes only \\
+\code{H} & halbgesteuert & half-controlled & thyristors + diodes \\
+\code{C} & (vollgesteuert, ``controlled'') & fully controlled & thyristors only \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Note that \code{C} (not \code{V}) is used for \emph{vollgesteuert}, borrowed from the English ``controlled''.
+
+\subsection{Variant suffixes}
+
+\begin{itemize}
+\item \code{K} -- \emph{kathodenseitig gesteuert}: half-controlled bridge with the thyristors grouped on one side (common-cathode group of thyristors, common-anode group of diodes): \code{B2HK}, \code{B6HK}. This is the ``asymmetric'' half-controlled bridge; it has inherent free-wheeling through the diode group.\verify
+\item \code{Z} -- \emph{zweiggesteuert} (\emph{Zweig} = branch/leg): one thyristor and one diode per leg, i.e.\ thyristors in different legs: \code{B2HZ}, \code{B6HZ}. This is the ``symmetric'' half-controlled bridge; it needs a separate free-wheeling diode for correct behaviour.\verify
+\item \code{F} -- \emph{mit Freilaufdiode}: with free-wheeling diode, e.g.\ \code{B6CF}, \code{B2HZF}.
+\item \code{.2S}, \code{.2P} -- two identical groups in series / in parallel: \code{B6.2S} (12-pulse series), \code{B6.2P} (12-pulse parallel with interphase reactor), \code{M3.2} (double star with interphase reactor, \emph{Saugdrosselschaltung}).\verify
+\end{itemize}
+
+\subsection{Reversible (four-quadrant) connections}
+
+DIN 41761 names reversible thyristor converters by combining two codes:
+\begin{itemize}
+\item \code{(B6)A(B6)C} -- two \code{B6C} in \textbf{anti-parallel} (\emph{Antiparallelschaltung}), circulating-current-free operation (\emph{kreisstromfrei}); the common configuration for four-quadrant d.c.\ drives.
+\item \code{(B6)K(B6)C} -- two \code{B6C} in \textbf{cross connection} (\emph{Kreuzschaltung}) with circulating current (\emph{kreisstrombehaftet}), requiring separate transformer secondaries and circulating-current reactors.\verify
+\item \code{(M3)K(M3)C}, \code{(M3)A(M3)C} -- the corresponding three-pulse versions.
+\end{itemize}
+
+\subsection{Complete list of common DIN codes}
+
+\begin{longtable}{lp{5.2cm}p{5.5cm}}
+\caption{DIN 41761 codes in common use.}\\
+\toprule
+Code & Description & Remarks \\
+\midrule
+\endfirsthead
+\toprule
+Code & Description & Remarks \\
+\midrule
+\endhead
+\code{M1U} / \code{M1C} & single-phase half-wave, diode / thyristor & 1-pulse \\
+\code{M2U} / \code{M2C} & single-phase centre-tap & 2-pulse, single-way \\
+\code{B2U} & single-phase diode bridge & 2-pulse Graetz bridge \\
+\code{B2HK}, \code{B2HZ} & single-phase half-controlled bridge & asymmetric / symmetric \\
+\code{B2C} & single-phase fully controlled bridge & 2Q \\
+\code{M3U} / \code{M3C} & three-phase star (three-pulse) & single-way, d.c.\ magnetisation of transformer \\
+\code{M6U} / \code{M6C} & six-phase star & single-way, poor transformer utilisation \\
+\code{M3.2U} / \code{M3.2C} & double star with interphase reactor & 6-pulse, high-current electrochemical use \\
+\code{B6U} & three-phase diode bridge & 6-pulse Graetz bridge, ``B6 diode rectifier'' \\
+\code{B6HK}, \code{B6HZ} & three-phase half-controlled bridge & 1Q; large even-harmonic content at partial control \\
+\code{B6C} & three-phase fully controlled bridge & 2Q, inverter operation possible \\
+\code{B6CF} & \code{B6C} with free-wheeling diode & 1Q; freewheeling prevents inverter operation \\
+\code{B6.2S C} & two \code{B6C} in series & 12-pulse, HVDC/traction \\
+\code{B6.2P C} & two \code{B6C} in parallel + IPR & 12-pulse, high current \\
+\code{(B6)A(B6)C} & anti-parallel dual converter & 4Q, circulating-current-free \\
+\code{(B6)K(B6)C} & cross-connected dual converter & 4Q, with circulating current \\
+\code{W1C} & single-phase a.c.\ controller & anti-parallel thyristors / triac \\
+\code{W3C} & three-phase a.c.\ controller & soft starters, static switches \\
+\bottomrule
+\end{longtable}
+
+%======================================================================
+\section{IEC 60146 terminology}
+
+IEC 60146-1-1 (\emph{Semiconductor converters -- General requirements and line commutated converters -- Part 1-1: Specification of basic requirements}) does not prescribe a compact code; it defines terms and, in an informative annex, tabulates the ``basic connections'' with their characteristic ratios (transformer rating factors, ripple, $U_{di0}$, valve current, etc.). The descriptive names used are of the form:
+
+\begin{center}
+\emph{\{single-phase | three-phase | six-phase\} \{single-way | double-way\} connection, \{$p$\}-pulse, \{uncontrolled | half-controlled | fully controlled\}}
+\end{center}
+
+Other IEC 60146-1-1 terms worth knowing because they appear in data sheets:
+\begin{itemize}
+\item \textbf{commutating group}: set of valves that commutate in sequence within one cycle;
+\item \textbf{ideal no-load direct voltage} $U_{di0}$; \textbf{direct voltage regulation}; \textbf{inductive direct voltage regulation} $d_x$; \textbf{resistive} $d_r$;
+\item \textbf{delay angle} $\alpha$, \textbf{overlap angle} $\mu$ (or $u$), \textbf{extinction angle} (margin angle) $\gamma$, \textbf{advance angle} $\beta = \pi-\alpha$;
+\item \textbf{rectifier operation}, \textbf{inverter operation}, \textbf{reversible converter}, \textbf{circulating-current} / \textbf{circulating-current-free} operation;
+\item \textbf{duty classes} (I--VI) and \textbf{overload classes} for rating;
+\item \textbf{valve device}, \textbf{valve arm}, \textbf{principal arm}, \textbf{auxiliary arm} (e.g.\ the free-wheeling arm).
+\end{itemize}
+
+Older editions of IEC 146 and the German edition DIN EN 60146-1-1 (VDE 0558-11) reproduce the DIN letter codes in the annex tables, which is why \code{B6C} is de facto understood ``in IEC context''; the letter code itself is nevertheless of DIN origin.\verify
+
+Related IEC documents:
+\begin{itemize}
+\item IEC 60146-1-2: application guide (useful for the relation between $p$, harmonics and transformer connections);
+\item IEC 60146-1-3: transformers and reactors for converters;
+\item IEC 60146-2: self-commutated semiconductor converters (see Section~\ref{sec:afe});
+\item IEC 60617: graphical symbols (converter symbol: square with diagonal, a.c.\ and d.c.\ side symbols);
+\item IEC 61148: terminology for ``pulse number'' etc.\ also appears in IEC 60050-551 (International Electrotechnical Vocabulary, Chapter 551: Power electronics), which is the normative source for the terms ``single-way'', ``double-way'', ``pulse number'', ``commutation number''.
+\end{itemize}
+
+%======================================================================
+\section{ANSI / IEEE circuit numbers}
+
+North-American practice (ANSI C34.2 \emph{Practices and Requirements for Semiconductor Power Rectifiers}, IEEE Std 444 \emph{Thyristor Converters and Motor Drives}, IEEE Std C57.18.10 \emph{Semiconductor Power Rectifier Transformers}) identifies connections by a \textbf{circuit number}. The numbering system is inherited from the mercury-arc rectifier standards and is organised by pulse number and by single-way / double-way character. The most frequently cited numbers are listed below; the full table should be taken from IEEE C57.18.10, which is the current custodian of the list.\verify
+
+\begin{table}[htb]
+\centering
+\caption{ANSI/IEEE circuit numbers most often encountered (indicative).}
+\begin{tabular}{clll}
+\toprule
+Circuit no. & Connection & DIN equivalent & Typical use \\
+\midrule
+21 & single-phase, single-way (half-wave)      & \code{M1} & -- \\
+22 & single-phase, centre-tap                 & \code{M2} & -- \\
+23 & single-phase bridge                      & \code{B2} & -- \\
+25 & three-phase double-way (bridge), 6-pulse & \code{B6} & drives, general \\
+26 & six-phase double-wye with IPT, 6-pulse   & \code{M3.2} & electrochemical \\
+31 & 12-pulse double-way, two bridges         & \code{B6.2S}/\code{B6.2P} & HV, high current \\
+45/46 & 12-pulse, double-wye with IPT parallel & \code{M3.2} $\times 2$ & electrochemical \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The ANSI documents use ``double-way'' for bridge and ``single-way'' for midpoint exactly as IEC does, and ``wye'', ``delta'', ``double-wye'', ``zig-zag'', ``interphase transformer (IPT)'' for the transformer side. Control is described in words (``diode'', ``thyristor'', ``semi-converter'').
+
+%======================================================================
+\section{Textbook and industrial names}
+
+Different authors use different names for the same connection. Table~\ref{tab:cross} is a cross-reference for the six-pulse bridge family, which is the user's main interest.
+
+\begin{table}[htb]
+\centering
+\caption{Cross-reference of names for the six-pulse bridge family.}
+\label{tab:cross}
+\small
+\begin{tabular}{p{2cm}p{3.5cm}p{4.4cm}p{4.4cm}}
+\toprule
+DIN & IEC descriptive & English textbook / vendor & Italian \\
+\midrule
+\code{B6U} & three-phase double-way connection, 6-pulse, uncontrolled & three-phase diode bridge, 6-pulse diode rectifier, Graetz bridge, ``B6 rectifier'', ``DFE'' (diode front end) & ponte trifase a diodi, ponte di Graetz trifase, raddrizzatore a sei impulsi \\
+\code{B6HK}/\code{B6HZ} & \ldots, half-controlled & semi-converter, half-controlled bridge, asymmetric/symmetric half-controlled bridge & ponte semicontrollato (asimmetrico / simmetrico), semiconvertitore \\
+\code{B6C} & \ldots, fully controlled & full converter, fully controlled bridge, 6-pulse thyristor bridge, two-quadrant converter, ``TFE'' (thyristor front end) & ponte totalcontrollato, ponte a tiristori, convertitore a due quadranti \\
+\code{B6CF} & \ldots, fully controlled with free-wheeling diode & full converter with freewheeling diode & ponte totalcontrollato con diodo di ricircolo (di libera circolazione) \\
+\code{(B6)A(B6)C} & two fully controlled double-way connections in anti-parallel (reversible converter, circulating-current-free) & dual converter, four-quadrant converter, anti-parallel thyristor converter, ``bidirectional thyristor bridge'' & doppio convertitore (a doppio ponte) in antiparallelo, convertitore reversibile a quattro quadranti, senza corrente di circolazione \\
+\code{(B6)K(B6)C} & reversible converter with circulating current, cross connection & dual converter with circulating current & doppio convertitore a ponti incrociati, con corrente di circolazione \\
+\code{B6.2S}/\code{B6.2P} & 12-pulse series / parallel & 12-pulse rectifier, twelve-pulse (series/parallel) & raddrizzatore a dodici impulsi (serie / parallelo) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{``Bidirectional'' and ``controllable bidirectional'' bridges.}
+Some caution is needed with the term \emph{bidirectional}. A \code{B6C} is already \emph{bidirectional in power} (rectifier and inverter operation, 2Q) but \emph{unidirectional in current}. A bridge that is bidirectional in \emph{current} (4Q) is, in line-commutated technology, always a dual converter, \code{(B6)A(B6)C} or \code{(B6)K(B6)C}. Devices with intrinsic bidirectional conduction (triacs, anti-parallel thyristor pairs, bidirectional switches) form a.c.\ controllers (\code{W1C}, \code{W3C}) or matrix/cycloconverters, not bridges in the DIN sense. Cycloconverters are named in DIN style by their constituent converters, e.g.\ a three-phase cycloconverter made of three anti-parallel \code{B6C} pairs is written \code{3$\times$(B6)A(B6)C}, or descriptively ``6-pulse bridge cycloconverter''.
+
+\paragraph{Additional textbook labels.}
+\begin{itemize}
+\item Mohan/Undeland/Robbins: ``three-phase full-bridge rectifier'', ``three-phase full-bridge (thyristor) converter''.
+\item Rashid, Dubey, Bimbhra: ``three-phase full converter'', ``three-phase semiconverter'', ``dual converter''.
+\item Kimbark, Arrillaga (HVDC): ``six-pulse bridge'', ``Graetz bridge'', ``twelve-pulse converter'', ``valve group''.
+\item German textbooks: \emph{Drehstrombrückenschaltung} (B6), \emph{Sechspulsbrücke}, \emph{halbgesteuerte Brücke}, \emph{vollgesteuerte Brücke}, \emph{Umkehrstromrichter} (dual converter), \emph{Zwölfpulsschaltung}.
+\item HVDC (IEC 60633, CIGRÉ): ``6-pulse group'', ``12-pulse group'', ``valve'', ``valve arm'', ``converter unit''.
+\end{itemize}
+
+%======================================================================
+\section{Is there a nomenclature for Active Front Ends?}
+\label{sec:afe}
+
+\subsection{Short answer}
+
+There is \textbf{no letter code} of the \code{B6C} type for self-commutated PWM rectifiers. DIN 41761 covers only line-commutated (\emph{netzgeführte}) connections, and IEC 60146-1-1 explicitly restricts its scope to line-commutated converters. What exists instead is:
+
+\begin{enumerate}
+\item a \textbf{standardised functional term}: \textbf{Active Infeed Converter (AIC)}, defined in IEC~TS~62578 (\emph{Power electronics systems and equipment -- Operation conditions and characteristics of active infeed converter (AIC) applications including design recommendations for their emission values below 150~kHz}), and used in IEC 61800-3 and IEC 61000-3-12 for EMC/harmonic classification;
+\item \textbf{topology names} from the literature (2L-VSC, 3L-NPC, 3L-T-type/T$^2$C, ANPC, FC, Vienna, Swiss, CSR, \ldots);
+\item \textbf{vendor trade names} (Active Front End, Active Line Module, IGBT Supply Unit, Regenerative Unit, \ldots).
+\end{enumerate}
+
+\subsection{IEC TS 62578 -- Active Infeed Converter classification}
+
+IEC TS 62578 defines an AIC as a self-commutated converter connected between the a.c.\ supply and a d.c.\ link (or another load), capable of controlling the a.c.\ current waveform. The specification classifies AICs by \textbf{d.c.-side character} and \textbf{switching behaviour}:\verify
+\begin{itemize}
+\item \textbf{Voltage-source type AIC} (VSC, ``VS-AIC''): d.c.\ voltage stiff, a.c.\ current controlled by PWM; this is the classical AFE with IGBTs and boost inductors. The d.c.-link voltage is above the peak line-to-line voltage (boost behaviour).
+\item \textbf{Current-source type AIC} (CSC, ``CS-AIC''): d.c.\ current stiff (d.c.\ reactor), a.c.\ side with capacitors; PWM current-source rectifier (buck behaviour).
+\item \textbf{Fundamental-frequency front end (F3E)}: self-commutated bridge switched at line frequency (six-step), with small d.c.\ link, regenerative but not sinusoidal; behaves like a diode bridge with reverse capability. Developed at Erlangen (Piepenbreier et al.) and used in some regenerative drives.
+\item \textbf{Slow-switching / ``diode-bridge-like'' AIC} vs.\ \textbf{PWM AIC} for EMC classification (IEC 61800-3 distinguishes ``basic'' and ``active'' infeed for harmonic emission requirements).
+\end{itemize}
+IEC TS 62578 also fixes the recommended measurement of emission between 2~kHz and 150~kHz for AIC applications; that is the origin of the ``IEC 62578 limits'' quoted by drive vendors.
+
+\subsection{Topology names (literature)}
+
+\begin{table}[htb]
+\centering
+\caption{Common designations of self-commutated grid-side converters.}
+\small
+\begin{tabular}{p{3.2cm}p{3.6cm}p{7cm}}
+\toprule
+Abbreviation & Full name & Notes \\
+\midrule
+2L-VSC / 2L-VSR & two-level voltage-source converter / rectifier & standard IGBT six-switch bridge; also ``B6CI''\verify{} in some German texts (\emph{I} = IGBT / self-commutated) \\
+3L-NPC & three-level neutral-point-clamped & Nabae/Akagi; MV drives, high-efficiency LV \\
+3L-T$^2$C / T-type & three-level T-type (transistor-clamped) & Schweizer/Kolar; ``3L-TNPC'' at Infineon \\
+3L-ANPC & active NPC & loss balancing \\
+FC / FLC & flying capacitor & \\
+CHB & cascaded H-bridge & MV regenerative (``cell'' rectifiers) \\
+MMC & modular multilevel converter & HVDC, STATCOM \\
+Vienna rectifier & three-level unidirectional PFC rectifier & Kolar; not regenerative, hence not an AFE in the strict sense \\
+Swiss rectifier & three-phase buck-type PFC rectifier & Kolar; unidirectional \\
+CSR / PWM-CSR & (PWM) current-source rectifier & \\
+B2B / AC-DC-AC & back-to-back converter & AFE + inverter sharing d.c.\ link \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Functional / vendor names}
+
+\begin{table}[htb]
+\centering
+\caption{Functional and trade names for the grid-side regenerative converter.}
+\small
+\begin{tabular}{p{4cm}p{3cm}p{7cm}}
+\toprule
+Name & Used by & Meaning \\
+\midrule
+Active Front End (AFE) & generic; Rockwell, Danfoss, Schneider, WEG & PWM VSC rectifier, regenerative, sinusoidal current, PF control \\
+Active Infeed Converter (AIC) & IEC TS 62578, IEC 61800-3 & normative generic term \\
+Active Line Module (ALM) & Siemens SINAMICS S120 & AFE with LC filter (``Active Interface Module'' AIM) \\
+Smart Line Module (SLM) & Siemens SINAMICS S120 & F3E-type regenerative unit (line-frequency switched) \\
+Basic Line Module (BLM) & Siemens SINAMICS S120 & B6U / B6C non-regenerative \\
+Einspeise-/Rückspeiseeinheit (E/R) & Siemens SIMOVERT MC & older name for AFE / F3E \\
+IGBT Supply Unit (ISU) & ABB ACS800/ACS880 & AFE \\
+Regenerative Supply Unit, Diode Supply Unit (DSU), Thyristor Supply Unit (TSU) & ABB & ISU / DSU / TSU triad = AFE / B6U / B6C \\
+Regenerative converter, D1000 & Yaskawa & AFE \\
+Active rectifier, PWM rectifier, boost rectifier, sinusoidal rectifier & academic & VSC-type AIC \\
+Grid-tied / grid-connected VSC & academic, renewables & same hardware, generation direction \\
+Power-regenerative unit, RGU & Fuji, Mitsubishi, Hitachi & often F3E-like \\
+DFE / TFE / AFE & drive industry shorthand & diode / thyristor / active front end \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Suggested designation for documents}
+
+When a compact label is needed in a report, the following convention (not a standard, but consistent with DIN and IEC style) is unambiguous:
+\begin{itemize}
+\item state the AIC type per IEC TS 62578 (VS-AIC, CS-AIC, F3E);
+\item add the topology and level count (2L-VSC, 3L-NPC, 3L-T$^2$C);
+\item add the filter type (L, LCL, LC) and the quadrant capability (4Q).
+\end{itemize}
+Example: ``VS-AIC, 2L-VSC, LCL, 4Q'' or, for a non-regenerative Vienna, ``3L Vienna, 1Q (unidirectional AIC)''. Grouping the passive alternatives as DFE (\code{B6U}), TFE (\code{B6C}) and AFE (VS-AIC) is the common drive-industry shorthand.
+
+%======================================================================
+\section{Italian--English--German glossary}
+
+\begin{longtable}{p{4.6cm}p{4.8cm}p{5cm}}
+\caption{Glossary.}\\
+\toprule
+Italiano & English & Deutsch \\
+\midrule
+\endfirsthead
+\toprule
+Italiano & English & Deutsch \\
+\midrule
+\endhead
+raddrizzatore & rectifier & Gleichrichter \\
+convertitore a commutazione naturale (di linea) & line-commutated converter & netzgeführter Stromrichter \\
+convertitore a commutazione forzata & self-commutated converter & selbstgeführter Stromrichter \\
+ponte & bridge, double-way connection & Brückenschaltung, Zweiwegschaltung \\
+a punto medio (a stella) & midpoint, single-way connection & Mittelpunktschaltung, Einwegschaltung \\
+numero di impulsi & pulse number & Pulszahl \\
+ponte a diodi & diode bridge, uncontrolled & ungesteuerte Brücke \\
+ponte semicontrollato & half-controlled bridge, semi-converter & halbgesteuerte Brücke \\
+ponte totalcontrollato & fully controlled bridge, full converter & vollgesteuerte Brücke \\
+diodo di ricircolo / di libera circolazione & free-wheeling diode & Freilaufdiode \\
+doppio convertitore, convertitore reversibile & dual converter, reversible converter & Umkehrstromrichter \\
+corrente di circolazione & circulating current & Kreisstrom \\
+senza corrente di circolazione & circulating-current-free & kreisstromfrei \\
+in antiparallelo & anti-parallel & Antiparallelschaltung \\
+a ponti incrociati & cross connection & Kreuzschaltung \\
+reattore interfase (trasformatore interfase) & interphase reactor / transformer (IPR, IPT) & Saugdrossel \\
+angolo di ritardo (di innesco) & delay (firing) angle $\alpha$ & Steuerwinkel, Zündwinkel \\
+angolo di commutazione (di sovrapposizione) & overlap angle $\mu$ & Überlappungswinkel, Kommutierungswinkel \\
+angolo di estinzione (margine) & extinction (margin) angle $\gamma$ & Löschwinkel \\
+funzionamento da raddrizzatore / da invertitore & rectifier / inverter operation & Gleichrichterbetrieb / Wechselrichterbetrieb \\
+regolatore in c.a., interruttore statico & a.c.\ controller, static switch & Wechselstromsteller \\
+raddrizzatore attivo, AFE & active front end, active infeed converter & Active Front End, Netzpulsstromrichter, Pulsgleichrichter, Einspeise-/Rückspeiseeinheit \\
+lato rete / lato c.c. & line side, a.c.\ side / d.c.\ side & Netzseite / Gleichstromseite \\
+gruppo di commutazione & commutating group & Kommutierungsgruppe \\
+valvola, ramo & valve, valve arm & Ventil, Zweig \\
+\bottomrule
+\end{longtable}
+
+%======================================================================
+\section{Caveats}
+
+\begin{itemize}
+\item DIN 41761 has been withdrawn as a stand-alone standard; its characteristic values were moved to DIN EN 60146-1-1. The codes remain in universal use but are not formally normative in IEC documents.
+\item The exact meaning of \code{K} and \code{Z} for half-controlled bridges, the \code{.2S}/\code{.2P} notation and the \code{(B6)A(B6)C} / \code{(B6)K(B6)C} forms are reproduced from German textbook practice (Möltgen, Heumann) and should be verified against the printed standard before contractual use.
+\item ANSI/IEEE circuit numbers are given as indicative; the authoritative list is in IEEE C57.18.10 (Table of ``rectifier circuit numbers'').
+\item IEC TS 62578 is a Technical Specification, not an International Standard; its classification terms are widely quoted but may be revised.
+\end{itemize}
+
+%======================================================================
+\begin{thebibliography}{99}
+\bibitem{din41761} DIN 41761, \emph{Stromrichter-Schaltungen; Benennungen, Kurzzeichen, Kennwerte}, Beuth Verlag (withdrawn; content transferred to DIN EN 60146-1-1).
+\bibitem{iec60146} IEC 60146-1-1, \emph{Semiconductor converters -- General requirements and line commutated converters -- Part 1-1: Specification of basic requirements}, IEC, Geneva.
+\bibitem{iec601461-2} IEC/TR 60146-1-2, \emph{Semiconductor converters -- Part 1-2: Application guide}, IEC.
+\bibitem{iec601462} IEC 60146-2, \emph{Semiconductor converters -- Part 2: Self-commutated semiconductor converters including direct d.c. converters}, IEC.
+\bibitem{iev551} IEC 60050-551, \emph{International Electrotechnical Vocabulary -- Part 551: Power electronics}, IEC.
+\bibitem{iec62578} IEC TS 62578, \emph{Power electronics systems and equipment -- Operation conditions and characteristics of active infeed converter (AIC) applications including design recommendations for their emission values below 150 kHz}, IEC.
+\bibitem{iec618003} IEC 61800-3, \emph{Adjustable speed electrical power drive systems -- Part 3: EMC requirements and specific test methods}, IEC.
+\bibitem{ansic342} ANSI C34.2, \emph{Practices and Requirements for Semiconductor Power Rectifiers}, ANSI/IEEE.
+\bibitem{ieee444} IEEE Std 444, \emph{Standard Practices and Requirements for Thyristor Converters and Motor Drives}, IEEE.
+\bibitem{c571810} IEEE Std C57.18.10, \emph{Standard Practices and Requirements for Semiconductor Power Rectifier Transformers}, IEEE.
+\bibitem{moltgen} G. Möltgen, \emph{Netzgeführte Stromrichter mit Thyristoren} / \emph{Line Commutated Thyristor Converters}, Siemens AG, Berlin/München.
+\bibitem{heumann} K. Heumann, \emph{Grundlagen der Leistungselektronik}, Teubner, Stuttgart.
+\bibitem{schroeder} D. Schröder, \emph{Leistungselektronische Schaltungen}, Springer.
+\bibitem{mohan} N. Mohan, T. M. Undeland, W. P. Robbins, \emph{Power Electronics: Converters, Applications and Design}, Wiley.
+\bibitem{rashid} M. H. Rashid, \emph{Power Electronics: Circuits, Devices and Applications}, Pearson.
+\bibitem{kolar} J. W. Kolar, T. Friedli, ``The essence of three-phase PFC rectifier systems -- Part I,'' \emph{IEEE Trans. Power Electron.}, vol.~28, no.~1, pp.~176--198, 2013.
+\bibitem{f3e} B. Piepenbreier, L. Sack, ``Regenerative drive converter with line-frequency switched rectifier and without DC link components,'' \emph{Proc. IEEE PESC}, 2004.
+\end{thebibliography}
+
+\end{document}
