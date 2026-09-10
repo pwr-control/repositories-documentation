@@ -1,0 +1,501 @@
+% !TeX program = pdflatex
+% -------------------------------------------------------------------------
+%  crowbar_thyristor_selftrigger.tex
+%  Crowbar thyristor for the 3 kV / 3600 A static-switch test bench:
+%  device selection and passive self-triggering gate circuit.
+%  Conventions: English, thebibliography (no biblatex), no babel, no lmodern.
+% -------------------------------------------------------------------------
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=25mm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{siunitx}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage[european]{circuitikz}
+\usepackage{fancyhdr}
+\usepackage[hidelinks]{hyperref}
+
+% ---------------- document identification / revision ----------------------
+\newcommand{\doctitle}{Crowbar Thyristor for the 3~kV / 3600~A Static-Switch Test Bench}
+\newcommand{\docsubtitle}{Device Selection and Passive Self-Triggering Gate Circuit}
+\newcommand{\docrev}{00}
+\newcommand{\docdate}{2026-09-09}
+\newcommand{\docid}{crowbar\_thyristor\_selftrigger}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\small \docid}
+\rhead{\small Rev.~\docrev}
+\lfoot{\small \docdate}
+\cfoot{\small \thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\sisetup{per-mode=symbol, range-phrase=--, range-units=single}
+
+\title{\textbf{\doctitle}\\[6pt]\large \docsubtitle\\[10pt]\normalsize Rev.~\docrev\ --- \docdate}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+\thispagestyle{fancy}
+
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Rev.} & \textbf{Date} & \textbf{Description} \\
+\midrule
+00 & 2026-09-09 & First issue. Device selection, stress analysis, passive gate circuit. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{abstract}
+A thyristor crowbar with a series dump inductor and resistor extracts the energy
+of a \SI{2}{mH}, \SI{3600}{A} inductive load when a \SI{3}{kV} IGBT static switch
+opens. This note quantifies the electrical stress on the crowbar thyristor,
+justifies the choice of a \SI{6.5}{kV} symmetric phase-control thyristor (Hitachi
+Energy 5STP~26N6500), and explains why the intrinsic self-firing mechanisms of a
+thyristor (critical $\mathrm{d}v/\mathrm{d}t$ and forward breakover) must not be
+used as they are, but can be turned into a reliable, fully passive trigger by a
+floating anode-to-gate network. Design equations and starting values for that
+network are given, together with the coordination rules with the MOV clamp of the
+main switch and the checks to be made in simulation.
+\end{abstract}
+
+% ==========================================================================
+\section{Scope and circuit under study}
+% ==========================================================================
+
+The circuit is the static-switch test bench of Fig.~\ref{fig:circuit}: a DC source
+$V_s = \SI{3000}{V}$ feeds an RL load ($R = \SI{0.8}{\ohm}$, $L = \SI{2}{mH}$)
+through an IGBT breaker $S$ (four 5SNA~1000G650300 in parallel). The breaker is
+opened under load at $I_0 = \SI{3600}{A}$; a varistor bank across the breaker
+clamps its voltage at $V_{\mathrm{MOV}} \approx \SI{5.5}{kV}$. The load energy is
+extracted by the crowbar branch in parallel with the load: thyristor $T$, dump
+inductor $L_c = \SI{12.5}{\micro H}$ and dump resistor $R_D = \SI{0.42}{\ohm}$,
+with an RC snubber $C_{sn} = \SI{2}{\micro F}$, $R_{sn} = \SI{64}{\ohm}$ across the
+branch. The bench must perform of the order of $10^6$ opening cycles.
+
+\begin{figure}[htbp]
+\centering
+\begin{circuitikz}[american, scale=0.95, transform shape]
+  % source (positive terminal towards the breaker)
+  \draw (0,0) to[battery1, l_=$V_s$] (0,4);
+  \node[font=\scriptsize] at (0.35,3.35) {$+$};
+  \node[font=\scriptsize] at (0.35,0.65) {$-$};
+  % breaker with MOV
+  \draw (0,4) -- (1,4) to[nos, l=$S$] (3.5,4) -- (4.5,4);
+  \draw (1,4) -- (1,5.5) to[varistor, l=MOV] (3.5,5.5) -- (3.5,4);
+  % load
+  \draw (4.5,4) -- (5.5,4) to[R, l_=$R$] (5.5,2.5) to[L, l_=$L$] (5.5,0.5) -- (5.5,0) -- (0,0);
+  % crowbar branch: thyristor (anode at bottom), Lc, RD
+  \draw (5.5,4) -- (8,4);
+  \draw (5.5,0) -- (8,0);
+  \draw (8,0) to[Ty, n=T, l_=$T$] (8,1.8) to[L, l_=$L_c$] (8,2.9) to[R, l_=$R_D$] (8,4);
+  % snubber across the branch
+  \draw (8,4) -- (10,4) to[R, l=$R_{sn}$] (10,2.4) to[C, l=$C_{sn}$] (10,0) -- (8,0);
+  % gate network box
+  \draw (T.G) -- (7.15,0 |- T.G);
+  \draw[dashed] (5.95,0.3) rectangle (7.15,1.9);
+  \node[align=center,font=\scriptsize] at (6.55,1.1) {gate\\network\\(Fig.~\ref{fig:gate})};
+  % current arrow
+  \draw[-latex] (4.55,3.75) -- (5.15,3.75) node[midway, above, font=\scriptsize] {$i_L$};
+\end{circuitikz}
+\caption{Static-switch test bench with dump-resistor crowbar. In service ($S$ closed) the load
+voltage is $+V_s$ and the thyristor blocks in the \emph{reverse} direction; forward voltage appears
+across $T$ only while $S$ opens.}
+\label{fig:circuit}
+\end{figure}
+
+Two facts shape the whole analysis:
+
+\begin{enumerate}
+\item In service the crowbar thyristor is \emph{reverse} biased at $-V_s = \SI{-3}{kV}$.
+      Forward voltage appears only when $S$ opens and the load inductance reverses the load
+      voltage, which is exactly when the crowbar must fire.
+\item The forward voltage available to the crowbar is bounded by the MOV clamp of the breaker:
+      \begin{equation}
+        v_{AK,\max} = V_{\mathrm{MOV}} - V_s \approx \SI{5.5}{kV} - \SI{3.0}{kV} = \SI{2.5}{kV}.
+        \label{eq:vfw}
+      \end{equation}
+      Any firing threshold of the crowbar must lie well below this value, otherwise the MOV
+      takes the load current and the energy.
+\end{enumerate}
+
+% ==========================================================================
+\section{Electrical stress on the crowbar thyristor}
+% ==========================================================================
+
+\subsection{Conduction: charge, $\int i^2\,\mathrm{d}t$, energy}
+
+Once the load current has commutated into the crowbar branch, it decays through
+$R + R_D$ with
+\begin{equation}
+  \tau = \frac{L}{R + R_D} = \frac{\SI{2}{mH}}{\SI{1.22}{\ohm}} \approx \SI{1.64}{ms}.
+\end{equation}
+The conduction quantities follow directly:
+\begin{align}
+  Q &= I_0\,\tau \approx \SI{5.9}{C}, \\
+  \int i^2\,\mathrm{d}t &= \frac{I_0^2\,\tau}{2} \approx \SI{10.6e3}{A^2 s}, \\
+  E_{L} &= \tfrac12 L I_0^2 \approx \SI{13.0}{kJ},
+  \qquad E_{R_D} = E_L\,\frac{R_D}{R+R_D} \approx \SI{4.5}{kJ},
+  \qquad E_{R} \approx \SI{8.5}{kJ}.
+\end{align}
+The thyristor conduction energy, with the on-state model $v_T = V_{T0} + r_T\,i$ of the
+5STP~26N6500 ($V_{T0} = \SI{1.12}{V}$, $r_T = \SI{0.29}{m\ohm}$), is
+\begin{equation}
+  E_T = V_{T0}\,Q + r_T \int i^2\,\mathrm{d}t \approx 6.6 + 3.1 \approx \SI{10}{J}.
+\end{equation}
+Spread over the silicon of a \SI{100}{mm} wafer (thermal capacity of the order of
+\SI{10}{J/K}), this gives $\Delta T_j \lesssim \SI{1}{K}$ per event. The crowbar
+thyristor is therefore \emph{not} sized by current or by $\int i^2\mathrm{d}t$; it is sized by
+blocking voltage, turn-on $\mathrm{d}i/\mathrm{d}t$ and cycle count. The current reaches the
+holding level ($I_H \approx \SI{1}{A}$) after $\tau\ln(I_0/I_H) \approx \SI{13}{ms}$ and the
+device turns off naturally, without reverse recovery.
+
+\subsection{Commutation: $\mathrm{d}i/\mathrm{d}t$ and MOV energy}
+
+While $S$ opens, the breaker voltage is held at $V_{\mathrm{MOV}}$ by the varistor bank; the
+forward voltage \eqref{eq:vfw} drives the load current into $L_c$:
+\begin{align}
+  \frac{\mathrm{d}i}{\mathrm{d}t} &= \frac{V_{\mathrm{MOV}} - V_s}{L_c}
+      = \frac{\SI{2.5}{kV}}{\SI{12.5}{\micro H}} = \SI{200}{A/\micro s}, \\
+  t_{\mathrm{comm}} &= \frac{L_c\,I_0}{V_{\mathrm{MOV}} - V_s} = \SI{18}{\micro s}, \\
+  E_{\mathrm{MOV,comm}} &\approx \tfrac12\,V_{\mathrm{MOV}}\,I_0\,t_{\mathrm{comm}} \approx \SI{180}{J}.
+\end{align}
+The MOV bank thus sees about \SI{180}{J} per opening instead of the $\sim$\SI{16}{kJ} it would
+absorb without the crowbar, which is what makes the $10^6$-cycle target credible.
+The turn-on $\mathrm{d}i/\mathrm{d}t$ is set by the MOV clamp level and $L_c$, not by the
+triggering method: it is the same whether the thyristor fires at \SI{50}{V} or at \SI{2}{kV}.
+It must be compared with the \emph{repetitive} critical $\mathrm{d}i/\mathrm{d}t$ of the
+datasheet (for large phase-control thyristors of the order of a few hundred \si{A/\micro s});
+if the margin is insufficient, increase $L_c$ or lower the MOV clamp.
+
+\subsection{$\mathrm{d}v/\mathrm{d}t$ at breaker opening}
+
+At the instant $S$ turns off, the load current initially flows into the capacitances hanging on
+the load node; with the branch snubber alone as an upper bound,
+\begin{equation}
+  \left.\frac{\mathrm{d}v}{\mathrm{d}t}\right|_{\max} \approx \frac{I_0}{C_{sn}}
+  = \frac{\SI{3600}{A}}{\SI{2}{\micro F}} = \SI{1.8}{kV/\micro s},
+  \label{eq:dvdt}
+\end{equation}
+so the thyristor voltage swings from \SI{-3}{kV} through zero into forward bias in about
+\SI{2}{\micro s}. The breaker's own RCD snubbers in parallel reduce this figure, but it remains
+of the same order as the critical $\mathrm{d}v/\mathrm{d}t$ of a phase-control thyristor
+(typically \SIrange{1000}{2000}{V/\micro s}). This is the key observation of
+Section~\ref{sec:selffire}: left to itself, the device is likely to self-fire at breaker
+opening, in an uncontrolled way.
+
+% ==========================================================================
+\section{Device selection}
+% ==========================================================================
+
+\subsection{Requirements}
+
+\begin{table}[htbp]
+\centering
+\caption{Crowbar thyristor requirements and 5STP~26N6500 data.}
+\label{tab:req}
+\begin{tabular}{@{}llll@{}}
+\toprule
+Quantity & Requirement & 5STP 26N6500 & Note \\
+\midrule
+Reverse blocking, continuous DC & \SI{3.0}{kV} & $V_{RRM} = \SI{6.5}{kV}$ & cosmic-ray FIT, see text \\
+Forward blocking, transient & $\le$ \SI{2.5}{kV} & $V_{DRM} = \SI{6.5}{kV}$ & bounded by MOV \\
+Peak current & \SI{3600}{A} & $I_{TSM} = \SI{65}{kA}$ & \\
+$\int i^2\mathrm{d}t$ per event & \SI{10.6e3}{A^2 s} & $\sim\!\SI{2e7}{A^2 s}$ & from $I_{TSM}$, \SI{10}{ms} \\
+Turn-on $\mathrm{d}i/\mathrm{d}t$, repetitive & \SI{200}{A/\micro s} & datasheet & check margin \\
+$\mathrm{d}v/\mathrm{d}t$ at turn-on & up to \SI{1.8}{kV/\micro s} & \SIrange{1000}{2000}{V/\micro s} & gate network required \\
+Cycles & $\sim 10^6$ & --- & $\Delta T_j \lesssim \SI{1}{K}$ \\
+Gate trigger current & --- & $I_{GT} \le \SI{0.4}{A}$ & \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Voltage class: why \SI{6.5}{kV}}
+
+The device blocks \SI{3}{kV} DC continuously in the reverse direction for the whole life of the
+bench. For high-voltage silicon devices the dominant random failure mechanism under continuous
+DC blocking is cosmic-ray induced breakdown, whose rate rises very steeply with the ratio of
+applied to rated voltage. A \SI{4.5}{kV} device would be operated at about \SI{67}{\percent} of
+its rating, a \SI{6.5}{kV} device at \SI{46}{\percent}. The FIT-versus-$V_{DC}$ curves of the
+manufacturer must be consulted for the chosen part, but the \SI{6.5}{kV} class is the natural
+choice; it also gives comfortable margin against the transients at breaker closing, when the
+device sees a \SI{0}{}$\rightarrow$\SI{-3}{kV} step.
+
+The 5STP~26N6500 (Hitachi Energy, formerly ABB) is a symmetric \SI{6.5}{kV} phase-control
+thyristor with interdigitated amplifying gate, $I_{T(RMS)} = \SI{4410}{A}$,
+$I_{TSM} = \SI{65}{kA}$ \cite{ds26n6500}. A Simscape model of this device with Lauritzen--Ma
+reverse recovery already exists, so the simulation work carries over. Its current margins in this
+application are very large (three orders of magnitude on $\int i^2\mathrm{d}t$); a smaller wafer of
+the same \SI{6.5}{kV} family would be adequate thermally and would reduce clamping force and cost.
+The \SI{100}{mm} device is retained here for the $\mathrm{d}i/\mathrm{d}t$ margin and because it
+is already modelled.
+
+\subsection{Why not an asymmetric pulse-power thyristor}
+
+Pulse-power thyristors (e.g.\ the Dynex range based on GTO structures, \SIlist{3300;4500}{V},
+highly interdigitated gate, very high $\mathrm{d}i/\mathrm{d}t$) are marketed also for crowbar
+duty \cite{dynexpp}. They do not fit here for two reasons: they are asymmetric and do not block
+the \SI{-3}{kV} seen in service (a series diode would be needed), and the $\mathrm{d}i/\mathrm{d}t$
+of \SI{200}{A/\micro s} imposed by $L_c$ is well within the reach of a phase-control device. A
+symmetric PCT is the simpler and more robust choice.
+
+% ==========================================================================
+\section{Self-firing mechanisms and why they must not be used as they are}
+\label{sec:selffire}
+% ==========================================================================
+
+\subsection{$\mathrm{d}v/\mathrm{d}t$ firing}
+
+A rising forward voltage drives a displacement current $C_{J2}\,\mathrm{d}v/\mathrm{d}t$ through
+the blocking junction $J_2$. This current flows laterally in the p-base towards the cathode
+shorts; where the lateral voltage drop across the p-base under the $n^+$ emitter reaches
+$\approx \SI{0.7}{V}$, the emitter injects and the thyristor turns on \cite{baliga}. The
+location is wherever the p-base resistance is highest or the shorts are farthest, i.e.\ a random
+point of the cathode area, not the gate region. The datasheet ``critical $\mathrm{d}v/\mathrm{d}t$''
+is the ramp the device is guaranteed \emph{not} to fire on at $T_{j,\max}$; the actual firing
+ramp is unspecified, may be several times higher, and falls with temperature because leakage adds
+to the displacement current.
+
+\subsection{Forward breakover}
+
+When the forward voltage exceeds $V_{BO}$ the avalanche multiplication at $J_2$ satisfies the
+regenerative condition $\alpha_{npn}\,\alpha_{pnp}\,M \to 1$ and the device turns on
+\cite{baliga}. $V_{BO}$ is not a datasheet parameter: it lies at roughly
+\numrange{1.1}{1.3}$\times V_{DRM}$, varies with temperature and from device to device, and the
+turn-on initiates at the point of maximum field (junction termination or gate periphery). The
+undesired ignition of a thyristor occurs at a random, localized spot of the cathode
+junction and may destroy the device through the concentrated turn-on losses \cite{bodpatent}.
+
+\subsection{Consequences in this circuit}
+
+\begin{itemize}
+\item In both mechanisms the initially conducting area is small and unrelated to the
+      amplifying gate; the $\mathrm{d}i/\mathrm{d}t$ that follows (\SI{200}{A/\micro s} here) must
+      then be carried by that small area. The datasheet $\mathrm{d}i/\mathrm{d}t$ rating does not
+      apply. Over $10^6$ cycles this is not an acceptable operating mode.
+\item Static self-firing on $V_{BO}$ is not even reachable: the forward voltage is limited to
+      \SI{2.5}{kV} by the MOV \eqref{eq:vfw}, far below the $V_{BO} > \SI{6.5}{kV}$ of the chosen
+      device. The MOV would absorb the full \SI{16}{kJ} and the crowbar would never fire.
+\item Dynamic self-firing is, on the contrary, \emph{likely} to happen: \eqref{eq:dvdt} is at the
+      critical $\mathrm{d}v/\mathrm{d}t$ level. Without a gate network the device will fire, at an
+      unpredictable point of the wafer, at an unpredictable forward voltage.
+\end{itemize}
+
+The useful conclusion is not to suppress these mechanisms but to \emph{pre-empt} them: the same
+anode voltage that would cause an uncontrolled ignition is used to inject a proper gate current,
+so that turn-on always starts at the amplifying gate. This is the ``protective firing'' concept of
+HVDC valves, where a break-over diode (BOD) between anode and gate converts an overvoltage into a
+regular gate pulse \cite{bodpatent,arrillaga}. Here the roles are extended: the dynamic path is
+the primary trigger, the static path is the back-up.
+
+% ==========================================================================
+\section{Passive self-triggering gate network}
+% ==========================================================================
+
+\subsection{Topology}
+
+\begin{figure}[htbp]
+\centering
+\begin{circuitikz}[american, scale=1.0, transform shape]
+  % thyristor vertical, anode on top; gate lead comes out on the right
+  \draw (0,6) node[above left]{A} to[Ty, n=T] (0,0) node[below left]{K};
+  % anode rail with D1 and node N
+  \draw (0,6) -- (1,6) to[D, l=$D_1$] (3,6) -- (8.6,6);
+  \node[above] at (3,6) {N};
+  \filldraw (3,6) circle (1pt);
+  % gate rail
+  \draw (T.G) -- (1.5,0 |- T.G) coordinate (G);
+  \filldraw (G) circle (1pt);
+  \draw (G) -- (3,0 |- G) to[R, l_=$R_{gs}$] (3,4.2) coordinate (G1);
+  \filldraw (G1) circle (1pt);
+  % bus between the two paths
+  \draw (3,4.2) -- (8.6,4.2);
+  % dynamic path: Cg with reset resistor RC
+  \draw (3,6) to[C, l_=$C_g$] (3,4.2);
+  \draw (4.5,6) to[R, l_=$R_C$] (4.5,4.2);
+  % static path: BOD / TVS stack and Rs
+  \draw (8.6,6) to[zD, l_=BOD] (8.6,5.1) to[R, l_=$R_s$] (8.6,4.2);
+  % gate-cathode network: RGK and antiparallel DGK
+  \draw (G) to[R, l_=$R_{GK}$] (1.5,0) -- (0,0);
+  \draw (1.5,0) -- (2.4,0) to[D, l_=$D_{GK}$] (2.4,0 |- G) -- (G);
+  % annotations
+  \node[font=\scriptsize, align=left, anchor=west] at (5.0,5.1) {dynamic path\\$i_G = C_g\,\mathrm{d}v/\mathrm{d}t$};
+  \node[font=\scriptsize, align=left, anchor=west] at (8.95,5.1) {static path\\fires at $v_{AK} > V_{st}$};
+\end{circuitikz}
+\caption{Floating anode-to-gate trigger network. $D_1$ isolates the network during reverse
+blocking; $C_g$ converts the forward $\mathrm{d}v/\mathrm{d}t$ into gate current; the BOD (or TVS
+stack) with $R_s$ fires the gate if the forward voltage rises slowly beyond $V_{st}$;
+$R_C$ resets $C_g$; $R_{GK}$ and $D_{GK}$ protect the gate.}
+\label{fig:gate}
+\end{figure}
+
+All components are referenced to the cathode and float with it: no auxiliary supply, no
+fibre-optic link, no isolation transformer. The network works as follows.
+
+\paragraph{$D_1$ -- reverse isolation.} With $v_{AK} < 0$ (all of service life) $D_1$ is reverse
+biased and node~N sits at cathode potential: no current reaches the gate. This is essential,
+because a positive gate current while the thyristor blocks reverse voltage forward-biases $J_3$
+and $J_2$ and is amplified by the pnp transistor gain into an increased reverse leakage
+concentrated near the gate; manufacturers exclude this condition. $D_1$ also keeps the
+static-path elements from conducting in their forward direction at \SI{-3}{kV}. Its blocking
+voltage must cover $V_s$ plus closing transients with margin: a string rated $\ge \SI{6}{kV}$
+(e.g.\ 3--4 fast diodes of \SIrange{1.6}{2.2}{kV} with sharing resistors), or a HV diode stack.
+Its current is only the gate current, tens of amperes for microseconds.
+
+\paragraph{Dynamic path -- $C_g$.} As soon as $v_{AK}$ crosses zero and rises, $D_1$ conducts and
+\begin{equation}
+  i_G \approx C_g\,\frac{\mathrm{d}v_{AK}}{\mathrm{d}t}
+\end{equation}
+flows into the gate through $R_{gs}$ (valid for $R_{gs}C_g$ much shorter than the rise time).
+Firing occurs when the injected current exceeds the gate trigger current plus what $R_{GK}$
+diverts:
+\begin{equation}
+  \left.\frac{\mathrm{d}v}{\mathrm{d}t}\right|_{th} = \frac{I_{GT} + V_{GT}/R_{GK}}{C_g}.
+  \label{eq:dvth}
+\end{equation}
+The thyristor therefore turns on at the amplifying gate within a few tens of volts of forward
+bias, long before the intrinsic $\mathrm{d}v/\mathrm{d}t$ mechanism could act.
+
+\paragraph{$R_C$ -- reset.} $C_g$ charges to the forward voltage present at firing (up to
+\SI{2.5}{kV}); after turn-on $D_1$ blocks and $C_g$ discharges through $R_C$ with
+$\tau_{C} = R_C C_g$, which must be much longer than the voltage rise (\si{\micro s}) and much
+shorter than the cycle period. $R_C$ dissipates $\tfrac12 C_g v_{AK}^2$ per event.
+
+\paragraph{Static path -- BOD or TVS stack with $R_s$.} If the forward voltage rises too slowly for
+the dynamic path (abnormal breaker opening, fault), the BOD conducts once
+$v_{AK} > V_{st}$ and drives the gate through $R_s$, which limits the current to
+$(v_{AK} - V_{st})/R_s$. Since no forward voltage exists in service, $V_{st}$ can be low; it must
+only exceed ringing and noise and remain far below \eqref{eq:vfw}. Genuine BODs are available from
+HVDC gate-unit suppliers; at a threshold of a few hundred volts a stack of high-energy TVS diodes
+(5KP/15KP class) does the same job.
+
+\paragraph{$R_{GK}$, $D_{GK}$.} $R_{GK}$ gives noise immunity and sets the threshold
+\eqref{eq:dvth}; $D_{GK}$ (antiparallel) limits negative gate voltage to well below $V_{RGM}$,
+e.g.\ against the small displacement current through the $D_1$ junction capacitance at breaker
+closing.
+
+\subsection{Starting values}
+
+\begin{table}[htbp]
+\centering
+\caption{Starting values for the gate network (5STP~26N6500, $I_{GT} \le \SI{0.4}{A}$,
+$V_{GT} \approx \SI{3}{V}$ to be confirmed on the datasheet).}
+\label{tab:gate}
+\begin{tabular}{@{}llp{7.2cm}@{}}
+\toprule
+Element & Value & Design check \\
+\midrule
+$C_g$ & \SI{4.7}{nF}, $\ge \SI{4}{kV}$ DC & $i_G = \SI{2.4}{A}$ at \SI{500}{V/\micro s}, \SI{8.5}{A} at \SI{1.8}{kV/\micro s}; compare peak with $I_{FGM}$ \\
+$R_{GK}$ & \SI{10}{\ohm} & threshold \eqref{eq:dvth}: $(0.4 + 0.3)\,\si{A}/\SI{4.7}{nF} \approx \SI{150}{V/\micro s}$ \\
+$R_{gs}$ & \SIrange{10}{15}{\ohm} & $R_{gs}C_g \approx \SI{70}{ns} \ll$ rise time; damps the $C_g$--lead-inductance loop, $2\sqrt{L_{lead}/C_g} \approx \SI{13}{\ohm}$ for $L_{lead} = \SI{0.2}{\micro H}$ \\
+$R_C$ & \SI{22}{k\ohm}, HV & $\tau_C \approx \SI{100}{\micro s}$; $E = \tfrac12 C_g (\SI{2.5}{kV})^2 \approx \SI{15}{mJ}$ per event \\
+BOD / TVS & $V_{st} \approx \SIrange{400}{500}{V}$ & e.g.\ 3 $\times$ \SIrange{150}{180}{V} TVS 5KP/15KP; $V_{st} \ll \SI{2.5}{kV}$ \\
+$R_s$ & \SI{200}{\ohm}, pulse rated & $i_{G,\max} = (2500 - 500)/200 = \SI{10}{A}$; $\sim\!\SI{15}{mJ}$ in the stack per event (worst case) \\
+$D_1$ & string $\ge \SI{6}{kV}$, fast & blocks $-V_s$ in service; sharing R/C across the string \\
+$D_{GK}$ & fast or Schottky, $\ge \SI{15}{A}$ pulse & clamps $v_{GK} < 0$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Optional active trigger}
+
+If the breaker controller can issue a gate command, it should be used as the primary trigger
+(pulse transformer or fibre-optic gate unit) with the passive network of Fig.~\ref{fig:gate} left
+in place as an independent back-up -- the same philosophy as HVDC valves. The command must be
+issued together with, not before, the IGBT turn-off: a positive gate pulse applied while the
+thyristor still blocks \SI{-3}{kV} produces the reverse-leakage amplification described above.
+
+% ==========================================================================
+\section{Coordination with the MOV clamp}
+% ==========================================================================
+
+\begin{enumerate}
+\item \textbf{Firing level:} $V_{st} \ll V_{\mathrm{MOV}} - V_s$. With $V_{st} \approx \SI{0.5}{kV}$
+      and \SI{2.5}{kV} available the margin is a factor five; the dynamic path fires even
+      earlier.
+\item \textbf{$\mathrm{d}i/\mathrm{d}t$:} $(V_{\mathrm{MOV}} - V_s)/L_c = \SI{200}{A/\micro s}$,
+      independent of the trigger. To be checked against the repetitive datasheet value; the two
+      knobs are $L_c$ and the MOV clamp level.
+\item \textbf{MOV duty:} about \SI{180}{J} per opening during the \SI{18}{\micro s} commutation
+      interval; the varistor bank becomes a back-up clamp with negligible ageing.
+\item \textbf{Branch snubber:} at firing $C_{sn}$ discharges through $R_{sn}$ into the thyristor,
+      $v_{AK}/R_{sn} \le \SI{40}{A}$ and $\tfrac12 C_{sn} v_{AK}^2 \le \SI{6}{J}$ in $R_{sn}$:
+      harmless.
+\end{enumerate}
+
+% ==========================================================================
+\section{Verification in simulation}
+% ==========================================================================
+
+With the existing Simscape model of the 5STP~26N6500 and the gate network added:
+
+\begin{itemize}
+\item Plot $v_{AK}$ (device terminals, not branch voltage), $i_G$ and $i_A$ at breaker opening.
+      Confirm that $i_G$ exceeds $I_{GT}$ while $v_{AK}$ is still low, and record the forward voltage
+      at which anode current starts.
+\item Extract $\mathrm{d}i_A/\mathrm{d}t$ during the first \SI{20}{\micro s} and compare with the
+      repetitive rating.
+\item Sweep the effective capacitance at the load node (branch snubber plus breaker snubbers) to
+      cover the range of $\mathrm{d}v/\mathrm{d}t$ from \SI{200}{V/\micro s} to \SI{2}{kV/\micro s};
+      the static path should take over below the threshold \eqref{eq:dvth}.
+\item Breaker closing: $v_{AK}$ steps from \SI{0}{} to \SI{-3}{kV}; check that the gate stays
+      quiet ($v_{GK}$ within $\pm$ a few volts) and that $D_1$ sees no overvoltage.
+\item Abnormal case: breaker re-closing while the crowbar still conducts. The source then forces
+      the crowbar current to zero through $L_c$ at $V_s/L_c = \SI{240}{A/\micro s}$ with reverse
+      recovery; check the reverse voltage overshoot across $T$ and the branch snubber. The
+      turn-off time $t_q$ is irrelevant in normal operation, since forward voltage returns only at
+      the next cycle.
+\end{itemize}
+
+% ==========================================================================
+\section{Conclusions}
+% ==========================================================================
+
+The crowbar thyristor of the \SI{3}{kV} / \SI{3600}{A} bench dissipates about \SI{10}{J} per
+event and is sized by voltage, $\mathrm{d}i/\mathrm{d}t$ and cycle count. A symmetric
+\SI{6.5}{kV} phase-control thyristor such as the 5STP~26N6500 is the appropriate choice: it
+blocks the \SI{3}{kV} reverse DC of service life with adequate cosmic-ray margin, and its
+$\mathrm{d}i/\mathrm{d}t$ capability matches the \SI{200}{A/\micro s} imposed by $L_c$ and the
+MOV clamp. The intrinsic self-firing mechanisms must not be relied upon: forward breakover is
+unreachable below the MOV clamp, and $\mathrm{d}v/\mathrm{d}t$ firing is likely but uncontrolled.
+A floating anode-to-gate network -- blocking diode, coupling capacitor, BOD/TVS stack -- turns
+both into a regular gate-triggered turn-on with no auxiliary supply, and can be combined with
+an active command as primary trigger. Firing level and $\mathrm{d}i/\mathrm{d}t$ are coordinated
+with the MOV clamp through $V_{st} \ll V_{\mathrm{MOV}} - V_s$ and
+$(V_{\mathrm{MOV}} - V_s)/L_c$.
+
+% ==========================================================================
+\begin{thebibliography}{9}
+
+\bibitem{ds26n6500}
+Hitachi Energy (formerly ABB Semiconductors), ``Phase Control Thyristor 5STP~26N6500,'' data sheet.
+
+\bibitem{baliga}
+B.~J. Baliga, \emph{Fundamentals of Power Semiconductor Devices}. New York: Springer, 2008,
+ch.~8 (Thyristors).
+
+\bibitem{bodpatent}
+``Protective circuitry for a thyristor,'' U.S. Patent 4\,651\,251 (break-over diode protective firing, Nelson River HVDC precedent).
+
+\bibitem{arrillaga}
+J.~Arrillaga, \emph{High Voltage Direct Current Transmission}, 2nd ed. London: IEE, 1998
+(thyristor valves, protective firing).
+
+\bibitem{dynexpp}
+Dynex Semiconductor, ``Pulsed power thyristors,'' product information, accessed Sept.~2026.
+
+\bibitem{abbsnubber}
+ABB Switzerland Ltd, Semiconductors, ``Design of RC snubbers for phase control applications,''
+Application Note 5SYA~2020.
+
+\end{thebibliography}
+
+\end{document}
