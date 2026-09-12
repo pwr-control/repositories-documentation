@@ -1,0 +1,205 @@
+component crowbar_bidir
+% Bidirectional self-triggered thyristor crowbar (functional)
+%
+% Two antiparallel thyristors T1 (conducts p -> n) and T2 (conducts n -> p),
+% each with its own floating anode-to-gate trigger network, intended as a
+% bypass crowbar across a low-impedance element (a few volts at full load)
+% that may open unexpectedly. See "crowbar_bidir" LaTeX note, Rev. 00.
+%
+% Trigger network of each thyristor (referred to its own cathode):
+%     A --|>|--[Z Varm]-- N --+--------+--------+
+%          D1 arming TVS     |        |        |
+%                           C_g      R_C      BOD (Vst - Varm)
+%                            |        |        |
+%                            |        |       R_s
+%                            +--------+--------+-- R_gs -- G
+%                                                          |
+%                                                   R_GK  ||  D_GK
+%                                                          |
+%                                                          K
+% Because one of the two thyristors is always forward biased in service
+% (at the few volts of the element), the network is fed through an arming
+% threshold Varm: below Varm no gate current flows, whatever the dv/dt.
+% Static firing level (BOD) = Vst, dynamic path (C_g) active above Varm.
+%
+% State machine (event variables on, dir, armed, latched, mode):
+%   trigger source detected  -> armed = 1, dir = +-1, t_trig = time
+%   after the turn-on delay  -> on = 1 if the polarity is still dir*v > 0,
+%                               otherwise the arming is cancelled
+%   current latched          -> dir*i > Il
+%   natural turn-off         -> dir*i < Ih after latching
+% Trigger sources, priority order, reported as |M| (sign of M = dir):
+%   1 static (BOD)   2 dynamic (C_g)   3 external command G > 0.5
+%   4 intrinsic dv/dt (dv/dt > dvdt_crit, v > Vmin)   5 forward breakover
+% |M| = 4 or 5 means the intrinsic mechanism preceded the gate: the device
+% would turn on uncontrolled -> add snubber capacitance / lower Vst.
+%
+% On-state: v = dir*Vt0 + rT*i (PWL), off-state conductance Goff both ways.
+% Observables: i2t (integral of i^2), Ed (energy dissipated in the device).
+% Not modelled: plasma spreading and di/dt limits, reverse recovery, tq,
+% thermal feedback. Place the di/dt reactor, the RC snubber and the MOV
+% externally, as in the note.
+%
+% Ports: p (left), n (right), G external fire command (bottom, dimensionless,
+% connect a PS Constant 0 if unused), M signed state code (top).
+% Defaults: Hitachi Energy 5STP 26N6500 and the network of the note.
+
+  nodes
+    p = foundation.electrical.electrical; % p:left
+    n = foundation.electrical.electrical; % n:right
+  end
+
+  inputs
+    G = {0, '1'}; % G:bottom  external fire command (> 0.5 fires the forward-biased thyristor)
+  end
+
+  outputs
+    M = {0, '1'}; % M:top  signed state code: 0 off, sign = direction, |M| = trigger source
+  end
+
+  parameters
+    % --- on-state / blocking ---
+    Vt0   = {1.12,    'V'    }; % Threshold voltage V_T0
+    rT    = {0.29e-3, 'Ohm'  }; % Slope resistance r_T
+    Goff  = {1e-6,    '1/Ohm'}; % Off-state conductance (both polarities)
+    Il    = {2,       'A'    }; % Latching current I_L
+    Ih    = {1,       'A'    }; % Holding current I_H
+    tgd   = {2e-6,    's'    }; % Turn-on delay t_gd (trigger to conduction)
+    % --- gate ---
+    Igt   = {0.4,     'A'    }; % Gate trigger current I_GT
+    Vgt   = {3,       'V'    }; % Gate trigger voltage V_GT
+    Rgk   = {10,      'Ohm'  }; % Gate-cathode resistor R_GK
+    % --- trigger network (identical for T1 and T2) ---
+    Varm  = {100,     'V'    }; % Arming threshold V_arm (series TVS/Zener after D1)
+    Vst   = {400,     'V'    }; % Static firing level V_st (anode-cathode voltage)
+    Cg    = {1e-9,    'F'    }; % Coupling capacitor C_g (dynamic path)
+    Rc    = {22e3,    'Ohm'  }; % Reset resistor R_C
+    Rs    = {100,     'Ohm'  }; % Static path series resistor R_s
+    Rser  = {11,      'Ohm'  }; % Series resistance in the loop (D1, TVS, R_gs)
+    Gd1off= {1e-9,    '1/Ohm'}; % D1 off-state conductance
+    % --- intrinsic self-firing (observation) ---
+    dvdt_crit = {1e9, 'V/s'  }; % Intrinsic critical dv/dt
+    Vmin  = {50,      'V'    }; % Minimum forward voltage for intrinsic dv/dt firing
+    Vbo   = {7800,    'V'    }; % Forward breakover voltage V_BO
+    tau_f = {50e-9,   's'    }; % dv/dt sensing time constant
+  end
+
+  parameters (Access = private)
+    Vbod = Vst - Varm;          % BOD threshold referred to node N
+  end
+
+  variables
+    it  = {0, 'A'};   % Terminal current p -> n (device + networks)
+    i   = {0, 'A'};   % Main device current, positive p -> n
+    v   = {0, 'V'};   % Voltage p - n
+    vC1 = {0, 'V'};   % Coupling capacitor voltage, network of T1
+    vC2 = {0, 'V'};   % Coupling capacitor voltage, network of T2
+    vf  = {0, 'V'};   % Filtered v for dv/dt estimate
+    i2t = {value = {0, 'A^2*s'}, priority = priority.high}; % Integral of i^2
+    Ed  = {value = {0, 'J'},     priority = priority.high}; % Energy dissipated in the device
+  end
+
+  variables (Event = true)
+    on      = 0;          % 1 = conducting
+    dir     = 0;          % +1 = T1 (p -> n), -1 = T2 (n -> p)
+    armed   = 0;          % 1 = triggered, waiting for tgd
+    latched = 0;          % 1 = current has exceeded Il since turn-on
+    mode    = 0;          % trigger source code
+    t_trig  = {0, 's'};   % time of the last trigger
+  end
+
+  intermediates (ExternalAccess = observe)
+    % forward voltage seen by each thyristor
+    v1 = v;
+    v2 = -v;
+    % network currents delivered to the gate node (D1 + arming TVS)
+    i_d1 = if (v1 - Varm - vC1) > 0, (v1 - Varm - vC1)/Rser else (v1 - Varm - vC1)*Gd1off end;
+    i_d2 = if (v2 - Varm - vC2) > 0, (v2 - Varm - vC2)/Rser else (v2 - Varm - vC2)*Gd1off end;
+    % static path (BOD) currents, shunt C_g above Vbod
+    i_st1 = if (vC1 - Vbod) > 0, (vC1 - Vbod)/Rs else {0, 'A'} end;
+    i_st2 = if (vC2 - Vbod) > 0, (vC2 - Vbod)/Rs else {0, 'A'} end;
+    % gate-cathode voltages (smooth clamp) and junction currents
+    vgk1 = Vgt*tanh(i_d1*Rgk/Vgt);
+    vgk2 = Vgt*tanh(i_d2*Rgk/Vgt);
+    i_j1 = i_d1 - vgk1/Rgk;
+    i_j2 = i_d2 - vgk2/Rgk;
+    % estimated dv/dt of v
+    dvdt = (v - vf)/tau_f;
+  end
+
+  branches
+    it : p.i -> n.i;
+  end
+
+  equations
+    assert(Vst > Varm, 'Vst must be larger than Varm');
+    assert(tgd > 0,    'tgd must be positive');
+    v  == p.v - n.v;
+    it == i + i_d1 - i_d2;
+    Cg*der(vC1)   == i_d1 - vC1/Rc - i_st1;
+    Cg*der(vC2)   == i_d2 - vC2/Rc - i_st2;
+    tau_f*der(vf) == v - vf;
+    der(i2t) == i*i;
+    der(Ed)  == v*i;
+    M  == on*dir*mode;
+    if on > 0.5
+      v == dir*Vt0 + rT*i;
+    else
+      i == v*Goff;
+    end
+  end
+
+  equations (Initial = true)
+    vC1 == 0.5*(( v - Varm) + abs( v - Varm));   % = max(v - Varm, 0)
+    vC2 == 0.5*((-v - Varm) + abs(-v - Varm));
+    vf  == v;
+  end
+
+  events
+    % ---------- T1 trigger sources (v > 0) ----------
+    when edge((i_j1 >= Igt) && (i_st1 > 0) && (v > 0) && (on < 0.5) && (armed < 0.5))
+      armed = 1; t_trig = time; dir = 1; mode = 1;      % static (BOD)
+    elsewhen edge((i_j1 >= Igt) && (v > 0) && (on < 0.5) && (armed < 0.5))
+      armed = 1; t_trig = time; dir = 1; mode = 2;      % dynamic (C_g)
+    elsewhen edge((G > 0.5) && (v > 0) && (on < 0.5) && (armed < 0.5))
+      armed = 1; t_trig = time; dir = 1; mode = 3;      % external command
+    elsewhen edge((dvdt > dvdt_crit) && (v > Vmin) && (on < 0.5) && (armed < 0.5))
+      armed = 1; t_trig = time; dir = 1; mode = 4;      % intrinsic dv/dt
+    elsewhen edge((v > Vbo) && (on < 0.5) && (armed < 0.5))
+      armed = 1; t_trig = time; dir = 1; mode = 5;      % forward breakover
+    % ---------- T2 trigger sources (v < 0) ----------
+    elsewhen edge((i_j2 >= Igt) && (i_st2 > 0) && (v < 0) && (on < 0.5) && (armed < 0.5))
+      armed = 1; t_trig = time; dir = -1; mode = 1;
+    elsewhen edge((i_j2 >= Igt) && (v < 0) && (on < 0.5) && (armed < 0.5))
+      armed = 1; t_trig = time; dir = -1; mode = 2;
+    elsewhen edge((G > 0.5) && (v < 0) && (on < 0.5) && (armed < 0.5))
+      armed = 1; t_trig = time; dir = -1; mode = 3;
+    elsewhen edge((-dvdt > dvdt_crit) && (-v > Vmin) && (on < 0.5) && (armed < 0.5))
+      armed = 1; t_trig = time; dir = -1; mode = 4;
+    elsewhen edge((-v > Vbo) && (on < 0.5) && (armed < 0.5))
+      armed = 1; t_trig = time; dir = -1; mode = 5;
+    % ---------- delayed turn-on / cancellation ----------
+    elsewhen edge((armed > 0.5) && (time >= t_trig + tgd) && (dir*v > 0))
+      on = 1; armed = 0; latched = 0;
+    elsewhen edge((armed > 0.5) && (time >= t_trig + tgd) && (dir*v <= 0))
+      armed = 0; mode = 0;                              % polarity reversed during tgd
+    % ---------- latching and natural turn-off ----------
+    elsewhen edge((dir*i > Il) && (on > 0.5) && (latched < 0.5))
+      latched = 1;
+    elsewhen edge((dir*i < Ih) && (latched > 0.5) && (on > 0.5))
+      on = 0; latched = 0; mode = 0;
+    end
+  end
+
+  annotations
+    p : Side = left;
+    n : Side = right;
+    G : Side = bottom;
+    M : Side = top;
+    UILayout = [UIGroup("On-state and blocking", Vt0, rT, Goff, Il, Ih, tgd)
+                UIGroup("Gate", Igt, Vgt, Rgk)
+                UIGroup("Trigger network", Varm, Vst, Cg, Rc, Rs, Rser, Gd1off)
+                UIGroup("Intrinsic self-firing", dvdt_crit, Vmin, Vbo, tau_f)];
+  end
+
+end
