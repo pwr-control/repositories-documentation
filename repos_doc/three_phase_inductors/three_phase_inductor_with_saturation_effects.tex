@@ -1,148 +1,57 @@
 %\documentclass[11pt,a4paper]{article}
 \documentclass[11pt,a4paper]{scrartcl}
 %\documentclass[11pt,a4paper,oneside]{book}
-\usepackage[british,UKenglish,USenglish,english,american]{babel}
-%\usepackage[a4paper, total={16cm, 23cm}]{geometry}
-\usepackage[tmargin = 1.25in,bmargin = 1.25in,lmargin = 0.75in,rmargin = 0.75in]{geometry}
-\usepackage{tikz}
-\usepackage{graphicx}
-\usepackage{pgfplots}
-\pgfplotsset{width=12cm,compat=1.9}
-\usepackage{setspace}
-\usepackage{chemmacros}
-\usepackage{chemfig}
-%\usepackage{ghsystem}
-\usechemmodule{redox}
-%\usepackage{chemnum}
-%\usepackage{bohr}
-%\usepackage{elements}
-%\usepackage{endiagram}
-%\usepackage{modiagram}
-%\usepackage{chemgreek}
-%\usepackage{mhchem}
-\usepackage{esint}
-\usepackage{tabularray}
+\input{../../AAA_template_latex_settings/settings}
 
-\usepackage{makeidx}
-\usepackage{epstopdf}
+% =============================================================
+%  DOCUMENT METADATA
+% =============================================================
 
-\usepackage{amssymb}
-\usepackage{mathrsfs}
-%\usepackage{minted}
-\usepackage{bm}
-\usepackage{amsmath}
-\usepackage{enumitem}
-\usepackage[english]{varioref}
-\usepackage[english]{babel}
-\usepackage{lipsum}
-\usepackage{fancyhdr}
-\pagestyle{fancy} 
-\usepackage{float}
-\usepackage{empheq}
-\usepackage[framemethod=tikz]{mdframed}
-\usepackage{epstopdf}
-\numberwithin{equation}{section}
-\usepackage{eso-pic}
-\usepackage{calc}
-\usepackage{nccmath}
-\usepackage{caption}
-\usepackage{subcaption}
-\usepackage{gensymb}
-\usepackage{amsfonts,amsthm,epsfig,epstopdf,titling,url,array}
-\usepackage{siunitx}
-\sisetup{input-digits = 0123456789\pi}
-\usepackage[symbol]{footmisc}
-\usepackage{xcolor}
-\usepackage{multicol}
-\usepackage{boondox-cal}
-\DeclareSIUnit\atm{atm}
-\setcounter{secnumdepth}{3}
-\setcounter{tocdepth}{3}
-\usepackage{booktabs}
-\usepackage{blindtext}
-\usepackage{changepage}
+\newcommand{\DocCategory}{Technical Research Report}
+\newcommand{\DocField}{Power Electronics and Control Systems}
 
-% \usepackage{draftwatermark}
-% \SetWatermarkText{DRAFT}
-% \SetWatermarkScale{5}
-
-\DeclareSIUnit\atm{atm}
-
-\pagestyle{fancy} 
-\fancypagestyle{firstpage}{
-\rhead{\includegraphics[height=0.75cm]{figures/pwr-control_logo_doc.png}}
+\newcommand{\DocTitle}{%
+	{\fontsize{20}{24}\selectfont\bfseries Three Phase Inductors:} \\[16pt]
+	{\fontsize{16}{20}\selectfont\bfseries mathematical model, construction and saturation effects.}
 }
-\fancyhead[L]{\small\slshape\nouppercase{\leftmark}}
-\chead{}
-\rhead{\includegraphics[height=0.75cm]{figures/pwr-control_logo_doc.png}}
-\lfoot{\textit{}}
-\cfoot{-\ \thepage\ -}
-\rfoot{\textit{}}
 
-\DeclareMathOperator{\rank}{rank}
-\DeclareMathOperator{\atantwo}{atan2}
-\DeclareMathOperator{\arctantwo}{arctan2}
-\DeclareMathOperator{\spn}{span}
-
-\renewcommand{\headrulewidth}{0.4pt}
-\renewcommand{\footrulewidth}{0.4pt}
-\newcommand{\abs}[1]{\left|#1\right|}
-\definecolor{mycolor1}{rgb}{0.97, 0.97, 0.97}
-\definecolor{mycolor2}{rgb}{0.97, 0.97, 0.97}
-\definecolor{tableShade}{gray}{0.9}
-\newcommand{\sign}{\text{sign}}
-\newcommand{\centered}[1]{\begin{tabular}{@{}l@{}} #1 \end{tabular}}
-\theoremstyle{it}
-\newtheorem{defn}{Definition}[section]
-\newtheorem{assumption}{Assumption}[section]
-\newtheorem{thm}{Theorem}[section]
-\newtheorem{lemma}{Lemma}[section]
-\newtheorem{corollary}{Corollary}[section]
-\theoremstyle{definition}
-%\theoremstyle{it}
-\newtheorem{example}{Example}[section]
-\let\eqrefn\eqref
-\renewcommand{\eqref}[1]{Eq.~(\ref{#1})}
-
-\newenvironment{myitemize_1}
-{ \begin{itemize}[topsep=4pt]
-		\setlength{\topsep}{2pt}		
-		\setlength{\itemsep}{2pt}
-		\setlength{\parskip}{2pt}
-		\setlength{\parsep}{2pt}     }
-	{ \end{itemize}                  }
-
-
-\newmdenv[innerlinewidth=0.5pt, roundcorner=4pt,backgroundcolor=mycolor2, 
-linecolor=mycolor1,innerleftmargin=6pt,
-innerrightmargin=6pt,innertopmargin=6pt,innerbottommargin=6pt]{mybox}
-
-\title{\textbf{ 
-	\begin{LARGE}
-		Three Phase Inductors
-	\end{LARGE} \\[24pt]
-	\begin{Large}
-		Mathematical Model and Construction
-	\end{Large}}
+\newcommand{\DocSubtitle}{%
+	Differential and common mode inductance of three-phase reactors.
 }
-\author{\textbf{Davide Bagnara}}
 
+\newcommand{\DocAuthor}{Davide Bagnara}
+\newcommand{\DocRevision}{00}
+\newcommand{\DocDate}{September 2024}
+
+\newcommand{\DocAbstract}{%
+	A three-phase inductor is not fully described by a single inductance value: the way the three windings share the magnetic circuit decides how the component reacts to differential mode currents and to common mode currents, and the two behaviours may differ by orders of magnitude. This note derives the corresponding model. Starting from the voltage equations of three coupled windings, written in terms of the self inductance $L_a$ and of the mutual inductance $L_m$, a transformation into phase-to-phase and zero sequence quantities decouples the system into a differential mode (positive sequence) inductance $L_p = L_a + L_m$ and a common mode (zero sequence) inductance $L_0 = L_a - 2L_m$, together with the relations which convert one set of parameters into the other. The three usual constructions are then read through the model: the four limb core, which carries both modes, the three limb core, which is essentially a differential mode reactor whose residual common mode inductance is the leakage, and the single limb or toroidal core used for common mode chokes. The last section extends the model to saturation, making $L_a$ and $L_m$ depend on the phase currents through a saturation factor which degrades them down to their air values $L_{a0}$ and $L_{m0}$, the condition reached for instance during a short circuit, and gives the resulting current dependent inductance matrix.
+}
+
+% Righe della revision history: Rev. & Date & Description & Authors \\
+\newcommand{\RevisionHistory}{%
+	00 & September 2024 & First issue. & \DocAuthor \\
+}
+
+% Metadati in fondo al frontespizio
+\newcommand{\MetaLabelA}{Project Repository}
+\newcommand{\MetaValueAUrl}{https://github.com/pwr-control/modelization-and-control.git}
+\newcommand{\MetaValueALabel}{modelization-and-control.git}
+
+\newcommand{\MetaLabelB}{Framework}
+\newcommand{\MetaValueB}{MATLAB/Simulink/Simscape}
+
+% =============================================================
+%  DOCUMENTO
+% =============================================================
 \begin{document}
-	\thispagestyle{empty}
-	\begin{mybox}
-		\maketitle
-		\vspace{150mm}
-	\end{mybox}
-%	\let\clearpage\relax
-	\newpage
-	\tableofcontents%
-	\listoffigures%
+	\input{../../AAA_template_latex_settings/titlepage}
+	\tableofcontents
+	\listoffigures
 	\listoftables
-%	\let\clearpage\LaTeXStandardClearpage
 	\newpage
-	
+
 \begin{onehalfspace}
-	
+
 	\pagebreak
 	\section{Three phase inductance: mathematical model}
 	\noindent\textbf{Three-phase inductance with four limbs}:

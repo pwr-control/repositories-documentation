@@ -4,7 +4,7 @@
 \input{../../AAA_template_latex_settings/settings}
 
 % =============================================================
-%  
+%  DOCUMENT METADATA
 % =============================================================
 
 \newcommand{\DocCategory}{Technical Research Report}
@@ -16,14 +16,15 @@
 }
 
 \newcommand{\DocSubtitle}{%
-	Case studies on moving coil actuator. 
+	Case studies on moving coil actuator.
 }
 
 \newcommand{\DocAuthor}{Davide Bagnara}
-\newcommand{\DocDate}{October 2022}
+\newcommand{\DocRevision}{01}
+\newcommand{\DocDate}{September 2026}
 
 \newcommand{\DocAbstract}{%
-	Moving coil modelization control results in a very prepedeutic physical system for learing. Follows modelization and control sytstem design. 
+	The moving coil actuator is one of the simplest electromechanical energy converters, yet it is governed by the same electromagnetic laws that describe any rotating machine: for this reason it is an excellent case study to introduce both the modelization technique and the design of the associated control system. This document derives the model of a single degree of freedom moving coil in two complementary ways. The first one is a field theory derivation, in which Faraday's law is applied to a circuit whose contour moves inside a stationary magnetic field, and the motional term $\vec{v}\times\vec{B}$ is recovered from the Galilean invariance of the force acting on the charges. The second one is a lumped parameter derivation, which leads to a third order state space model in position, speed and current. The model is then used as the plant of a complete digital control design: a discrete time state feedback with integral action, obtained through the Ackermann's formula, together with a full state observer and, in a second step, an extended observer which also estimates the load force in order to preserve the tracking accuracy when the friction of the rails is not modelized. Simulation results compare the two observer structures under different load conditions.
 }
 
 % Tre righe metadati in fondo (label small caps + valore)
@@ -48,70 +49,91 @@
 		{\Large\scshape \DocCategory}\\[8pt]
 		{\large\scshape \DocField}
 	\end{center}
-	
-	\vspace{36pt}
+
+	\vspace{30pt}
 	\noindent\rule{\linewidth}{0.8pt}
-	
+
 	% ---- Titolo ----
-	%\vspace{28pt}
 	\begin{center}
 		\DocTitle
 	\end{center}
-	
+
 	\vspace{4pt}
 	\noindent\rule{\linewidth}{2.2pt}
-	
+
 	% ---- Sottotitolo ----
-	%\vspace{14pt}
 	\begin{center}
 		\begin{onehalfspace}
 			{\large\itshape \DocSubtitle}
 		\end{onehalfspace}
 	\end{center}
-	
-	% ---- Spazio prima di Autore/Data ----
-	\vspace{36pt}
-	
-	% ---- Author / Date su due colonne ----
-	\begin{minipage}{0.92\linewidth}
-		\noindent
-		\begin{minipage}[t]{0.48\linewidth}
-			\textbf{Author:}\\[2pt]
-			\DocAuthor
-		\end{minipage}%
-		\hfill
-		\begin{minipage}[t]{0.48\linewidth}
-			\raggedleft
-			\textbf{Date:}\\[2pt]
-			\DocDate
-		\end{minipage}
+
+	% ---- Spazio prima di Autori/Revisione/Data ----
+	\vspace{30pt}
+
+	% ---- Authors / Revision / Date su tre colonne ----
+	\noindent
+	\begin{minipage}[t]{0.44\linewidth}
+		\textbf{Authors:}\\[2pt]
+		\DocAuthor
+	\end{minipage}%
+	\hfill
+	\begin{minipage}[t]{0.22\linewidth}
+		\centering
+		\textbf{Revision:}\\[2pt]
+		\DocRevision
+	\end{minipage}%
+	\hfill
+	\begin{minipage}[t]{0.30\linewidth}
+		\raggedleft
+		\textbf{Date:}\\[2pt]
+		\DocDate
 	\end{minipage}
+
+	\vspace{10pt}
+	\noindent\rule{\linewidth}{0.8pt}
+
 	% ---- Spazio prima dell'abstract ----
-	\vspace{36pt}
-	
+	\vspace{24pt}
+
 	% ---- Abstract indentato ----
 	\begin{center}
-		\begin{minipage}{0.85\linewidth}
-			%    \small
-			\footnotesize 
+		\begin{minipage}{0.88\linewidth}
+			\footnotesize
 			\begin{onehalfspace}
 				\textbf{Abstract:} \DocAbstract
 			\end{onehalfspace}
 		\end{minipage}
 	\end{center}
-	
-	% ---- Spazio prima dei metadati ----
+
 	\vfill
-	
+
+	% ---- Revision history ----
+	\begin{center}
+		\begin{minipage}{0.96\linewidth}
+			\centering
+			{\footnotesize\scshape Revision history}\\[6pt]
+			{\footnotesize
+				\begin{tabular}{@{}cl>{\raggedright\arraybackslash}p{0.38\linewidth}>{\raggedright\arraybackslash}p{0.26\linewidth}@{}}
+					\toprule
+					\textbf{Rev.} & \textbf{Date} & \textbf{Description} & \textbf{Authors} \\
+					\midrule
+					00 & October 2022   & First issue.                                              & \DocAuthor \\
+					01 & September 2026 & Document restyled, abstract and revision history added.   & \DocAuthor \\
+					\bottomrule
+				\end{tabular}}
+		\end{minipage}
+	\end{center}
+
+	\vspace{18pt}
+
 	% ---- Metadati in fondo ----
 	\noindent
 	\begin{tabular}{@{} r @{\quad} l @{}}
-		%		\textsc{\MetaLabelA:} & {\url{\MetaValueA}} \\[3pt]
 		\textsc{\MetaLabelA:} & {\href{\MetaValueAUrl}{\MetaValueALabel}} \\[3pt]
 		\textsc{\MetaLabelB:} & {\MetaValueB}       \\[3pt]
-		%		\textsc{\small\MetaLabelC:} & {\small\MetaValueC}       \\
 	\end{tabular}
-	
+
 	% =============================================================
 	%  Fine frontespizio
 	% =============================================================
@@ -119,12 +141,12 @@
 	\pagenumbering{arabic}
 	\setcounter{page}{1}
 	\tableofcontents
-	\listoffigures	
+	\listoffigures
 	\listoftables
 	\newpage
-	
+
 	\begin{onehalfspace}
-	
+
 	\pagebreak
 \section{Moving Coil: mathematical model}\label{moving_coil_jackson_section}
 Here we want to represent the moving coil model using a different approach, we would 

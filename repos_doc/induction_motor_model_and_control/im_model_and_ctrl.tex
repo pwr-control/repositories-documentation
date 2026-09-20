@@ -1,106 +1,18 @@
-\documentclass[11pt,a4paper,oneside]{book}
-\usepackage[british,UKenglish,USenglish,english,american]{babel}
-%\usepackage[a4paper, total={16cm, 23cm}]{geometry}
-\usepackage[tmargin = 1.25in,bmargin = 1.25in,lmargin = 1in,rmargin = 
-1in]{geometry}
-\usepackage{tikz}
-\usepackage{graphicx}
-\usepackage{pgfplots}
-\pgfplotsset{width=12cm,compat=1.9}
+%\documentclass[11pt,a4paper]{article}
+\documentclass[12pt,a4paper]{scrartcl}
+%\documentclass[11pt,a4paper,oneside]{book}
+\input{../../AAA_template_latex_settings/settings}
 
-\usepackage{tabularray}
-
-\usepackage{makeidx}
-\usepackage{epstopdf}
-
-\usepackage{amssymb}
-\usepackage{mathrsfs}
-
-\usepackage{bm}
-\usepackage{amsmath}
-\usepackage{enumitem}
-\usepackage[english]{varioref}
-\usepackage[english]{babel}
-\usepackage{lipsum}
-\usepackage{fancyhdr}
-\pagestyle{fancy} 
-\usepackage{float}
-\usepackage{empheq}
-\usepackage[framemethod=tikz]{mdframed}
-\usepackage{epstopdf}
-\numberwithin{equation}{section}
-\usepackage{eso-pic}
-\usepackage{calc}
-\usepackage{nccmath}
-\usepackage{caption}
-\usepackage{subcaption}
-\usepackage{gensymb}
-\usepackage{amsfonts,amsthm,epsfig,epstopdf,titling,url,array}
-\usepackage{siunitx}
-\sisetup{input-digits = 0123456789\pi}
-\usepackage[symbol]{footmisc}
-\usepackage{xcolor}
-\usepackage{multicol}
-\usepackage{boondox-cal}
-\DeclareSIUnit\atm{atm}
-\setcounter{secnumdepth}{3}
-\setcounter{tocdepth}{3}
-\usepackage{booktabs}
-\usepackage{blindtext}
-\usepackage{setspace}
-
-
-\DeclareSIUnit\atm{atm}
-
-\pagestyle{fancy} 
-\fancypagestyle{firstpage}{
-	\rhead{\begin{picture}(0,0) 
-			\put(-30,0){\includegraphics[width=1cm]{figures/MCI_4C_bw.eps}} 
-	\end{picture}}
-}
-\fancyhead[L]{\slshape\nouppercase{\leftmark}}
-\chead{}
-%\rhead{\begin{picture}(0,0) 
-%		\put(-30,0){\includegraphics[width=1cm]{figures/MCI_4C_bw.eps}} \end{picture}}
-\rhead{\includegraphics[height=0.75cm]{figures/pwr-control_logo_doc.png}}
-\lfoot{\textit{}}
-\cfoot{-\ \thepage\ -}
-\rfoot{\textit{}}
-
-\DeclareMathOperator{\rank}{rank}
-\DeclareMathOperator{\atantwo}{atan2}
+% =============================================================
+%  LOCAL SETTINGS (not included in the shared template)
+% =============================================================
 
 \def\changemargin#1#2{\list{}{\rightmargin#2\leftmargin#1}\item[]}
 \let\endchangemargin=\endlist
 
-\renewcommand{\headrulewidth}{0.4pt}
-\renewcommand{\footrulewidth}{0.4pt}
-\newcommand{\abs}[1]{\left|#1\right|}
-\definecolor{mycolor1}{rgb}{0.97, 0.97, 0.97}
-\definecolor{mycolor2}{rgb}{0.97, 0.97, 0.97}
-\definecolor{tableShade}{gray}{0.9}
-\newcommand{\sign}{\text{sign}}
-\newcommand{\centered}[1]{\begin{tabular}{@{}l@{}} #1 \end{tabular}}
-\theoremstyle{it}
-\newtheorem{defn}{Definition}[chapter]
-\newtheorem{assumption}{Assumption}[chapter]
-\newtheorem{thm}{Theorem}[chapter]
-\newtheorem{lemma}{Lemma}[chapter]
-\theoremstyle{definition}
-%\theoremstyle{it}
-\newtheorem{example}{Example}[section]
-
-\newenvironment{myitemize_1}
-{ \begin{itemize}[topsep=0pt]
-		\setlength{\topsep}{2pt}		
-		\setlength{\itemsep}{2pt}
-		\setlength{\parskip}{2pt}
-		\setlength{\parsep}{2pt}     }
-	{ \end{itemize}                  }
-
 \newenvironment{myitemize_2}
 { \begin{itemize}[topsep=2pt]
-		\setlength{\topsep}{4pt}		
+		\setlength{\topsep}{4pt}
 		\setlength{\itemsep}{4pt}
 		\setlength{\parskip}{4pt}
 		\setlength{\parsep}{4pt}     }
@@ -114,42 +26,157 @@
 		\setlength{\parsep}{6pt}     }
 	{ \end{itemize}                  }
 
-\newmdenv[innerlinewidth=0.5pt, roundcorner=4pt,backgroundcolor=mycolor2, 
-linecolor=mycolor1,innerleftmargin=6pt,
-innerrightmargin=6pt,innertopmargin=6pt,innerbottommargin=6pt]{mybox}
+% =============================================================
+%  DOCUMENT METADATA
+% =============================================================
 
-\title{\textbf{ 
-		\begin{LARGE}
-			Induction Motor
-		\end{LARGE} \\[24pt]
-		\begin{Large}
-			Modelization and Parameters Estimation
-	\end{Large}}
+\newcommand{\DocCategory}{Technical Research Report}
+\newcommand{\DocField}{Power Electronics and Control Systems}
+
+\newcommand{\DocTitle}{%
+	{\fontsize{20}{24}\selectfont\bfseries Three-Phase Induction Machines:} \\[16pt]
+	{\fontsize{16}{20}\selectfont\bfseries model derivation, parameters estimation, control and Simscape implementation.}
 }
-\author{\textbf{Davide Bagnara}}
 
+\newcommand{\DocSubtitle}{%
+	Derivation of the mathematical model of a symmetrical three-phase induction motor.
+}
+
+\newcommand{\DocAuthor}{Davide Bagnara}
+\newcommand{\DocDate}{May 2021}
+
+\newcommand{\DocAbstract}{%
+	In this document, the symmetrical three-phase induction machine (im) and its rotor-flux oriented control are shown. The machine, implemented into the \textit{Simscape} model, has been presented in machine variables (uvw). The following document will cover either representations $\alpha\beta$ (stationary) and $dq$ (rotating) which are extensively used as model base for control and state observers design. Additional topics like the steady state equivalent circuit, the identification of the machine parameters from the standard factory tests (no-load and blocked-rotor), the rotor flux observer, the effects of a wrong rotor resistance estimation and its online adaptation will be taken into account.
+}
+
+% Tre righe metadati in fondo (label small caps + valore)
+\newcommand{\MetaLabelA}{Project Repository}
+\newcommand{\MetaValueA}{https://github.com/pwr-control/modelization-and-control.git}
+\newcommand{\MetaValueAUrl}{https://github.com/pwr-control/modelization-and-control.git}
+\newcommand{\MetaValueALabel}{modelization-and-control.git}
+
+\newcommand{\MetaLabelB}{Framework}
+\newcommand{\MetaValueB}{MATLAB/Simulink/Simscape}
+
+\newcommand{\MetaLabelC}{Architecture}
+\newcommand{\MetaValueC}{SiC, EiceDRIVER, Customized Power Supplies}
+
+% =============================================================
+%  FRONTESPIZIO
+% =============================================================
 \begin{document}
-	\thispagestyle{firstpage}
-	\begin{mybox}
-		\maketitle
-		\vspace{125mm}
-	\end{mybox}
-	\newpage
-	\tableofcontents
-	\listoffigures	
-	\listoftables
-	\newpage
+\titlepage
+% ---- Intestazione centrata ----
+\begin{center}
+	{\Large\scshape \DocCategory}\\[8pt]
+	{\large\scshape \DocField}
+\end{center}
 
-\onehalfspacing
-%\setstretch{baselinestretch}
-\chapter{Introduction}
+\vspace{36pt}
+\noindent\rule{\linewidth}{0.8pt}
+
+% ---- Titolo ----
+%\vspace{28pt}
+\begin{center}
+	\DocTitle
+\end{center}
+
+\vspace{4pt}
+\noindent\rule{\linewidth}{2.2pt}
+
+% ---- Sottotitolo ----
+%\vspace{14pt}
+\begin{center}
+	\begin{onehalfspace}
+		{\large\itshape \DocSubtitle}
+	\end{onehalfspace}
+\end{center}
+
+% ---- Spazio prima di Autore/Data ----
+\vspace{36pt}
+
+% ---- Author / Date su due colonne ----
+\begin{minipage}{0.92\linewidth}
+	\noindent
+	\begin{minipage}[t]{0.48\linewidth}
+		\textbf{Author:}\\[2pt]
+		\DocAuthor
+	\end{minipage}%
+	\hfill
+	\begin{minipage}[t]{0.48\linewidth}
+		\raggedleft
+		\textbf{Date:}\\[2pt]
+		\DocDate
+	\end{minipage}
+\end{minipage}
+% ---- Spazio prima dell'abstract ----
+\vspace{36pt}
+
+% ---- Abstract indentato ----
+\begin{center}
+	\begin{minipage}{0.85\linewidth}
+		%    \small
+		\footnotesize
+		\begin{onehalfspace}
+			\textbf{Abstract:} \DocAbstract
+		\end{onehalfspace}
+	\end{minipage}
+\end{center}
+
+% ---- Spazio prima dei metadati ----
+\vfill
+
+% ---- Metadati in fondo ----
+\noindent
+\begin{tabular}{@{} r @{\quad} l @{}}
+%		\textsc{\MetaLabelA:} & {\url{\MetaValueA}} \\[3pt]
+		\textsc{\MetaLabelA:} & {\href{\MetaValueAUrl}{\MetaValueALabel}} \\[3pt]
+		\textsc{\MetaLabelB:} & {\MetaValueB}       \\[3pt]
+%		\textsc{\small\MetaLabelC:} & {\small\MetaValueC}       \\
+\end{tabular}
+
+% =============================================================
+%  Fine frontespizio
+% =============================================================
+\newpage
+\pagenumbering{arabic}
+\setcounter{page}{1}
+\tableofcontents
+\listoffigures
+\listoftables
+\newpage
+
+\begin{onehalfspace}
+
+\noindent The following arguments will be presented:
+\begin{itemize}
+	\item[$-$] \textbf{Induction machine model derivation in machine variables.}
+	\item[$-$] \textbf{Steady state analysis and equivalent circuit.}
+	\item[$-$] \textbf{Parameters identification from standard factory tests.}
+	\begin{itemize}
+		\item[$-$] No-load test.
+		\item[$-$] Blocked-rotor test.
+		\item[$-$] Rotor resistance from the nominal load test.
+	\end{itemize}
+	\item[$-$] \textbf{Reference-frame theory and dynamical model of the machine.}
+	\begin{itemize}
+		\item[$-$] Stationary ($\alpha\beta$) representation.
+		\item[$-$] Rotating ($dq$, $xy$) representations.
+	\end{itemize}
+	\item[$-$] \textbf{Rotor flux observer and field oriented control.}
+	\item[$-$] \textbf{Effects of a wrong rotor resistance estimation.}
+	\item[$-$] \textbf{Online rotor resistance estimation.}
+	\item[$-$] \textbf{Model parameters setting and model output variables.}
+\end{itemize}
+
+\section{Introduction}
 The following document concerns the modelization and parameters calculation of symmetric three phase induction motors. The document starts with a description of the three phase induction motor model and proceed exploring the way how to calculate the fundamental parameters, which describe the properties of the machine, from standard factory tests.
 
 After the exploring of the electrical machine from machine variables ($uvw$) the document introduce the use of the $\alpha\beta$ representation. This representation plays a fundamental role when a control system has to be designed. The natural extension of the $\alpha\beta$ representation, which is basically a vector representation from a fixed reference frame, is the so-called $dq$ representation where the vector description is taken from a generic rotating reference frame.  Starting from the model of the induction motor derived respect a generic reference frame, particular rotating reference frame may be adopted in order to hide or to highlight different properties.
 
 The document proceed exploring the effects of wrong parameters estimation (in particular the rotor resistance $R_r$) and terms describing the \textit{Simscape} model developed from this document. 
 
-\section{Nomenclature}
+\subsection{Nomenclature}
 The following nomenclature and notation is adopted along the document:
 \begin{changemargin}{0.5cm}{3cm} 
 \begin{myitemize_2}
@@ -177,8 +204,8 @@ The following nomenclature and notation is adopted along the document:
 
 
 
-\chapter{Symmetrical Induction Machines}
-\section{Voltage equations in machine variables}\label{voltage_equations_in_machine_variables}
+\section{Symmetrical Induction Machines}
+\subsection{Voltage equations in machine variables}\label{voltage_equations_in_machine_variables}
 The voltage equations in machine variables may be expressed as follows
 \begin{flalign}
 	\mathbf{u}_{uvw}^s &= \mathbf{R}_s\mathbf{i}_{uvw}^s + \frac{d}{dt}\mathbf{\psi}_{uvw}^s \label{im_krause_eq1}\\[6pt]
@@ -220,7 +247,7 @@ The voltage equations expressed in terms of machine variables referred to the st
 	\mathbf{u}_{uvw}^r &= \mathbf{R}_r\mathbf{i}_{uvw}^r + \frac{d}{dt}\Big(\mathbf{L}_r\mathbf{i}_{uvw}^r\Big) + \frac{d}{dt}\Big[\big(\mathbf{L}_{sr}\big)^T\mathbf{i}_{uvw}^s\Big] \label{im_krause_eq9}
 \end{flalign}
 
-\section{Torque equation in machine variables}
+\subsection{Torque equation in machine variables}
 The energy stored in the coupling field may be written as follows
 \begin{flalign}
 	W_f = \frac{1}{2}\big(\mathbf{i}_{uvw}^s\big)^T\mathbf{L}_s\mathbf{i}_{uvw}^s + \big(\mathbf{i}_{uvw}^s\big)^T\mathbf{L}_{sr}\mathbf{i}_{uvw}^r + \frac{1}{2}\big(\mathbf{i}_{uvw}^r\big)^T\mathbf{L}_r\mathbf{i}_{uvw}^r \label{im_krause_eq10}
@@ -267,9 +294,9 @@ The torque and speed are related by the equation
 where $J$ is the inertia of the rotor and in some cases the connected load, $\tau_l$ is the load torque.
 
 
-\chapter{Steady State Analysis of the Induction Motor}
+\section{Steady State Analysis of the Induction Motor}
 
-\section{Equivalent Circuit}
+\subsection{Equivalent Circuit}
 Let us assume that the rotor is turning at the steady speed of $n$ [\SI{}{\per\minute}] in the same direction as the rotating stator field. Let the synchronous speed of the stator field be $n_s$ [\SI{}{\per\minute}]. The difference between synchronous speed and the rotor speed is the slip $n_s-n$, and may be used to define the slip factor. The slip factor is defined as as slip as fraction of the synchronous speed, namely
 \begin{equation} \label{eq1}
 	s=\frac{n_s - n}{n_s}
@@ -393,7 +420,7 @@ The electromechanical torque $T_{mech}$ corresponding to the power $P_{mech}$ ma
 	T_{mech} = \left(\frac{p}{2\omega_e} \right) q I_{2}^2 \left( \frac{R_r}{s} \right)
 \end{equation} 
 
-\chapter{Induction Motor Parameter Calculation}
+\section{Induction Motor Parameter Calculation}
 The equivalent circuit parameters needed for computing the performance of the poly-phase induction motor under load may be obtained from the results of a no-load test, a blocked-rotor test and measurements of the dc resistances of the stator windings. For a complete determination of the parameters, both reactive power $Q_{nl}$, $Q_{br}$ and active power $P_{nl}$, $P_{br}$ shall be measured, but often these information are available in partial way and additional information are necessary. The nominal load test is in general very useful to complete the calculation of the equivalent circuit, in fact this test reports clearly the correlation between nominal torque and nominal slip which is the fundamental parameter to calculate the rotor resistance by the mean of the equivalent circuit. Thus, the following tests may be assumed necessary to calculate the parameters of the equivalent electrical circuit of the induction motor. 
 \begin{changemargin}{0.5cm}{3cm} 
 	\begin{myitemize_2}
@@ -404,7 +431,7 @@ The equivalent circuit parameters needed for computing the performance of the po
 	\end{myitemize_2}
 \end{changemargin}
 
-\section{No-load test}
+\subsection{No-load test}
 Noting that the no-load power factor is very small (i.e. $Q_{nl} \gg P_{nl}$) and hence $R_s \ll (X_{d1}+X_m)$, the no-load reactance may often be approximated to (see also Figure~\ref{no_load_test})
 \begin{equation} \label{eq18}
 	X_{nl} \approx \frac{V_{1,nl}}{I_{1,nl}}
@@ -419,7 +446,7 @@ That means by the knowledge of the no-load test, the magnetization current and t
 \end{figure}
 
 
-\section{Blocked-rotor test}
+\subsection{Blocked-rotor test}
 Blocked-rotor test is used to calculate the $L_{d2}$ leakage inductance even if, theoretically, may be used to calculate the rotor resistance $R_r$. 
 In the following we will show the complete calculation of the parameters using the locked-rotor test. After that,  the nominal load test will be used to finally correct and identify the rotor resistance, in fact, the effective slip at nominal load gives the correct information for the calculation of the motor torque, namely, of the rotor resistance. The value of the actual slip and the value of the actual torque are strictly related to the value of the rotor resistance.
 \begin{figure}[H]
@@ -486,7 +513,7 @@ The performance of the motor is affected relatively little by the way in which t
 \end{equation}
 
 
-\subsection{Rotor resistance from steady state nominal load test}
+\subsubsection{Rotor resistance from steady state nominal load test}
 The calculation of the rotor resistance from steady state nominal load condition is performed via equivalent circuit, by the measure of the following test data:
 \begin{itemize}
 	\item voltage input;
@@ -497,10 +524,10 @@ The calculation of the rotor resistance from steady state nominal load condition
 \end{itemize}
 From equivalent circuit of the induction motor, where all data are already calculated from the dc-measure of the stator winding, no-load test and locked-rotor test, the $I_2$ current is calculated with a preliminary underestimate value of $R_r(0)$. Now, iteratively, for each step a small $\Delta R_r$ is add to the initial value of $R_r(k)=\Delta R_r+R_r(k-1)$ and the relative torque (as seen in Eq.~\eqref{eq17}) is calculated. The iteration stops when for a given $R_r(n)$ the nominal torque value is reached. The value of $R_r(n)$, which gives the nominal value of torque, completes the calculation of the parameters of the equivalent circuit.
 
-\chapter{Reference-Frame Theory}
+\section{Reference-Frame Theory}
 Some of the machine inductances are functions of the rotor position, whereupon the coefficients of the differential equations that describe the behaviour of these machines are rotor position dependent. A change of variables is often used to reduce the complexity of these differential equations.
 
-\section{Change of variables}
+\subsection{Change of variables}
 Although changes of variables are used in the analysis of ac machines to eliminate time-varying inductances, changes of variables are also employed in the analysis of various static, constant-parameter power-system components and control systems associated with electrical drives.
 
 A change of variables that formulates a transformation of the three-phase variables of stationary circuit elements to the arbitrary reference frame may be expressed as
@@ -678,8 +705,8 @@ On the other hand, the self- and mutual inductances between the stator phases of
 \end{example}
 
 
-\chapter{Dynamical Model of the Induction Motor}
-\section{Induction Motor Representation in $\alpha\beta$}
+\section{Dynamical Model of the Induction Motor}
+\subsection{Induction Motor Representation in $\alpha\beta$}
 The induction motor equivalent circuit of the previous section was derived supposing to be in steady state conditions. In this section different dynamical model are going to be derived and properties will be described.
 For the derivation of the dynamical model, the rotor windings are assumed to be identical with resistance $R_r$ and equivalent turns $N_r$.
 Let
@@ -1212,7 +1239,7 @@ In the case the rotating reference is attached to the rotor the induction motor 
 	\textbf{The rotor frame state space model has some advantages from observability view point given by the linearity of the rotor flux equation where the cross terms are deleted from the selected rotating reference frame.}
 \end{mybox}
 
-\section{Rotor Flux Observer}
+\subsection{Rotor Flux Observer}
 As mentioned in the previous chapter rotor flux may be observed by the implementation of the \textit{open-loop rotor flux observer}
 
 \begin{mybox}
@@ -1252,7 +1279,7 @@ the equivalent synchronous phase become
 The correctness of the estimation of the slip phase $\hat{\vartheta}_{slip}$ affects the  behaviour of the machine; on the same time uncertainty of the parameter $R_r$ is the main cause of inaccuracy in the estimation of the rotor flux components, hence, of the slip phase. 
 
 
-\section{Performance analysis and correction of the parameters}
+\subsection{Performance analysis and correction of the parameters}
 In this section, the motor performance, under different condition of rotor resistance estimation, is investigated.
 
 We denote with $R_r$ the real value of the rotor resistance whereas $R_r^p$ is the rotor resistance parameter applied to 
@@ -1283,7 +1310,7 @@ When rotor parameter resistance is over-estimated, that means $R_r^p > R_r$ the 
 \end{equation}
 As result, of the over estimation of the rotor resistance parameter, the machine is under-flux and the motor voltage, in load condition, is below the nominal value.
 
-\subsection{Motor performance under correct rotor resistance estimation}
+\subsubsection{Motor performance under correct rotor resistance estimation}
 
 \begin{figure}[H]
 	\centering
@@ -1327,7 +1354,7 @@ As result, of the over estimation of the rotor resistance parameter, the machine
 	\label{}
 \end{figure}
 
-\subsection{Motor performance with underestimate rotor resistance}
+\subsubsection{Motor performance with underestimate rotor resistance}
 
 \begin{figure}[H]
 	\centering
@@ -1371,7 +1398,7 @@ As result, of the over estimation of the rotor resistance parameter, the machine
 	\label{}
 \end{figure}
 
-\subsection{Motor performance with overestimate rotor resistance}
+\subsubsection{Motor performance with overestimate rotor resistance}
 
 \begin{figure}[H]
 	\centering
@@ -1415,8 +1442,8 @@ As result, of the over estimation of the rotor resistance parameter, the machine
 	\label{}
 \end{figure}
 
-\chapter{Online Rotor Resistance Estimation}
-\section{Introduction}
+\section{Online Rotor Resistance Estimation}
+\subsection{Introduction}
 In this chapter we summarize the comparison between different rotor resistance estimator algorithms which have been implemented and tested.
 
 Before to start with the description of the algorithms we just introduce some clarification between different type of observers. 
@@ -1524,9 +1551,9 @@ In the following, both algorithms \textit{Adaptive flux observer with rotor resi
 	\end{flalign}
 \end{mybox}
 
-\section{Simulation results of the simplified rotor resistance estimator}
+\subsection{Simulation results of the simplified rotor resistance estimator}
 
-\subsection{Induction motor in hot condition}
+\subsubsection{Induction motor in hot condition}
 \begin{figure}[H]
 	\centering
 	\begin{subfigure}{0.5\textwidth}
@@ -1590,7 +1617,7 @@ In the following, both algorithms \textit{Adaptive flux observer with rotor resi
 	\label{}
 \end{figure}
 
-\subsection{Induction motor in cold condition}
+\subsubsection{Induction motor in cold condition}
 
 \begin{figure}[H]
 	\centering
@@ -1655,7 +1682,7 @@ In the following, both algorithms \textit{Adaptive flux observer with rotor resi
 	\label{}
 \end{figure}
 
-\chapter{Appendices}
+\appendix
 
 \section{Simscape Model: input/output and parameters}
 The \textit{Simscape} model has been implemented by equation in machine variables according to section §~\ref{voltage_equations_in_machine_variables}.
@@ -1735,4 +1762,5 @@ For a star connection (Y-connection) the nodes \texttt{uu\_n}-\texttt{uv\_n}-\te
 	1991.
 
 \end{thebibliography}
+\end{onehalfspace}
 \end{document} 

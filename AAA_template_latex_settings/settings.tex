@@ -14,7 +14,6 @@
 \usepackage{setspace}
 \usepackage{chemmacros}
 \usepackage{chemfig}
-\usepackage{esint}
 \usepackage{tabularray}
 \usepackage{makeidx}
 \usepackage{epstopdf}
@@ -22,6 +21,14 @@
 \usepackage{mathrsfs}
 \usepackage{bm}
 \usepackage{amsmath}
+% esint deve essere caricato DOPO amsmath: entrambi definiscono \iint, \iiint,
+% \iiiint e \idotsint. Le si rende indefinite in modo che esint le ridefinisca
+% (versioni con i simboli di integrale multiplo corretti) senza errori.
+\let\iint\undefined
+\let\iiint\undefined
+\let\iiiint\undefined
+\let\idotsint\undefined
+\usepackage{esint}
 \usepackage{enumitem}
 %\usepackage[english]{varioref}
 \usepackage{physics}

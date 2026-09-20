@@ -1,140 +1,57 @@
 %\documentclass[11pt,a4paper]{article}
 \documentclass[11pt,a4paper]{scrartcl}
 %\documentclass[11pt,a4paper,oneside]{book}
-\usepackage[british,UKenglish,USenglish,english,american]{babel}
-%\usepackage[a4paper, total={16cm, 23cm}]{geometry}
-\usepackage[tmargin = 1in,bmargin = 1in,lmargin = 0.75in,rmargin = 
-0.75in]{geometry}
-\usepackage{tikz}
-\usepackage{graphicx}
-\usepackage{pgfplots}
-\pgfplotsset{width=12cm,compat=1.9}
-\usepackage{xcolor}
+\input{../../AAA_template_latex_settings/settings}
 
-%\usepackage{esint}
-\usepackage{tabularray}
-\usepackage{makeidx}
-\usepackage{epstopdf}
-\usepackage{amssymb}
-\usepackage{mathrsfs}
+% =============================================================
+%  DOCUMENT METADATA
+% =============================================================
 
-\usepackage{bm}
-\usepackage{amsmath}
-\usepackage{enumitem}
-\usepackage[english]{varioref}
-\usepackage[english]{babel}
-\usepackage{lipsum}
-\usepackage{fancyhdr}
-\pagestyle{fancy} 
-\usepackage{float}
-\usepackage{empheq}
-\usepackage[framemethod=tikz]{mdframed}
-\usepackage{epstopdf}
-\numberwithin{equation}{section}
-\usepackage{eso-pic}
-\usepackage{calc}
-\usepackage{nccmath}
-\usepackage{caption}
-\usepackage{subcaption}
-\usepackage{gensymb}
-\usepackage{amsfonts,amsthm,epsfig,epstopdf,titling,url,array}
-\usepackage{siunitx}
-\sisetup{input-digits = 0123456789\pi}
-\usepackage[symbol]{footmisc}
-\usepackage{multicol}
-\usepackage{boondox-cal}
-\DeclareSIUnit\atm{atm}
-\setcounter{secnumdepth}{3}
-\setcounter{tocdepth}{3}
-\usepackage{booktabs}
-\usepackage{blindtext}
-\usepackage{changepage}
-% \usepackage{draftwatermark}
-% \SetWatermarkText{DRAFT}
-% \SetWatermarkScale{5}
+\newcommand{\DocCategory}{Technical Research Report}
+\newcommand{\DocField}{Power Electronics and Control Systems}
 
-\DeclareSIUnit\atm{atm}
-
-\pagestyle{fancy} 
-\fancypagestyle{firstpage}{
-\rhead{
-\includegraphics[height=0.75cm]{figures/pwr-control_logo_doc.png}
+\newcommand{\DocTitle}{%
+	{\fontsize{20}{24}\selectfont\bfseries Single Phase Locked Loop:} \\[16pt]
+	{\fontsize{16}{20}\selectfont\bfseries structures, transfer functions and laboratory implementation.}
 }
+
+\newcommand{\DocSubtitle}{%
+	Grid synchronization of single phase signals through SOGI-QSG and Park based PLL.
 }
-\fancyhead[L]{\slshape\nouppercase{\leftmark}}
-\chead{}
-\rhead{
-\includegraphics[height=0.75cm]{figures/pwr-control_logo_doc.png}
+
+\newcommand{\DocAuthor}{Davide Bagnara}
+\newcommand{\DocRevision}{00}
+\newcommand{\DocDate}{May 2021}
+
+\newcommand{\DocAbstract}{%
+	The phase locked loop (\textit{PLL}) is the standard way of extracting the phase angle, the frequency and the amplitude of a grid voltage, and it is therefore the entry point of any grid connected converter control. In a single phase system the task is harder than in a three phase one, because a single measurement does not provide the orthogonal component needed to build a rotating vector: the quadrature signal has to be generated. This document reviews the structures which solve that problem. The elementary \textit{PLL} is introduced first (phase detector, loop filter and voltage controlled oscillator), it is linearized around the locked condition and its open and closed loop transfer functions are derived, showing the double pole at the origin which makes the loop able to track a frequency ramp with no steady state error. Two quadrature signal generators are then analysed: the second order generalized integrator (\textit{SOGI-QSG}), whose direct, quadrature and error transfer functions behave as a band pass, a low pass and a notch filter tuned on the estimated frequency, and the scheme based on the direct and inverse Park transforms, for which the equivalent block diagram and the corresponding transfer functions are derived. Bode diagrams are reported for both. The structures are intended for a laboratory implementation on a dSPACE SCALEXIO real-time system, with the moving average filter written in C and integrated through the Simulink C-caller.
 }
-\lfoot{\textit{}}
-\cfoot{-\ \thepage\ -}
-\rfoot{\textit{}}
 
-\DeclareMathOperator{\rank}{rank}
-\DeclareMathOperator{\atantwo}{atan2}
-\DeclareMathOperator{\spn}{span}
-
-\renewcommand{\headrulewidth}{0.4pt}
-\renewcommand{\footrulewidth}{0.4pt}
-\newcommand{\abs}[1]{\left|#1\right|}
-\definecolor{mycolor1}{rgb}{0.97, 0.97, 0.97}
-\definecolor{mycolor2}{rgb}{0.97, 0.97, 0.97}
-\definecolor{tableShade}{gray}{0.9}
-\newcommand{\sign}{\text{sign}}
-\newcommand{\centered}[1]{\begin{tabular}{@{}l@{}} #1 \end{tabular}}
-\theoremstyle{it}
-
-\newtheorem{defn}{Definition}[section]
-\newtheorem{assumption}{Assumption}[section]
-\newtheorem{thm}{Theorem}[section]
-\newtheorem{lemma}{Lemma}[section]
-\newtheorem{corollary}{Corollary}[section]
-
-
-%\newtheorem{defn}{Definition}[chapter]
-%\newtheorem{assumption}{Assumption}[chapter]
-%\newtheorem{thm}{Theorem}[chapter]
-%\newtheorem{lemma}{Lemma}[chapter]
-%\newtheorem{corollary}{Corollary}[chapter]
-\theoremstyle{definition}
-%\theoremstyle{it}
-\newtheorem{example}{Example}[section]
-
-\newenvironment{myitemize_1}
-{ \begin{itemize}[topsep=0pt]
-		\setlength{\topsep}{2pt}		
-		\setlength{\itemsep}{2pt}
-		\setlength{\parskip}{2pt}
-		\setlength{\parsep}{2pt}     }
-	{ \end{itemize}                  }
-
-\newmdenv[innerlinewidth=0.5pt, roundcorner=4pt,backgroundcolor=mycolor2, 
-linecolor=mycolor1,innerleftmargin=6pt,
-innerrightmargin=6pt,innertopmargin=6pt,innerbottommargin=6pt]{mybox}
-
-\title{\textbf{ 
-	\begin{LARGE}
-		Single Phase Lock Loop
-	\end{LARGE}}
+% Righe della revision history: Rev. & Date & Description & Authors \\
+\newcommand{\RevisionHistory}{%
+	00 & May 2021 & First issue. & \DocAuthor \\
 }
-\author{\textbf{davide bagnara}}
 
+% Metadati in fondo al frontespizio
+\newcommand{\MetaLabelA}{Project Repository}
+\newcommand{\MetaValueAUrl}{https://github.com/pwr-control/modelization-and-control.git}
+\newcommand{\MetaValueALabel}{modelization-and-control.git}
+
+\newcommand{\MetaLabelB}{Framework}
+\newcommand{\MetaValueB}{MATLAB/Simulink, dSPACE SCALEXIO}
+
+% =============================================================
+%  DOCUMENTO
+% =============================================================
 \begin{document}
-	\thispagestyle{firstpage}
-	\begin{mybox}
-		\maketitle
-		\vspace{100mm}
-	\end{mybox}
-	\newpage
+	\input{../../AAA_template_latex_settings/titlepage}
 	\tableofcontents
-	\listoffigures	
+	\listoffigures
 	\listoftables
 	\newpage
-	
-%\chapter*{}	
-%\begin{adjustwidth}{50pt}{50pt}
-%		\textit{In the present document the design and model derivation of a CLL-Resonant DC/DC converter is reported. The document includes the control strategy and additional control loops for load harmonic compensation.}
-%\end{adjustwidth}
+
+	\begin{onehalfspace}
+
 \section{Introduction}
 In this document the following topics are slightly covered: 
 \begin{itemize}
@@ -482,4 +399,5 @@ where the relation of Eq.~\eqref{alphabeta_tr_eq} has been applied.
 	R. Teodorescu, M. Liserre, P. Rodrıguez, \emph{Grid converters for photovoltaic and wind power systems}. Wiley, 2011.
 \end{thebibliography}
 
+\end{onehalfspace}
 \end{document} 

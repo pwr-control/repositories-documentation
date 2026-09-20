@@ -3,139 +3,53 @@
 %\documentclass[11pt,a4paper,oneside]{book}
 \input{../../AAA_template_latex_settings/settings}
 
-\geometry{
-	a4paper,
-	top    = 3.0cm,
-	bottom = 3.0cm,
-	left   = 2.5cm,
-	right  = 2.5cm
-}
-
-\hypersetup{
-	colorlinks = true,
-	urlcolor   = blue,
-	linkcolor  = black,
-	citecolor  = black
-}
-
-\pagenumbering{gobble}
-
 % =============================================================
-%  
+%  DOCUMENT METADATA
 % =============================================================
 
 \newcommand{\DocCategory}{Technical Research Report}
 \newcommand{\DocField}{Power Electronics and Control Systems}
 
 \newcommand{\DocTitle}{%
-	Solid State Transformers: \\[12pt]
-	\huge architecture, modelization, and control
+	{\fontsize{20}{24}\selectfont\bfseries Solid State Transformers:} \\[16pt]
+	{\fontsize{16}{20}\selectfont\bfseries architecture, modelization and control.}
 }
+
 \newcommand{\DocSubtitle}{%
-	Investigation on different layout based on DAB, DAB3, and CLLC. 
+	Investigation on different layouts based on DAB, DAB3 and CLLC.
 }
 
 \newcommand{\DocAuthor}{Davide Bagnara}
-\newcommand{\DocDate}{May 2021}
+\newcommand{\DocRevision}{00}
+\newcommand{\DocDate}{May 2025}
 
 \newcommand{\DocAbstract}{%
-	This document presents a preliminary analysis of Solid State Transformers (SSTs), aiming to provide a comprehensive introduction to the technology. The study proposes some potential layouts for hardware architectures and control strategies, supported by Simscape modeling and simulation results. Furthermore, the document evaluates the capabilities of the Simscape models implemented for this investigation. 
+	A solid state transformer (\textit{SST}) replaces the line frequency transformer of a distribution system with a chain of high frequency isolated power electronic stages, gaining compactness, efficiency and control over the power flow, the voltage and the reactive power; its inherent current limiting, on the other hand, deprives the downstream overcurrent protections of the fault current they rely upon. This document is a preliminary comparative investigation of \textit{SST} architectures placed between a low voltage DC grid and a three phase medium voltage AC grid. The proposed layout is a cascade of series connected single phase inverters, each one supplied by its own galvanically isolated DC/DC converter with the inputs connected in parallel, operated in a master/slave arrangement in which every unit runs its own single phase \textit{PLL}. Three isolated DC/DC stages are compared --- three phase DAB, single phase DAB and single phase bidirectional CLLC --- together with two inverter topologies, three level NPC and three level T-type, built with Wolfspeed SiC modules. The control architecture is described and each combination is simulated in \textit{Simscape} at about \SI{250}{\kilo\watt} per phase, with the semiconductor losses collected and compared. A dedicated chapter covers the design of the high frequency transformers of the three phase DAB and of the single phase DAB, on nanocrystalline C-cores with copper foil windings.
 }
 
-% Tre righe metadati in fondo (label small caps + valore)
+% Righe della revision history: Rev. & Date & Description & Authors \\
+\newcommand{\RevisionHistory}{%
+	00 & May 2025 & First issue. & \DocAuthor \\
+}
+
+% Metadati in fondo al frontespizio
 \newcommand{\MetaLabelA}{Project Repository}
-\newcommand{\MetaValueA}{https://github.com/pwr-control/solid-state-transformers.git}
+\newcommand{\MetaValueAUrl}{https://github.com/pwr-control/solid-state-transformers.git}
+\newcommand{\MetaValueALabel}{solid-state-transformers.git}
 
 \newcommand{\MetaLabelB}{Framework}
 \newcommand{\MetaValueB}{MATLAB/Simulink/Simscape}
 
-\newcommand{\MetaLabelC}{Architecture}
-\newcommand{\MetaValueC}{SiC, EiceDRIVER, Customized Power Supplies}
-
 % =============================================================
-%  FRONTESPIZIO
+%  DOCUMENTO
 % =============================================================
 \begin{document}
-	\titlepage
-	% ---- Intestazione centrata ----
-	\begin{center}
-		{\Large\scshape \DocCategory}\\[8pt]
-		{\large\scshape \DocField}
-	\end{center}
-	
-	\vspace{36pt}
-	\noindent\rule{\linewidth}{0.8pt}
-	
-	% ---- Titolo ----
-	%\vspace{28pt}
-	\begin{center}
-		{\fontsize{30}{30}\selectfont\bfseries \DocTitle}
-	\end{center}
-	
-	\vspace{4pt}
-	\noindent\rule{\linewidth}{2.2pt}
-	
-	% ---- Sottotitolo ----
-	%\vspace{14pt}
-	\begin{center}
-		\begin{onehalfspace}
-			{\large\itshape \DocSubtitle}
-		\end{onehalfspace}
-	\end{center}
-	
-	% ---- Spazio prima di Autore/Data ----
-	\vspace{36pt}
-	
-	% ---- Author / Date su due colonne ----
-	\begin{minipage}{0.92\linewidth}
-		\noindent
-		\begin{minipage}[t]{0.48\linewidth}
-			\textbf{Author:}\\[2pt]
-			\DocAuthor
-		\end{minipage}%
-		\hfill
-		\begin{minipage}[t]{0.48\linewidth}
-			\raggedleft
-			\textbf{Date:}\\[2pt]
-			\DocDate
-		\end{minipage}
-	\end{minipage}
-	% ---- Spazio prima dell'abstract ----
-	\vspace{36pt}
-	
-	% ---- Abstract indentato ----
-	\begin{center}
-		\begin{minipage}{0.85\linewidth}
-			%    \small
-			\footnotesize 
-			\begin{onehalfspace}
-				\textbf{Abstract:} \DocAbstract
-			\end{onehalfspace}
-		\end{minipage}
-	\end{center}
-	
-	% ---- Spazio prima dei metadati ----
-	\vfill
-	
-	% ---- Metadati in fondo ----
-	\noindent
-	\begin{tabular}{@{} r @{\quad} l @{}}
-		\textsc{\small\MetaLabelA:} & {\small\url{\MetaValueA}} \\[3pt]
-		\textsc{\small\MetaLabelB:} & {\small\MetaValueB}       \\[3pt]
-		%		\textsc{\small\MetaLabelC:} & {\small\MetaValueC}       \\
-	\end{tabular}
-	
-	% =============================================================
-	%  Fine frontespizio
-	% =============================================================
-	\newpage
-	\pagenumbering{arabic}
-	\setcounter{page}{1}
+	\input{../../AAA_template_latex_settings/titlepage}
 	\tableofcontents
-	\listoffigures	
+	\listoffigures
 	\listoftables
 	\newpage
-	
+
 \begin{onehalfspace}
 \section{Introduction}
 \textbf{Solid State Transformers (SSTs)} are advanced power electronic devices designed to replace traditional low-frequency transformers in modern power distribution systems. By operating at high frequency and using fully controllable conversion stages, SSTs achieve a more compact size, improved energy efficiency, and enhanced functionality compared to conventional transformers. Beyond simple voltage transformation, they provide additional services such as bidirectional power flow, voltage and reactive power regulation, and seamless integration of distributed energy resources including renewables, electric vehicles, and energy storage.
