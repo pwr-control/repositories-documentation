@@ -29,21 +29,27 @@ Debug/
 Release/
 
 # IDE / toolchain artifacts
-*.su          # GCC stack usage
+# GCC stack usage
+*.su
 *.cyclo
 *.deps
 
 # ============================================================
 # MATLAB
 # ============================================================
-*.asv         # auto-save
+# auto-save
+*.asv
 *.m~
-*.mex*        # compiled MEX (mexw64, mexw32, mexa64 …)
-*.slxc        # Simulink code-gen cache
+# compiled MEX (mexw64, mexw32, mexa64 …)
+*.mex*
+# Simulink code-gen cache
+*.slxc
 *.autosave
 *.mdlp
-codegen/      # Simulink Coder / Embedded Coder output
-slprj/        # Simulink project build folder
+# Simulink Coder / Embedded Coder output
+codegen/
+# Simulink project build folder
+slprj/
 work/
 
 # ============================================================
@@ -75,8 +81,11 @@ work/
 *.vrb
 *.xdv
 
+# epstopdf conversions (regenerated at every compile)
+*-eps-converted-to.pdf
+
 # Output — rimuovi se vuoi tracciare il PDF finale
-*.pdf
+#*.pdf
 
 # ============================================================
 # KiCad
