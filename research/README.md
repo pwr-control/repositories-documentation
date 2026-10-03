@@ -69,6 +69,10 @@ Line-commutated rectifiers and protection:
 - `six_pulses_thyristor_based_rectifier/rectifier_16V4_1100A_src` — *Sizing of a 16.4 V / 1100 A
   six-pulse thyristor rectifier* (transformer, line reactor with 5th/7th/11th traps, DC LC
   filter), with `calc2.py`.
+- `six_pulse_controlled_rectifier_design` — *Six-pulse thyristor bridge (B6C) with arm fuses, RC
+  snubbers and DC LC filter: sizing formula sheet and design path* (fourteen steps, 440 V /
+  1000 A worked example; Rev. 01 adds the RC snubber design criteria), with `b6c_example_calc.py`
+  and the switched-circuit check `b6c_snubber_sim.py`.
 - `soft_starters_and_snubbers` — *Thyristor-based soft starters for high-power motors*.
 - `thyristor_based_crowbar/unidirectional_crowbar` — *Crowbar thyristor for the 3 kV / 3600 A
   static-switch test bench*: device selection and passive self-triggering gate circuit, with
