@@ -111,15 +111,15 @@ Figure~\ref{fig:bridge} shows the circuit the sheet sizes. The transformer (with
 \begin{figure}[htb]
 \centering
 \begin{tikzpicture}[x=0.95cm,y=0.95cm,line width=0.6pt,>=latex]
-% thyristor: anode at top, cathode at bottom, gate to the left. #1 label, #2 centre
+% thyristor: anode at bottom, cathode at top (current flows upwards, from n to p), gate to the left. #1 label, #2 centre
 \newcommand{\thy}[2]{%
   \begin{scope}[shift={#2}]
-    \draw (0,0.55) -- (0,0.28);
-    \draw[fill=white] (-0.25,0.28) -- (0.25,0.28) -- (0,-0.1) -- cycle;
-    \draw (-0.25,-0.1) -- (0.25,-0.1);
-    \draw (0,-0.1) -- (0,-0.55);
-    \draw (-0.22,-0.1) -- (-0.45,-0.32);
-    \node[font=\scriptsize,anchor=east] at (-0.3,0.2) {#1};
+    \draw (0,0.55) -- (0,0.1);
+    \draw (-0.25,0.1) -- (0.25,0.1);
+    \draw[fill=white] (-0.25,-0.28) -- (0.25,-0.28) -- (0,0.1) -- cycle;
+    \draw (0,-0.28) -- (0,-0.55);
+    \draw (-0.22,0.1) -- (-0.45,0.32);
+    \node[font=\scriptsize,anchor=east] at (-0.3,-0.2) {#1};
   \end{scope}}
 % fuse: vertical, #1 centre
 \newcommand{\fuse}[1]{%
@@ -554,10 +554,11 @@ where $v_T$ is the reverse voltage on the device.
 \draw (3.1,-0.38) -- (3.7,-0.38);
 \node[font=\scriptsize,right] at (3.75,-0.3) {$C_s$};
 \draw (3.4,-0.38) -- (3.4,-1.5) -- (0,-1.5) -- (0,-0.3);
-% thyristor (open) in parallel with the snubber
+% thyristor (open, reverse biased: cathode at the top node) in parallel with the snubber
 \draw (3.4,1.5) -- (5.2,1.5) -- (5.2,0.75);
-\draw[fill=white] (4.95,0.75) -- (5.45,0.75) -- (5.2,0.3) -- cycle;
-\draw (4.95,0.3) -- (5.45,0.3);
+\draw (4.95,0.75) -- (5.45,0.75);
+\draw[fill=white] (4.95,0.3) -- (5.45,0.3) -- (5.2,0.75) -- cycle;
+\draw (4.98,0.75) -- (4.75,0.97);
 \draw (5.2,0.3) -- (5.2,-1.5) -- (3.4,-1.5);
 \node[font=\scriptsize,right] at (5.5,0.55) {outgoing device: $i_T = 0$ after snap-off};
 % current arrow and vT
