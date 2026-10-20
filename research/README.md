@@ -61,6 +61,15 @@ Converters and control:
 - `LRCL_grid_filter_design` — two live scripts sizing an L-RC-L grid filter for the 400 V /
   250 kVA and 690 V / 1600 kVA cases; sub-notes `summary_EN50160` (IT) and `trafo_equivalente`
   (sequence equivalent circuits of a three-phase transformer, IT).
+- `lrc_filter_design_guidelines` — *L(RC) filter design guidelines*: grid-side L / LCL / L(RC)L
+  filters for active front ends (exact PWM inductor ripple for SPWM, SVM and DPWM, capacitor reactive
+  power, attenuation against IEEE 519, resonance placement versus the critical frequency $f_s/6$,
+  passive damping and its losses, grid-impedance interaction) and LC / L(RC) sine and dv/dt output
+  filters for induction and PMSM drives (reflected wave with long cables, resonance window, loaded
+  resonance set by the machine inductance, damping, consequences for the current control and for
+  sensorless control), with two step-by-step worked examples for a 450 kW, 480 V, 2 kHz drive (AFE
+  grid filter; IM and PMSM sine filters) and a comparison table; `lrc_filter_example.py` reproduces
+  the numbers.
 
 Line-commutated rectifiers and protection:
 - `six_pulses_thyristor_based_rectifier/acdc_thyristor_sizing_src` — *Sizing of a 400 V / 1 MW
