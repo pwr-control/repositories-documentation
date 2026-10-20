@@ -12,7 +12,7 @@
 \rfoot{\small Rev.~00}
 \geometry{left=2.0cm, right=2.0cm}
 \usepackage[european]{circuitikz}
-\ctikzset{bipoles/length=0.9cm}
+\ctikzset{bipoles/length=1.2cm}
 
 \sisetup{per-mode=symbol,range-phrase={\text{--}},range-units=single}
 \setlist{nosep}
@@ -41,9 +41,9 @@
 \newcommand{\DocField}{Power Electronics and Control Systems}
 \newcommand{\DocTitle}{%
 	{\fontsize{20}{24}\selectfont\bfseries L(RC) Filter Design Guidelines} \\[16pt]
-	{\fontsize{16}{20}\selectfont\bfseries Grid-side filters for active front ends and output filters for induction and permanent-magnet motor drives}
+	{\fontsize{16}{26}\selectfont\bfseries Grid-side filters for active front ends \\ and output filters for induction and permanent-magnet motor drives}
 }
-\newcommand{\DocSubtitle}{Topologies, sizing relations, resonance placement, damping and interaction with the current control}
+\newcommand{\DocSubtitle}{Topologies, sizing relations, resonance placement, damping \\[6pt] and interaction with the current control}
 \newcommand{\DocAuthor}{Davide Bagnara}
 \newcommand{\DocRevision}{00}
 \newcommand{\DocDate}{October 2026}
@@ -63,36 +63,134 @@ Design guidelines for the passive filters of two-level voltage-source converters
 \input{../../../AAA_template_latex_settings/titlepage}
 \tableofcontents
 \newpage
+\begin{onehalfspace}
 
-\section{Scope and notation}
-Two-level three-phase voltage-source converter (VSC) \cite{mohan2003,holmes2003} with DC link $\Vdc$, switching frequency $\fsw$ ($\wsw = 2\pi\fsw$), double-edge regular-sampled PWM with sampling frequency $f_s = \fsw$ (single update) or $2\fsw$ (double update). Two applications are treated with the same formulas: the grid side of an active front end (AFE), Fig.~\ref{fig:circ}(a), and the output side of a motor inverter, Fig.~\ref{fig:circ}(b). All quantities are per phase of the star equivalent; $V$ is the RMS line-to-line voltage, $V_{ph} = V/\sqrt3$, $I_n$ the rated RMS phase current, $\hat I_n = \sqrt2 I_n$. The base impedance is $Z_b = V^2/S_n$, $L_b = Z_b/\omega_1$, $C_b = 1/(\omega_1 Z_b)$ with $\omega_1 = 2\pi f_1$ the fundamental (grid or motor) angular frequency. Formulas are quoted without derivation except where the derivation is short and not found in the references.
+\section*{Nomenclature}
+\addcontentsline{toc}{section}{Nomenclature}
+All quantities are per phase of the star equivalent of the three-phase system; RMS values unless a hat (peak) or a ``pp'' (peak-to-peak) is written. Per-unit values refer to the base quantities of the converter ($Z_b$, $L_b$, $C_b$). The same filter symbols are used on the grid side (Fig.~\ref{fig:circ}a, inductances $L_1$, $L_2$) and on the motor side (Fig.~\ref{fig:circ}b, inductance $\Lf$); the damping-network symbols are common to both.
+
+\begin{singlespace}\footnotesize
+\begin{longtable}{@{}>{$}l<{$} p{10.3cm} l@{}}
+\toprule
+\text{Symbol} & Description & Unit \\
+\midrule
+\endfirsthead
+\toprule
+\text{Symbol} & Description & Unit \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+\bottomrule
+\endlastfoot
+\multicolumn{3}{@{}l}{\textit{Converter, PWM and base quantities}} \\
+\Vdc & DC-link voltage of the two-level voltage-source converter (VSC) & V \\
+\fsw,\ \wsw,\ T_{sw} & switching (carrier) frequency, $\wsw = 2\pi\fsw$, switching period $1/\fsw$ & Hz, rad/s, s \\
+f_s,\ T_s & update (sampling) frequency of the digital current loop, $f_s = \fsw$ with single update and $2\fsw$ with double update; $T_s = 1/f_s$; the computation and PWM delay is $1.5T_s$ & Hz, s \\
+f_1,\ \omega_1 & fundamental frequency (grid frequency on the grid side, motor supply frequency on the motor side), $\omega_1 = 2\pi f_1$ & Hz, rad/s \\
+f_{1,max},\ \omega_{1,max} & highest fundamental frequency of the drive (top speed, field weakening included) & Hz, rad/s \\
+V,\ V_{ph} & RMS line-to-line voltage and phase (star) voltage, $V_{ph} = V/\sqrt3$ & V \\
+S_n,\ P_n & rated apparent power of the converter, rated active power of the motor & VA, W \\
+I_n,\ \hat I_n & rated RMS phase current and its peak, $\hat I_n = \sqrt2 I_n$ & A \\
+Z_b,\ L_b,\ C_b & base impedance ($V^2/S_n$ for the grid side, $V_{ph}/I_n$ for the motor side), base inductance $Z_b/\omega_1$ and base capacitance $1/(\omega_1 Z_b)$ at the rated fundamental frequency & $\Omega$, H, F \\
+m & modulation index: peak of the phase reference voltage over $\Vdc/2$; linear range $m \le 1$ for SPWM, $m \le 2/\sqrt3$ for SVM/THI & -- \\
+\theta & angle of the reference voltage vector; $\theta = 0$ when the phase-a voltage is at its peak, $90^\circ$ at its zero crossing & rad \\
+v_{ref},\ v_{1,n} & phase reference voltage and switched phase voltage with respect to the load neutral ($0$, $\pm\Vdc/3$, $\pm2\Vdc/3$) & V \\
+T_1,\ T_2,\ T_0 & dwell times of the two active vectors and total dwell time of the zero vectors in one switching period; $T_{0a}$, $T_{0b}$ are the parts of $T_0$ spent on $000$ and on $111$ & s \\
+\text{SPWM, SVM, THI, DPWM} & sinusoidal PWM (no zero sequence), space-vector PWM (equal split of the zero vectors), third-harmonic injection (same ripple as SVM), discontinuous PWM with $60^\circ$ clamping (DPWM1) & -- \\
+k & ripple coefficient, $\Delta i = k\,\Vdc/(\fsw L)$; tabulated in Table~\ref{tab:ripple} as $1/x$ & -- \\
+\Delta i_{\pp},\ \Delta i_{\pp,max} & peak-to-peak switching ripple of the inductor current in one switching period, and its maximum over the fundamental period & A \\
+I_{rip,rms},\ \mathrm{HDF} & RMS value of the switching ripple over the fundamental period and harmonic distortion factor of Holmes--Lipo, Eq.~\eqref{eq:hdf} & A, -- \\
+k_r & ripple allowance of the design, $\Delta i_{\pp,max}/\hat I_n$ & -- \\
+\epsilon_L & relative fundamental voltage drop on the filter inductance(s), $\omega_1 L I_n/V_{ph}$ & -- \\
+\multicolumn{3}{@{}l}{\textit{Grid-side filter (Fig.~\ref{fig:circ}a)}} \\
+L_1,\ L_2 & converter-side and grid-side filter inductances & H \\
+\Lg,\ L_2' & grid inductance at the point of common coupling (transformer and upstream network) and total grid-side inductance $L_2' = L_2 + \Lg$ & H \\
+\Cf & filter capacitance per phase, star equivalent (a delta bank uses $\Cf/3$ per branch) & F \\
+r,\ x & inductance ratio $L_2/L_1$ and capacitor fraction $\Cf/C_b$ (the capacitor reactive power is $Q_c = x S_n$) & -- \\
+v_1,\ v_c,\ v_g & converter, capacitor-node and grid phase voltages & V \\
+i_1,\ i_2 & converter-side and grid-side currents & A \\
+Z_1,\ Z_2,\ Z_c & impedances of $L_1$, of $L_2'$ and of the shunt network (capacitor with its damping) & $\Omega$ \\
+\fres,\ \wres & resonance frequency of the LCL filter, Eq.~\eqref{eq:lcl}; $\fres^{min}$, $\fres^{max}$ its values at the weakest and at the stiffest grid & Hz, rad/s \\
+f_2,\ \omega_2 & resonance of $L_2'$ with $\Cf$, $1/(2\pi\sqrt{L_2'\Cf})$, the corner of the current ratio $i_2/i_1$ & Hz, rad/s \\
+k_a & attenuation of the filter at the switching frequency, $|i_2/i_1|_{\wsw}$ & -- \\
+I_{1,sw},\ I_{2,sw} & RMS converter-side and grid-side currents of the switching-frequency cluster & A \\
+I_c,\ \hat v_{c,sw} & RMS capacitor current and peak switching ripple of the capacitor voltage & A, V \\
+S_{sc},\ \mathrm{SCR} & short-circuit power at the point of common coupling (PCC) and short-circuit ratio $S_{sc}/S_n$; $I_{sc}/I_L$ is the ratio of IEEE~519 with $I_L$ the maximum demand load current & VA, -- \\
+u_k,\ S_T & short-circuit (leakage) voltage and rating of the supply transformer & pu, VA \\
+h,\ \mathrm{TDD} & harmonic order and total demand distortion of IEEE~519 & -- \\
+f_c & crossover frequency of the current loop & Hz \\
+f_s/6 & critical resonance frequency of the digital current loop (Parker--McGrath--Holmes) & Hz \\
+Y_c,\ Z_g & converter output admittance and grid impedance of the impedance-based stability criterion & S, $\Omega$ \\
+\multicolumn{3}{@{}l}{\textit{Damping networks (both sides)}} \\
+R_d & resistor in series with $\Cf$ (series damping) & $\Omega$ \\
+C_1,\ C_2,\ n & main capacitor and damping-branch capacitor of the R--C network, $n = C_2/C_1$; $C_1 + C_2$ is the total capacitance & F, -- \\
+R_2 & resistor of the R--C damping branch & $\Omega$ \\
+L_p & inductance seen by the capacitor node: $L_1 \parallel L_2'$ on the grid side, $\Lf \parallel \Lhf$ on the motor side & H \\
+R_0,\ \omega_0 & characteristic impedance $\sqrt{L_p/C_1}$ and undamped resonance $1/\sqrt{L_p C_1}$ of the damped network (on the motor side $\omega_0 = 2\pi f_0$ with $\Lf$) & $\Omega$, rad/s \\
+\rho,\ \rho_Z,\ \rho_H,\ \rho_P & normalised damping resistance $R_2/R_0$ and its closed-form optima (minimum peak impedance, minimum peak of the voltage transfer function, real pole at $\omega_0$) & -- \\
+\zeta,\ \zeta_m,\ Q & damping ratio of the filter resonance, contribution of the machine to it, quality factor $1/(2\zeta)$ & -- \\
+X_c & capacitor reactance at the switching frequency, $1/(\wsw\Cf)$ & $\Omega$ \\
+v_{c,sw} & RMS switching-ripple voltage on the capacitor node & V \\
+P_{R_d},\ P_{R_2} & losses of the damping resistors (fundamental plus switching terms) & W \\
+\multicolumn{3}{@{}l}{\textit{Motor-side filter (Fig.~\ref{fig:circ}b)}} \\
+v_i,\ i_i & inverter output voltage and current (filter input) & V, A \\
+v_c,\ v_s,\ i_s & capacitor voltage, stator (motor terminal) voltage, $v_s = v_c$ without cable, and stator current & V, A \\
+\Lf,\ R_{Lf} & filter inductance and its series resistance & H, $\Omega$ \\
+\Lhf,\ \Rhf & inductance and resistance presented by the machine at the filter resonance: $\Lhf = \sigma L_s = L_{ls} + L_{lr}'$ (transient inductance of the induction motor, stator and referred rotor leakage), $\Lhf = L_d$ or $L_q$ (PMSM); $\Rhf$ includes the deep-bar rotor resistance of the IM & H, $\Omega$ \\
+e & back-EMF of the machine & V \\
+f_0,\ f_p & unloaded resonance $1/(2\pi\sqrt{\Lf\Cf})$ and resonance with the machine connected, $f_0\sqrt{1 + \Lf/\Lhf}$ & Hz \\
+Z_0,\ v,\ \tau,\ l & surge impedance $\sqrt{L'/C'}$, propagation velocity, transit time $l/v$ and length of the motor cable & $\Omega$, m/$\mu$s, s, m \\
+t_r & rise time ($10$--$90\,\%$) of the voltage edge at the cable input & s \\
+\Gamma_m,\ \Gamma_s & voltage reflection coefficients at the motor and at the inverter end of the cable & -- \\
+l_{crit} & critical cable length $v t_r/2$ at which the full reflection is reached & m \\
+\hat V_m,\ OF & peak voltage at the motor terminals and overshoot factor $\hat V_m/\Vdc - 1$ & V, -- \\
+Z_m,\ C_{cable} & high-frequency impedance of the motor seen by the cable, cable capacitance & $\Omega$, F \\
+G_m & equivalent conductance of the machine branch at $f_p$, $\Rhf/(\Rhf^2 + (2\pi f_p\Lhf)^2)$ & S \\
+I_c & fundamental capacitor current $\omega_1 \Cf V_{ph}$ & A \\
+\alpha_i,\ \alpha_v,\ \alpha_s & bandwidths of the inverter-current, capacitor-voltage and stator-current loops of the cascaded control & rad/s \\
+f_{inj} & frequency of the high-frequency injection of saliency-based sensorless control & Hz \\
+\text{MTPA, MTPV} & maximum-torque-per-ampere and maximum-torque-per-volt trajectories of the PMSM & -- \\
+\end{longtable}
+\end{singlespace}
+
+\section{Scope}
+Two-level three-phase voltage-source converter (VSC) \cite{mohan2003,holmes2003} with DC link $\Vdc$, switching frequency $\fsw$, double-edge regular-sampled PWM with single or double update. Two applications are treated with the same formulas: the grid side of an active front end (AFE), Fig.~\ref{fig:circ}(a), and the output side of a motor inverter, Fig.~\ref{fig:circ}(b). Formulas are quoted without derivation except where the derivation is short and not found in the references; the numbers of the worked examples are reproduced by the companion script \texttt{lrc\_filter\_example.py}.
 
 \begin{figure}[htb]
 \centering
-\begin{circuitikz}[scale=0.9, every node/.style={transform shape}]
-% (a) grid side
-\draw (0,0) to[sV, l=$v_1$] (0,2)
-      to[L, l=$L_1$, i=$i_1$] (2.6,2)
-      to[L, l=$L_2$, i=$i_2$] (5.2,2)
-      to[L, l=$\Lg$] (7.4,2)
-      to[sV, l=$v_g$] (7.4,0) -- (0,0);
-\draw (2.6,2) to[R, l=$R_d$, dashed] (2.6,1.1) to[C, l=$\Cf$] (2.6,0);
-\draw (3.9,2) to[C, l=$C_2$] (3.9,1.1) to[R, l=$R_2$] (3.9,0);
-\node[anchor=north west] at (2.9,2.0) {\scriptsize $v_c$};
-\node at (3.7,-0.6) {(a) grid side: L ($\Cf = 0$), LCL, L(RC)L};
-% (b) motor side
-\begin{scope}[xshift=9.2cm]
-\draw (0,0) to[sV, l=$v_i$] (0,2)
-      to[L, l=$\Lf$, i=$i_i$] (2.6,2)
-      to[generic, l={cable $Z_0,\tau$}, i=$i_s$] (5.0,2)
-      to[R, l=$\Rhf$] (6.4,2)
-      to[L, l=$\Lhf$] (7.8,2)
-      to[sV, l=$e$] (7.8,0) -- (0,0);
-\draw (2.6,2) to[R, l=$R_d$, dashed] (2.6,1.1) to[C, l=$\Cf$] (2.6,0);
-\draw (3.9,2) to[C, l=$C_2$] (3.9,1.1) to[R, l=$R_2$] (3.9,0);
-\node at (3.9,-0.6) {(b) motor side: LC, L(RC); $\Lhf = \sigma L_s$ (IM), $L_d,L_q$ (PMSM)};
-\end{scope}
+\begin{subfigure}{\textwidth}
+\centering
+\begin{circuitikz}
+\draw (0,0) to[sV, l=$v_1$] (0,3)
+      to[L, l=$L_1$, i=$i_1$] (3,3)
+      to[short] (6.2,3)
+      to[L, l=$L_2$, i=$i_2$] (9.2,3)
+      to[L, l=$\Lg$] (12.2,3)
+      to[sV, l_=$v_g$] (12.2,0) -- (0,0);
+\draw (3.8,3) to[R, l=$R_d$, dashed] (3.8,1.6) to[C, l=$\Cf$] (3.8,0);
+\draw (5.6,3) to[C, l=$C_2$] (5.6,1.6) to[R, l=$R_2$] (5.6,0);
+\node[above] at (4.7,3.1) {$v_c$};
 \end{circuitikz}
+\caption{Grid side: L ($\Cf = 0$), LCL, L(RC)L; $\Lg$ is the grid (transformer and network) inductance.}
+\end{subfigure}
+\\[14pt]
+\begin{subfigure}{\textwidth}
+\centering
+\begin{circuitikz}
+\draw (0,0) to[sV, l=$v_i$] (0,3)
+      to[L, l=$\Lf$, i=$i_i$] (3,3)
+      to[short] (6.2,3)
+      to[generic, l={cable $Z_0,\ \tau$}, i=$i_s$] (8.6,3)
+      to[R, l=$\Rhf$] (10.4,3)
+      to[L, l=$\Lhf$] (12.2,3)
+      to[sV, l_=$e$] (12.2,0) -- (0,0);
+\draw (3.8,3) to[R, l=$R_d$, dashed] (3.8,1.6) to[C, l=$\Cf$] (3.8,0);
+\draw (5.6,3) to[C, l=$C_2$] (5.6,1.6) to[R, l=$R_2$] (5.6,0);
+\node[above] at (4.7,3.1) {$v_c$};
+\end{circuitikz}
+\caption{Motor side: LC, L(RC); the machine is $\Rhf$, $\Lhf$ ($\sigma L_s$ for the IM, $L_d$/$L_q$ for the PMSM) and the back-EMF $e$.}
+\end{subfigure}
 \caption{Filter structures. The damping is either the series resistor $R_d$ (dashed) or the parallel branch $C_2$--$R_2$ (the ``RC'' of L(RC)); only one of the two is used.}
 \label{fig:circ}
 \end{figure}
@@ -132,7 +230,7 @@ I_{rip,rms} = \frac{\Vdc}{24\,\fsw L}\sqrt{\mathrm{HDF}(m)},\qquad
 Table~\ref{tab:ripple} lists $k$ for the maximum and the mean (over the fundamental period) peak-to-peak ripple and for the RMS ripple, computed exactly by the companion script; the closed forms \eqref{eq:kpk}--\eqref{eq:hdf} are reproduced to four digits.
 
 \begin{table}[htb]
-\centering\footnotesize
+\centering\footnotesize\begin{singlespace}
 \caption{Ripple coefficient $k$ of \eqref{eq:kdef}, written as $1/x$: maximum peak-to-peak over the fundamental period, mean peak-to-peak, RMS of the ripple. Two-level VSC, double-edge regular sampling, isolated neutral.}
 \label{tab:ripple}
 \begin{tabular}{@{}c ccc ccc ccc@{}}
@@ -150,6 +248,7 @@ $m$ & max pp & mean pp & RMS & max pp & mean pp & RMS & max pp & mean pp & RMS \
 1.155 & --     & --     & --   & 1/6.0  & 1/12.8 & 1/40 & 1/6.0 & 1/11.9 & 1/38 \\
 \bottomrule
 \end{tabular}
+\end{singlespace}
 \end{table}
 
 \begin{mybox}
@@ -246,13 +345,13 @@ P_{R_d} = 3 R_d \big[(\omega_1 \Cf V_{ph})^2 + I_{rip,rms}^2\big],
 \end{equation}
 where the loss has a fundamental term (the whole capacitor current flows in $R_d$) and a switching term; both are usually \SIrange{0.1}{0.3}{\percent} of $S_n$ \cite{pena2013}. The price is the attenuation penalty of Section~\ref{sec:tf}.
 
-\textbf{R--C branch.} Splitting the capacitance into $C_1$ and $C_2 = nC_1$ with $R_2$ in series with $C_2$ keeps the $-60$~dB/decade slope. With $R_0 = \sqrt{L_p/C_1}$ and $r = R_2/R_0$, the three closed-form choices of \cite{bagnara2026} are
+\textbf{R--C branch.} Splitting the capacitance into $C_1$ and $C_2 = nC_1$ with $R_2$ in series with $C_2$ keeps the $-60$~dB/decade slope. With $R_0 = \sqrt{L_p/C_1}$ and $\rho = R_2/R_0$, the three closed-form choices of \cite{bagnara2026} are
 \begin{align}
-r_Z &= \sqrt{\frac{(2+n)(4+3n)}{2n^2(4+n)}} && \text{minimum peak of the output impedance \cite{erickson1999}}, \label{eq:rRC}\\
-r_H &= \frac{\sqrt{(1+n)(2+n)/2}}{n} && \text{minimum peak of } |v_c/v_1|, \nonumber\\
-r_P &= \frac{2+n}{2n} && \text{real pole at } \omega_0 = 1/\sqrt{L_p C_1}, \nonumber
+\rho_Z &= \sqrt{\frac{(2+n)(4+3n)}{2n^2(4+n)}} && \text{minimum peak of the output impedance \cite{erickson1999}}, \label{eq:rRC}\\
+\rho_H &= \frac{\sqrt{(1+n)(2+n)/2}}{n} && \text{minimum peak of } |v_c/v_1|, \nonumber\\
+\rho_P &= \frac{2+n}{2n} && \text{real pole at } \omega_0 = 1/\sqrt{L_p C_1}, \nonumber
 \end{align}
-with $\zeta = n/(2\sqrt{2(2+n)})$ for $r_P$ (0.20 for $n = 1$, 0.35 for $n = 2$) and a peak of $|v_c/v_1|$ not lower than $(2+n)/n$. On the AC grid the branch carries the fundamental capacitive current of $C_2$, so
+with $\zeta = n/(2\sqrt{2(2+n)})$ for $\rho_P$ (0.20 for $n = 1$, 0.35 for $n = 2$) and a peak of $|v_c/v_1|$ not lower than $(2+n)/n$. On the AC grid the branch carries the fundamental capacitive current of $C_2$, so
 \begin{equation}
 P_{R_2} = 3 R_2 \frac{(\omega_1 C_2 V_{ph})^2}{1 + (\omega_1 C_2 R_2)^2} + 3\frac{v_{c,sw}^2}{R_2},\qquad v_{c,sw} \approx \frac{I_{rip,rms}}{\wsw C_1},
 \label{eq:PR2}
@@ -263,7 +362,7 @@ which limits $n$ to \numrange{1}{2} and makes the loss comparable with the serie
 The grid sees the converter as a current source with an output admittance $Y_c(s)$ shaped by the current controller; stability of the interconnection is that of the loop $Z_g(s)Y_c(s)$ \cite{sun2011}. With the digital delay the real part of $Y_c$ becomes negative between about $f_s/6$ and $f_s/2$ for converter-current control, so any resonance of $Z_g$ with the filter falling in that band is destabilised, whatever the gains; passive damping and the choice of $\fres$ of Section~\ref{sec:resgrid} move the resonance out of the band or make $Y_c$ passive there. Practical rules: (i) evaluate $\fres$ and the phase margin at both ends of the $\Lg$ range; (ii) a weak grid (SCR $< 3$) also demands a slow PLL ($\le$ \SI{20}{Hz}) and a reduced current-loop bandwidth; (iii) the background distortion of the grid is amplified by the LCL between $f_2$ and $\fres$, which is why $\fres \ge 10 f_1$ and why the capacitor must be rated for the 5th/7th harmonics; (iv) verify the design with the transformer leakage and the cable of the actual installation, not with $\Lg = 0$ only.
 
 \subsection{Sizing path and worked example}
-\begin{center}\footnotesize
+\begin{center}\footnotesize\begin{singlespace}
 \begin{tabular}{@{}l p{6.3cm} p{8.4cm}@{}}
 \toprule
 Step & Relation & Example: \SI{400}{V}, \SI{250}{kVA}, \SI{50}{Hz}, $\Vdc = \SI{700}{V}$, $\fsw = \SI{4}{kHz}$, $f_s = \SI{8}{kHz}$, SVM, $i_1$ feedback \\
@@ -273,11 +372,12 @@ G2 & $L_1$ from \eqref{eq:L1}, $k_r = 0.25$ at the rated $m$ & $m = 0.98$: $k = 
 G3 & $\Cf$ from \eqref{eq:Cf}, $x = 0.05$ & $\Cf \le \SI{249}{\micro F}$ $\Rightarrow$ $\Cf = \SI{250}{\micro F}$ star (\SI{83}{\micro F} delta), $Q_c = \SI{12.6}{kvar}$ \\
 G4 & $k_a$ and $L_2$ from \eqref{eq:L2} & $I_{2,sw} \le 0.003 I_n = \SI{1.08}{A}$, $I_{1,sw} \approx \SI{19.2}{A}$ $\Rightarrow$ $k_a \le 0.056$ (\SI{-25}{dB}), $L_2 \ge \SI{119}{\micro H}$ $\Rightarrow$ $L_2 = \SI{125}{\micro H}$ ($r = 0.62$), $k_a = 0.053$, $I_{2,sw} = \SI{1.03}{A}$ (\SI{0.28}{\percent}); $L_1 + L_2 = \SI{16}{\percent}$ \\
 G5 & $\fres$ from \eqref{eq:lcl}, band \eqref{eq:resband} & $\fres = \SI{1148}{Hz}$ ($\Lg = 0$), \SIrange{976}{1086}{Hz} over the $\Lg$ range; $10 f_1 = \SI{500}{Hz}$, $\fsw/2 = \SI{2}{kHz}$; $f_s/6 = \SI{1333}{Hz}$: the band is below $f_s/6$ with $i_1$ feedback $\Rightarrow$ damping required (or $i_2$ feedback) \\
-G6 & damping \eqref{eq:Rd} or \eqref{eq:rRC}--\eqref{eq:PR2} & series: $R_d = \SI{185}{m\ohm}$, $\zeta \approx 0.17$, $P = \SI{387}{W}$ (\SI{0.15}{\percent}), $k_a$ degraded to $0.082$; R--C with $n = 1$: $C_1 = C_2 = \SI{125}{\micro F}$, $L_p = \SI{77}{\micro H}$, $R_0 = \SI{0.78}{\ohm}$, $r_P = 1.5$ $\Rightarrow$ $R_2 = \SI{1.18}{\ohm}$, $\zeta = 0.20$, $P = 290 + 95 = \SI{385}{W}$ (\SI{0.15}{\percent}), slope preserved \\
+G6 & damping \eqref{eq:Rd} or \eqref{eq:rRC}--\eqref{eq:PR2} & series: $R_d = \SI{185}{m\ohm}$, $\zeta \approx 0.17$, $P = \SI{387}{W}$ (\SI{0.15}{\percent}), $k_a$ degraded to $0.082$; R--C with $n = 1$: $C_1 = C_2 = \SI{125}{\micro F}$, $L_p = \SI{77}{\micro H}$, $R_0 = \SI{0.78}{\ohm}$, $\rho_P = 1.5$ $\Rightarrow$ $R_2 = \SI{1.18}{\ohm}$, $\zeta = 0.20$, $P = 290 + 95 = \SI{385}{W}$ (\SI{0.15}{\percent}), slope preserved \\
 G7 & ratings & $L_1$: \SI{361}{A}, saturation $\ge \SI{583}{A}$, ripple \SI{19}{A} RMS at \SI{4}{kHz}; $L_2$: line reactor \SI{361}{A}; $\Cf$: $\ge \SI{440}{V}$ AC, $I_c \approx \SI{26}{A}$ \\
 G8 & control checks & $f_c \le \fres^{min}/3 \approx \SI{320}{Hz}$ ($\approx \fsw/12$); verify phase margin at $\Lg^{min}$ and $\Lg^{max}$ with the delay $1.5 T_s$; PLL $\le \SI{20}{Hz}$ at $S_{sc,min}$ \\
 \bottomrule
 \end{tabular}
+\end{singlespace}
 \end{center}
 The example shows the typical outcome at \SI{4}{kHz}: a \SI{0.3}{\percent} target at the switching cluster needs $L_1 + L_2 \approx \SI{0.15}{pu}$ with the capacitor at its \SI{5}{\percent} bound, and the resonance lands at $\fres/\fsw \approx 0.25$--$0.3$, i.e.\ below the critical $f_s/6$ with double update. Raising $\fsw$ to \SIrange{8}{10}{kHz} halves the inductances and moves $\fres$ above $f_s/6$ at the same $x$; with grid-current feedback the present placement is instead the inherently damped one.
 
@@ -346,7 +446,7 @@ With the filter the inverter current $i_i$ and voltage $v_i$ are no longer the s
 \textbf{IM versus PMSM, summary.} (i) $\Lhf$: $\sigma L_s$ for the IM, $L_d$/$L_q$ for the PMSM, larger and anisotropic for the IPM, so the loaded resonance shift and the plant differ per axis. (ii) The IM rotor cage adds a lossy branch but, as shown, the damping it gives to the filter is marginal; the PMSM gives none. (iii) The PMSM usually has the higher $f_{1,max}$, which narrows the window \eqref{eq:window} and raises the required $\fsw$. (iv) The filter drop and the capacitor current change the voltage and current limits: for the PMSM they shift the MTPA/MTPV trajectories and anticipate the field weakening \cite{salomaki2008}; for the IM they reduce the maximum torque in field weakening. (v) The benefit differs too: for the PMSM the sinusoidal current removes the magnet eddy-current losses and the demagnetisation risk from the switching ripple at high temperature; for the IM it removes the rotor-bar harmonic losses and the acoustic noise.
 
 \subsection{Sizing path and worked example}
-\begin{center}\footnotesize
+\begin{center}\footnotesize\begin{singlespace}
 \begin{tabular}{@{}l p{4.6cm} p{4.9cm} p{4.9cm}@{}}
 \toprule
 Step & Relation & IM \SI{110}{kW}, 4-pole, \SI{400}{V}, \SI{195}{A}, $f_{1,max} = \SI{75}{Hz}$, $\sigma L_s = \SI{0.18}{pu}$, $\fsw = \SI{4}{kHz}$ & PMSM (IPM) \SI{110}{kW}, \SI{400}{V}, \SI{180}{A}, $f_{1,max} = \SI{200}{Hz}$, $L_q \approx \SI{0.3}{pu}$, $\fsw = \SI{8}{kHz}$ \\
@@ -360,8 +460,11 @@ M6 & damping & series $R_d = \SI{0.37}{\ohm}$ ($\zeta \approx 0.17$): \SI{607}{W
 M7 & control, Section~\ref{sec:control} & $\alpha_i \le 2\pi\cdot\SI{400}{Hz}$, stator-current loop $\le f_p/5 \approx \SI{200}{Hz}$, $f_{inj} \le \SI{340}{Hz}$ & $\alpha_i \le 2\pi\cdot\SI{800}{Hz}$, stator-current loop $\le \SI{390}{Hz}$, $f_{inj} \le \SI{650}{Hz}$; $L_d \ne L_q$ in the observer \\
 \bottomrule
 \end{tabular}
+\end{singlespace}
 \end{center}
 The two columns show the trade-off: the induction motor at \SI{4}{kHz} fits the window with a \SI{6}{\percent} inductor and a \SI{5}{\percent} capacitor, the PMSM needs \SI{8}{kHz} and still pays a \SI{15}{\percent} drop at its top speed or a larger ripple; in both cases the passive damping costs \SIrange{0.5}{1.5}{\percent} of the rated power, which is why the resonance is damped actively whenever the controller has the filter in its model. The dead-time harmonics must be checked against $f_p$ at every operating speed (the 7th of \SI{75}{Hz} is \SI{525}{Hz}, that of \SI{200}{Hz} is \SI{1.4}{kHz}, both below $f_p$ with margin), and the saturation of $L_q$ at rated $i_q$ shifts $f_p$ of the IPM upwards by a few percent more.
+
+\end{onehalfspace}
 
 \begin{thebibliography}{99}\small
 \bibitem{liserre2005} M. Liserre, F. Blaabjerg, S. Hansen, ``Design and control of an LCL-filter-based three-phase active rectifier,'' \emph{IEEE Transactions on Industry Applications}, vol.~41, no.~5, pp.~1281--1291, Sep./Oct. 2005.
