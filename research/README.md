@@ -67,7 +67,8 @@ Converters and control:
   passive damping and its losses, grid-impedance interaction) and LC / L(RC) sine and dv/dt output
   filters for induction and PMSM drives (reflected wave with long cables, resonance window, loaded
   resonance set by the machine inductance, damping, consequences for the current control and for
-  sensorless control), with two sizing paths and worked examples; `lrc_filter_example.py` reproduces
+  sensorless control), with two step-by-step worked examples for a 450 kW, 480 V, 2 kHz drive (AFE
+  grid filter; IM and PMSM sine filters) and a comparison table; `lrc_filter_example.py` reproduces
   the numbers.
 
 Line-commutated rectifiers and protection:
