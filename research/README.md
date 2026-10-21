@@ -62,7 +62,8 @@ Converters and control:
   250 kVA and 690 V / 1600 kVA cases; sub-notes `summary_EN50160` (IT) and `trafo_equivalente`
   (sequence equivalent circuits of a three-phase transformer, IT).
 - `lrc_filter_design_guidelines` — *L(RC) filter design guidelines*: grid-side L / LCL / L(RC)L
-  filters for active front ends (exact PWM inductor ripple for SPWM, SVM and DPWM, capacitor reactive
+  filters for active front ends (exact PWM inductor ripple for SPWM, SVM and DPWM, the ripple-inductance
+  trade-off of the reactor with its loss optimum versus the switching frequency, capacitor reactive
   power, attenuation against IEEE 519, resonance placement versus the critical frequency $f_s/6$,
   passive damping and its losses, grid-impedance interaction) and LC / L(RC) sine and dv/dt output
   filters for induction and PMSM drives (reflected wave with long cables, resonance window, loaded
