@@ -15,6 +15,7 @@
 \ctikzset{bipoles/length=1.2cm}
 
 \sisetup{per-mode=symbol,range-phrase={\text{--}},range-units=single}
+\DeclareSIUnit{\EUR}{EUR}
 \setlist{nosep}
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{3pt}
@@ -104,6 +105,17 @@ k & ripple coefficient, $\Delta i = k\,\Vdc/(\fsw L)$; tabulated in Table~\ref{t
 I_{rip,rms},\ \mathrm{HDF} & RMS value of the switching ripple over the fundamental period and harmonic distortion factor of Holmes--Lipo, Eq.~\eqref{eq:hdf} & A, -- \\
 k_r & ripple allowance of the design, $\Delta i_{\pp,max}/\hat I_n$ & -- \\
 \epsilon_L & relative fundamental voltage drop on the filter inductance(s), $\omega_1 L I_n/V_{ph}$ & -- \\
+\multicolumn{3}{@{}l}{\textit{Converter losses and reactor model (Section~\ref{sec:optL})}} \\
+E_{on},\ E_{off},\ E_{rr} & switching energies of the IGBT (turn-on, turn-off) and of its diode (reverse recovery) at the datasheet reference $I_{ref}$, $V_{ref}$ & J \\
+I_{pk} & repetitive peak current, $\hat I_n + \Delta i_{\pp,max}/2$ & A \\
+A_p,\ A_c,\ A_w & area product of the reactor and its factors, core section and window area & m$^4$, m$^2$ \\
+B_{max},\ J,\ k_u & peak flux density at $I_{pk}$, winding current density, window fill factor & T, A/m$^2$, -- \\
+k_h,\ k_e & hysteresis and eddy-current coefficients of the core loss per unit mass, $p = k_h f \hat B^2 + k_e f^2 \hat B^2$ ($p$ in W/kg, $f$ in Hz, $\hat B$ in T) & -- \\
+F_r & AC-to-DC resistance ratio of the winding at $\fsw$ & -- \\
+v_{L,hf} & switching part of the voltage across the converter-side inductor; $\langle v_{L,hf}^2\rangle$ its mean square & V \\
+m_L,\ P_L & mass and total loss of the three-phase reactor ($P_{cu}$, $P_{fe,1}$, $P_{fe,sw}$: copper, core at $f_1$, core at $\fsw$) & kg, W \\
+L_{opt},\ k_{r,opt} & inductance and ripple allowance at the minimum of $P_L$ & H, -- \\
+c_P,\ c_m & cost weights of the capitalised losses (EUR per W) and of the reactor mass (EUR per kg) & -- \\
 \multicolumn{3}{@{}l}{\textit{Grid-side filter (Fig.~\ref{fig:circ}a)}} \\
 L_1,\ L_2 & converter-side and grid-side filter inductances & H \\
 \Lg,\ L_2' & grid inductance at the point of common coupling (transformer and upstream network) and total grid-side inductance $L_2' = L_2 + \Lg$ & H \\
@@ -165,15 +177,17 @@ Two-level three-phase voltage-source converter (VSC) \cite{mohan2003,holmes2003}
 \begin{subfigure}{\textwidth}
 \centering
 \begin{circuitikz}
-\draw (0,0) to[sV, l=$v_1$] (0,3)
-      to[L, l=$L_1$, i=$i_1$] (3,3)
-      to[short] (6.2,3)
-      to[L, l=$L_2$, i=$i_2$] (9.2,3)
-      to[L, l=$\Lg$] (12.2,3)
+\draw (0,0) to[sV, l=$v_1$] (0,4.4)
+      to[L, l=$L_1$, i=$i_1$] (3,4.4)
+      to[short] (6.2,4.4)
+      to[L, l=$L_2$, i=$i_2$] (9.2,4.4)
+      to[L, l=$\Lg$] (12.2,4.4)
       to[sV, l_=$v_g$] (12.2,0) -- (0,0);
-\draw (3.8,3) to[R, l=$R_d$, dashed] (3.8,1.6) to[C, l=$\Cf$] (3.8,0);
-\draw (5.6,3) to[C, l=$C_2$] (5.6,1.6) to[R, l=$R_2$] (5.6,0);
-\node[above] at (4.7,3.1) {$v_c$};
+\draw[dashed] (3.8,4.4) to[R, l=$R_d$] (3.8,2.4);
+\draw (3.8,2.4) to[C, l=$\Cf$] (3.8,0);
+\draw (5.6,4.4) to[C, l=$C_2$] (5.6,2.4) to[R, l=$R_2$] (5.6,0);
+\draw (3.8,4.4) node[circ]{} (5.6,4.4) node[circ]{} (3.8,0) node[circ]{} (5.6,0) node[circ]{};
+\node[above] at (4.7,4.5) {$v_c$};
 \end{circuitikz}
 \caption{Grid side: L ($\Cf = 0$), LCL, L(RC)L; $\Lg$ is the grid (transformer and network) inductance.}
 \end{subfigure}
@@ -181,16 +195,18 @@ Two-level three-phase voltage-source converter (VSC) \cite{mohan2003,holmes2003}
 \begin{subfigure}{\textwidth}
 \centering
 \begin{circuitikz}
-\draw (0,0) to[sV, l=$v_i$] (0,3)
-      to[L, l=$\Lf$, i=$i_i$] (3,3)
-      to[short] (6.2,3)
-      to[generic, l={cable $Z_0,\ \tau$}, i=$i_s$] (8.6,3)
-      to[R, l=$\Rhf$] (10.4,3)
-      to[L, l=$\Lhf$] (12.2,3)
+\draw (0,0) to[sV, l=$v_i$] (0,4.4)
+      to[L, l=$\Lf$, i=$i_i$] (3,4.4)
+      to[short] (6.2,4.4)
+      to[generic, l={cable $Z_0,\ \tau$}, i=$i_s$] (8.6,4.4)
+      to[R, l=$\Rhf$] (10.4,4.4)
+      to[L, l=$\Lhf$] (12.2,4.4)
       to[sV, l_=$e$] (12.2,0) -- (0,0);
-\draw (3.8,3) to[R, l=$R_d$, dashed] (3.8,1.6) to[C, l=$\Cf$] (3.8,0);
-\draw (5.6,3) to[C, l=$C_2$] (5.6,1.6) to[R, l=$R_2$] (5.6,0);
-\node[above] at (4.7,3.1) {$v_c$};
+\draw[dashed] (3.8,4.4) to[R, l=$R_d$] (3.8,2.4);
+\draw (3.8,2.4) to[C, l=$\Cf$] (3.8,0);
+\draw (5.6,4.4) to[C, l=$C_2$] (5.6,2.4) to[R, l=$R_2$] (5.6,0);
+\draw (3.8,4.4) node[circ]{} (5.6,4.4) node[circ]{} (3.8,0) node[circ]{} (5.6,0) node[circ]{};
+\node[above] at (4.7,4.5) {$v_c$};
 \end{circuitikz}
 \caption{Motor side: LC, L(RC); the machine is $\Rhf$, $\Lhf$ ($\sigma L_s$ for the IM, $L_d$/$L_q$ for the PMSM) and the back-EMF $e$.}
 \end{subfigure}
@@ -200,6 +216,7 @@ Two-level three-phase voltage-source converter (VSC) \cite{mohan2003,holmes2003}
 
 \section{Switching ripple of the converter-side inductor}
 \label{sec:ripple}
+\subsection{Ripple coefficients}
 The converter-side inductor ($L_1$ or $\Lf$) is sized first from its switching ripple. With the capacitor node a stiff voltage at $\fsw$ (LCL, LC) or a stiff grid (plain L), the phase current ripple over one switching period $T_{sw} = 1/\fsw$ is piecewise linear with slopes $(v_{1,n} - v_{ref})/L$, where $v_{1,n}$ is the converter phase voltage with respect to the load neutral ($0$, $\pm\Vdc/3$, $\pm 2\Vdc/3$) and $v_{ref}$ the reference. Let $m = \hat V_{ref}/(\Vdc/2)$ be the modulation index ($m \le 1$ for sinusoidal PWM, $m \le 2/\sqrt3 = 1.155$ for space-vector or third-harmonic PWM). All ripple figures scale as
 \begin{equation}
 \Delta i = k\,\frac{\Vdc}{\fsw L},
@@ -257,6 +274,110 @@ $m$ & max pp & mean pp & RMS & max pp & mean pp & RMS & max pp & mean pp & RMS \
 \begin{mybox}
 \textbf{Which ripple formula to use.} The widely used $L = \Vdc/(8\fsw\Delta i_{\pp})$ is neither the maximum nor the mean: at $m \approx 1$ with SVM the true maximum is $\Vdc/(6.9\fsw L)$ (\SI{15}{\percent} above the rule), the worst case over $m$ is $\Vdc/(6\fsw L)$ (\SI{33}{\percent} above, the value used by Liserre et al.~\cite{liserre2005} and Reznik et al.~\cite{reznik2014}), while the mean peak-to-peak over the fundamental is $\Vdc/(13.5\fsw L)$ (\SI{40}{\percent} below). The rule is a fair ``typical period'' estimate; it is not an upper bound. Recommended use: (i) size $L$ and check the saturation current $\hat I_n + \Delta i_{\pp,max}/2$ with the maximum of Table~\ref{tab:ripple} at the largest $m$ of the application ($\Vdc/(6\fsw L)$ when the converter reaches the hexagon, $\Vdc/(7\fsw L)$ for an AFE at $m \approx 1$); (ii) use the RMS column, or \eqref{eq:hdf}, for the capacitor current, the damping losses and the harmonic current at $\fsw$; (iii) with discontinuous PWM at the same $\fsw$ the ripple is up to twice that of SVM at low $m$, so compare at equal switching losses ($\fsw$ raised by $1.5$).
 \end{mybox}
+
+\subsection{The ripple--inductance trade-off: where the optimum $L$ lies}
+\label{sec:optL}
+Eq.~\eqref{eq:kdef} ties $L$ to the ripple allowance $k_r = \Delta i_{\pp,max}/\hat I_n$ once $\fsw$ is given, $L = k_{\pp,max}\Vdc/(\fsw k_r \hat I_n)$; which $k_r$ to take is a balance between what the ripple costs in the converter and what the inductance costs in the reactor. The two sides are quantified in turn, then combined for the \SI{450}{kW} drive at $\fsw = \SIrange{2}{5}{kHz}$ (Fig.~\ref{fig:optL}, Table~\ref{tab:optL}); the same applies to the motor-side $\Lf$, which sees the same switched voltage.
+
+\textbf{Converter side: $\fsw$ is set by the semiconductor, $L$ hardly matters.} With the datasheet energies $E_{on}$, $E_{off}$, $E_{rr}$ at $I_{ref}$, $V_{ref}$ (linear in current and voltage), the switching loss of one IGBT--diode pair carrying a sinusoidal current is
+\begin{equation}
+P_{sw} = \fsw\,(E_{on} + E_{off} + E_{rr})\,\frac{\hat I_n}{\pi I_{ref}}\,\frac{\Vdc}{V_{ref}},
+\label{eq:Psw}
+\end{equation}
+and $P_{sw}$ plus the conduction loss at the overload current must fit the thermal budget of the module: this is what fixes $\fsw$ (\SIrange{2}{5}{kHz} with \SI{1700}{V} IGBTs at this power). The ripple then enters the semiconductor in three ways. (i) \emph{Peak current}: with continuous PWM the top IGBT turns on at the valley and off at the crest of the local ripple, so the repetitive peak is $\hat I_n + \Delta i_{\pp,max}/2 = \hat I_n(1 + k_r/2)$ at rated current and $\hat I_n(1.5 + k_r/2)$ at \SI{150}{\percent} overload; it must stay below the module $I_{CRM}$, below the over-current trip with its margin, and below the saturation current of $L$. This is the ``$I_0 + \Delta I/2$'' constraint, and it is the only one through which the IGBT sees $L$. (ii) \emph{Switching loss}: $E_{off}$ is paid at the crest and $E_{on}$, $E_{rr}$ at the valley, so to first order
+\begin{equation}
+\frac{\Delta P_{sw}}{P_{sw}} = \frac{E_{off} - E_{on} - E_{rr}}{E_{on} + E_{off} + E_{rr}}\;\frac{\pi}{4}\;\frac{\Delta i_{\pp,mean}}{\hat I_n}
+= 0.40\,k_r\,\frac{E_{off} - E_{on} - E_{rr}}{E_{on} + E_{off} + E_{rr}}\quad (\text{SVM},\ m \approx 1),
+\label{eq:dPsw}
+\end{equation}
+with $k_{\pp,mean}/k_{\pp,max} = 0.51$; a few percent either way: for \SI{1700}{V} IGBT4-class modules $E_{on} + E_{rr}$ exceeds $E_{off}$ by \SIrange{20}{40}{\percent} of the total, so the ripple \emph{lowers} $P_{sw}$ by \SIrange{3}{6}{\percent} at $k_r = 0.4$; with $E_{off}$-dominated devices the sign reverses. (iii) \emph{Conduction loss}: the RMS current rises by $(I_{rip,rms}/I_n)^2 = (0.22\,k_r)^2 < \SI{1}{\percent}$. The semiconductor is therefore indifferent to $L$ except through the peak; its stake in the choice is the trip margin, not the losses.
+
+\textbf{Reactor side: a scaling model.} Consider a family of geometrically similar gapped reactors (laminated SiFe, foil or flat-wire winding with fill factor $k_u$, forced-air cooling) designed at the same peak flux density $B_{max}$ at $I_{pk} = \hat I_n(1 + k_r/2)$ and at the same current density $J$. The area product
+\begin{equation}
+A_p = A_c A_w = \frac{L\,I_{pk}\,I_{rms}}{k_u B_{max} J},\qquad I_{rms} = \sqrt{I_n^2 + I_{rip,rms}^2},
+\label{eq:Ap}
+\end{equation}
+fixes the linear dimension $\propto A_p^{1/4}$, so core and copper masses scale as $A_p^{3/4} \propto L^{3/4}$ (the factor $(1 + k_r/2)^{3/4}$ from $I_{pk}$ is weak). The losses are:
+\begin{itemize}
+\item copper: $P_{cu} = R_{dc}\,(I_n^2 + F_r I_{rip,rms}^2) = \rho_{cu} J^2 V_{cu}\,(1 + F_r I_{rip,rms}^2/I_n^2) \propto L^{3/4}$, with $F_r = R_{ac}/R_{dc}$ at $\fsw$ ($3$--$5$ for a foil winding; the ripple term is a few percent);
+\item core at the fundamental: $P_{fe,1} = m_{fe}\,(k_h f_1 + k_e f_1^2)\,B_1^2 \propto L^{3/4}$, with $B_1 = B_{max}/(1 + k_r/2)$ and the loss separation $p = k_h f \hat B^2 + k_e f^2 \hat B^2$ per unit mass ($k_e = \pi^2\sigma d^2/(6\rho_m)$ for the lamination thickness $d$, valid while $d$ stays below the skin depth of the steel);
+\item core at the switching frequency: the eddy-current term depends on $\langle (dB/dt)^2\rangle = \langle v_{L,hf}^2\rangle/(N A_c)^2$ with $N A_c = L I_{pk}/B_{max}$, the hysteresis term on the amplitude of the ripple flux, so
+\begin{equation}
+P_{fe,sw} = m_{fe}\left[\frac{k_e}{2\pi^2}\,\langle v_{L,hf}^2\rangle\left(\frac{B_{max}}{L\,I_{pk}}\right)^{2} + k_h \fsw \hat B_{sw}^2\right],\qquad
+\hat B_{sw} = \sqrt3\,B_{max}\,\frac{I_{rip,rms}}{I_{pk}}.
+\label{eq:Pfesw}
+\end{equation}
+\end{itemize}
+Here $\langle v_{L,hf}^2\rangle$ is the mean square of the switching part of the voltage across the inductor (converter phase voltage minus reference, the capacitor node being stiff at $\fsw$). For the two-level VSC with SVM it has the closed form
+\begin{equation}
+\frac{\langle v_{L,hf}^2\rangle}{\Vdc^2} = \frac14 - \frac{\langle v_0^2\rangle}{\Vdc^2} - \frac{m^2}{8} = \frac{2\sqrt3}{3\pi}\,m - \frac{m^2}{8} = 0.057\quad (m = 1.02:\ \text{RMS } 0.24\,\Vdc),
+\label{eq:vhf}
+\end{equation}
+where $\langle v_0^2\rangle = \Vdc^2\,[a/36 + (1 - a)/4]$ is the mean square of the common-mode voltage and $a = 3\sqrt3\,m/(2\pi)$ the fraction of the period spent on the active vectors (the script reproduces it from the exact waveform). Two facts follow. The switched voltage does not depend on $\fsw$, so at a given $L$ the eddy-current loss, the part of $P_{fe,sw}$ that grows when $L$ is reduced, is the same at \SI{2}{kHz} and at \SI{5}{kHz} and scales as $m_{fe}/L^2 \propto L^{-5/4}$. And it is $2.4$ times what a triangular ripple with the same RMS at $\fsw$ would produce, because the multi-slope SVM waveform has a far larger $\langle v^2\rangle$ than its current ripple suggests: a core loss estimated ``from the ripple at $\fsw$'' underestimates it by that factor.
+
+\textbf{The optimum.} The total reactor loss $P_L = P_{cu} + P_{fe,1} + P_{fe,sw}$ is of the form $A L^{3/4} + B L^{-5/4}$, with its minimum where
+\begin{equation}
+P_{fe,sw} = \frac35\,(P_{cu} + P_{fe,1}),\qquad
+L_{opt} = L_t\sqrt{\frac{r_t}{0.6}},\quad r_t = \left.\frac{P_{fe,sw}}{P_{cu} + P_{fe,1}}\right|_{L_t},
+\label{eq:Lopt}
+\end{equation}
+i.e.\ where the switching-frequency core loss is \SI{60}{\percent} of the rest. The second form gives $L_{opt}$ from the loss split of any trial design $L_t$, e.g.\ from a supplier's loss sheet, provided the switching-frequency core loss is specified for the PWM voltage \eqref{eq:vhf} and not for a sinusoidal ripple. With a Steinmetz law $p \propto f^\alpha \hat B^\beta$ in place of the eddy term the ratio is $(3/4)/(\beta - 3/4)$ and $L_{opt} = L_t\,[r_t(4\beta - 3)/3]^{1/\beta}$; with the thermally consistent scaling $J \propto A_p^{-1/8}$ (larger reactors run at a lower current density) the ratio becomes $1/2$ and $L_{opt}$ moves up by about \SI{10}{\percent}. The mass $m_L \propto [(1 + k_r/2)/k_r]^{3/4}$ falls monotonically with $k_r$, so every design with $k_r < k_{r,opt}$ is dominated (heavier \emph{and} more lossy) and the useful range is $k_r \ge k_{r,opt}$: the loss optimum when the losses are capitalised (with $c_P \approx$ \SIrange{5}{10}{\EUR\per W} over the life of the drive against $c_m \approx$ \SIrange{10}{15}{\EUR\per kg} of reactor, minimising $c_P P_L + c_m m_L$ moves $k_r$ up by only \SI{10}{\percent}), a larger $k_r$ when the cabinet volume is binding, up to the peak-current limit of the converter and the capacitor-current and attenuation limits of Sections~\ref{sec:grid} and~\ref{sec:motor}. Since $\langle v_{L,hf}^2\rangle$ does not depend on $\fsw$, neither does $L_{opt}$: raising $\fsw$ at the optimum lowers the ripple ($k_{r,opt} \propto 1/\fsw$) but leaves mass and loss of the reactor unchanged; the smaller reactor expected from a higher $\fsw$ is obtained only by keeping $k_r$, i.e.\ by moving off the optimum and paying core loss, or with thinner laminations and better steel ($k_e \propto d^2$, hence $k_{r,opt} \propto 1/d$), amorphous or powder cores.
+
+\textbf{Numbers for the \SI{450}{kW} drive.} AFE of Example~1 ($I_n = \SI{601}{A}$, $\Vdc = \SI{800}{V}$, SVM at $m = 1.02$: $k_{\pp,max} = 1/6.8$, $k_{rms} = 1/44$); reactor model: \SI{0.35}{mm} non-oriented steel (\SI{3}{W/kg} at \SI{1.5}{T}, \SI{50}{Hz}: $k_h = \SI{0.024}{W/(kg.Hz.T^2)}$, $k_e = \SI{5.3e-5}{W/(kg.Hz^2.T^2)}$), $B_{max} = \SI{1.4}{T}$, $J = \SI{3}{A/mm^2}$, $k_u = 0.3$, UI core with a square leg $a$ and window $0.8a \times 2.5a$, three single-phase reactors, $F_r = 2 + \fsw/\SI{2}{kHz}$. Fig.~\ref{fig:optL} gives $P_L$ and $m_L$ against $k_r$ for $\fsw = 2$, $3$, $4$, \SI{5}{kHz}, Table~\ref{tab:optL} the optima. At \SI{2}{kHz} the loss optimum is $k_r = 0.43$ ($L = \SI{161}{\micro H}$, \SI{13}{\percent}), a flat minimum ($0.37$--$0.50$ within \SI{1}{\percent}) on which the $k_r = 0.40$ of step~A3 of Example~1 sits; the conventional $0.25$ would cost \SI{10}{\percent} more loss and \SI{42}{\percent} more mass. At \SI{4}{kHz} the optimum is $k_r = 0.20$ with the same $L = \SI{173}{\micro H}$: $0.25$, the allowance of the \SI{690}{V} design of Example~1b, costs \SI{2}{\percent} of loss and saves \SI{14}{\percent} of mass; $0.40$ saves \SI{36}{\percent} of mass for \SI{20}{\percent} more loss. The reactor at the optimum is the same at the four frequencies, $L \approx \SI{170}{\micro H}$ (\SI{14}{\percent}), \SI{165}{kg}, \SI{2.3}{kW} (\SI{0.47}{\percent} of $S_n$), with $P_{fe,sw}/(P_{cu} + P_{fe,1}) = 0.6$; the higher $\fsw$ pays on the filter side, where the grid line scales as $1/\fsw^3$ and the capacitor shrinks. The peak current at the optimum is $\hat I_n(1 + k_r/2) = \SI{1033}{A}$ at \SI{2}{kHz} and \SI{936}{A} at \SI{4}{kHz} (\SI{1460}{A} and \SI{1361}{A} at \SI{150}{\percent} overload), within the repetitive peak rating of the \SI{1400}{A}-class \SI{1700}{V} modules used at this power. Rule for the \SIrange{2}{5}{kHz} range with \SI{0.35}{mm} steel: $k_{r,opt} \approx \SI{0.8}{kHz}/\fsw$, equivalently $L_{opt} \approx$ \SIrange{13}{14}{\percent} of $L_b$, to be moved up with better steel and checked with \eqref{eq:Lopt} on the supplier's loss split.
+
+\begin{figure}[htb]
+\centering
+\begin{subfigure}{\textwidth}
+\centering
+\begin{tikzpicture}
+\begin{axis}[width=15cm, height=7cm, xlabel={$k_r = \Delta i_{\pp,max}/\hat I_n$}, ylabel={$P_L$ [kW]}, xmin=0.1, xmax=1.0, ymin=2, ymax=5, grid=both, grid style={gray!25}, legend pos=north west, legend style={font=\small, draw=gray!50}, label style={font=\small}, tick label style={font=\small}]
+\addplot[black, thick] coordinates {(0.10,4.184) (0.12,3.725) (0.14,3.396) (0.16,3.151) (0.18,2.964) (0.20,2.818) (0.22,2.704) (0.24,2.614) (0.26,2.543) (0.28,2.487) (0.30,2.443) (0.32,2.409) (0.34,2.383) (0.36,2.365) (0.38,2.352) (0.40,2.344) (0.42,2.341) (0.44,2.342) (0.46,2.345) (0.48,2.352) (0.50,2.361) (0.52,2.372) (0.54,2.385) (0.56,2.400) (0.58,2.417) (0.60,2.434) (0.62,2.453) (0.64,2.473) (0.66,2.494) (0.68,2.516) (0.70,2.539) (0.72,2.562) (0.74,2.586) (0.76,2.610) (0.78,2.635) (0.80,2.660) (0.82,2.686) (0.84,2.712) (0.86,2.738) (0.88,2.765) (0.90,2.792) (0.92,2.819) (0.94,2.846) (0.96,2.874) (0.98,2.901) (1.00,2.929)};
+\addplot[blue!70!black, thick] coordinates {(0.10,3.238) (0.12,2.936) (0.14,2.731) (0.16,2.588) (0.18,2.488) (0.20,2.420) (0.22,2.374) (0.24,2.347) (0.26,2.333) (0.28,2.331) (0.30,2.338) (0.32,2.351) (0.34,2.371) (0.36,2.396) (0.38,2.425) (0.40,2.458) (0.42,2.493) (0.44,2.532) (0.46,2.572) (0.48,2.614) (0.50,2.658) (0.52,2.703) (0.54,2.750) (0.56,2.797) (0.58,2.845) (0.60,2.894) (0.62,2.944) (0.64,2.994) (0.66,3.044) (0.68,3.095) (0.70,3.146) (0.72,3.198) (0.74,3.249) (0.76,3.301) (0.78,3.353) (0.80,3.405) (0.82,3.457) (0.84,3.509) (0.86,3.561) (0.88,3.612) (0.90,3.664) (0.92,3.716) (0.94,3.768) (0.96,3.819) (0.98,3.870) (1.00,3.922)};
+\addplot[teal!70!black, thick] coordinates {(0.10,2.778) (0.12,2.576) (0.14,2.452) (0.16,2.379) (0.18,2.341) (0.20,2.329) (0.22,2.335) (0.24,2.357) (0.26,2.389) (0.28,2.431) (0.30,2.479) (0.32,2.534) (0.34,2.593) (0.36,2.656) (0.38,2.722) (0.40,2.791) (0.42,2.862) (0.44,2.935) (0.46,3.009) (0.48,3.085) (0.50,3.161) (0.52,3.239) (0.54,3.317) (0.56,3.395) (0.58,3.474) (0.60,3.554) (0.62,3.633) (0.64,3.713) (0.66,3.793) (0.68,3.872) (0.70,3.952) (0.72,4.031) (0.74,4.111) (0.76,4.190) (0.78,4.269) (0.80,4.348) (0.82,4.426) (0.84,4.504) (0.86,4.582) (0.88,4.660) (0.90,4.737) (0.92,4.814) (0.94,4.890) (0.96,4.967) (0.98,5.042) (1.00,5.118)};
+\addplot[orange!80!black, thick] coordinates {(0.10,2.532) (0.12,2.405) (0.14,2.344) (0.16,2.328) (0.18,2.342) (0.20,2.378) (0.22,2.431) (0.24,2.495) (0.26,2.570) (0.28,2.652) (0.30,2.739) (0.32,2.832) (0.34,2.929) (0.36,3.028) (0.38,3.130) (0.40,3.234) (0.42,3.340) (0.44,3.447) (0.46,3.555) (0.48,3.664) (0.50,3.773) (0.52,3.883) (0.54,3.993) (0.56,4.103) (0.58,4.214) (0.60,4.324) (0.62,4.434) (0.64,4.543) (0.66,4.653) (0.68,4.762) (0.70,4.871) (0.72,4.979) (0.74,5.087) (0.76,5.194) (0.78,5.301) (0.80,5.407) (0.82,5.513) (0.84,5.618) (0.86,5.723) (0.88,5.827) (0.90,5.931) (0.92,6.034) (0.94,6.136) (0.96,6.238) (0.98,6.340) (1.00,6.440)};
+\addplot[only marks, mark=*, mark size=2pt, black] coordinates {(0.43,2.341) (0.27,2.331) (0.20,2.329) (0.16,2.328)};
+\legend{{$\fsw = \SI{2}{kHz}$}, {\SI{3}{kHz}}, {\SI{4}{kHz}}, {\SI{5}{kHz}}, {loss optimum, Eq.~\eqref{eq:Lopt}}}
+\end{axis}
+\end{tikzpicture}
+\caption{Total loss $P_L$ of the three-phase reactor.}
+\end{subfigure}
+\\[8pt]
+\begin{subfigure}{\textwidth}
+\centering
+\begin{tikzpicture}
+\begin{axis}[width=15cm, height=7cm, xlabel={$k_r = \Delta i_{\pp,max}/\hat I_n$}, ylabel={$m_L$ [kg]}, xmin=0.1, xmax=1.0, ymin=0, ymax=450, grid=both, grid style={gray!25}, legend pos=north east, legend style={font=\small, draw=gray!50}, label style={font=\small}, tick label style={font=\small}]
+\addplot[black, thick] coordinates {(0.10,449) (0.12,395) (0.14,354) (0.16,323) (0.18,297) (0.20,277) (0.22,259) (0.24,245) (0.26,232) (0.28,221) (0.30,211) (0.32,203) (0.34,195) (0.36,188) (0.38,182) (0.40,176) (0.42,171) (0.44,166) (0.46,162) (0.48,158) (0.50,154) (0.52,150) (0.54,147) (0.56,144) (0.58,141) (0.60,138) (0.62,136) (0.64,133) (0.66,131) (0.68,129) (0.70,127) (0.72,125) (0.74,123) (0.76,122) (0.78,120) (0.80,118) (0.82,117) (0.84,116) (0.86,114) (0.88,113) (0.90,112) (0.92,110) (0.94,109) (0.96,108) (0.98,107) (1.00,106)};
+\addplot[blue!70!black, thick] coordinates {(0.10,331) (0.12,291) (0.14,261) (0.16,238) (0.18,219) (0.20,204) (0.22,191) (0.24,181) (0.26,171) (0.28,163) (0.30,156) (0.32,150) (0.34,144) (0.36,139) (0.38,134) (0.40,130) (0.42,126) (0.44,122) (0.46,119) (0.48,116) (0.50,113) (0.52,111) (0.54,108) (0.56,106) (0.58,104) (0.60,102) (0.62,100) (0.64,98) (0.66,97) (0.68,95) (0.70,94) (0.72,92) (0.74,91) (0.76,90) (0.78,89) (0.80,87) (0.82,86) (0.84,85) (0.86,84) (0.88,83) (0.90,82) (0.92,81) (0.94,81) (0.96,80) (0.98,79) (1.00,78)};
+\addplot[teal!70!black, thick] coordinates {(0.10,267) (0.12,235) (0.14,211) (0.16,192) (0.18,177) (0.20,165) (0.22,154) (0.24,146) (0.26,138) (0.28,131) (0.30,126) (0.32,120) (0.34,116) (0.36,112) (0.38,108) (0.40,105) (0.42,102) (0.44,99) (0.46,96) (0.48,94) (0.50,91) (0.52,89) (0.54,87) (0.56,86) (0.58,84) (0.60,82) (0.62,81) (0.64,79) (0.66,78) (0.68,77) (0.70,76) (0.72,74) (0.74,73) (0.76,72) (0.78,71) (0.80,70) (0.82,70) (0.84,69) (0.86,68) (0.88,67) (0.90,66) (0.92,66) (0.94,65) (0.96,64) (0.98,64) (1.00,63)};
+\addplot[orange!80!black, thick] coordinates {(0.10,226) (0.12,198) (0.14,178) (0.16,162) (0.18,150) (0.20,139) (0.22,130) (0.24,123) (0.26,117) (0.28,111) (0.30,106) (0.32,102) (0.34,98) (0.36,95) (0.38,91) (0.40,89) (0.42,86) (0.44,83) (0.46,81) (0.48,79) (0.50,77) (0.52,76) (0.54,74) (0.56,72) (0.58,71) (0.60,70) (0.62,68) (0.64,67) (0.66,66) (0.68,65) (0.70,64) (0.72,63) (0.74,62) (0.76,61) (0.78,60) (0.80,60) (0.82,59) (0.84,58) (0.86,57) (0.88,57) (0.90,56) (0.92,56) (0.94,55) (0.96,54) (0.98,54) (1.00,53)};
+\addplot[only marks, mark=*, mark size=2pt, black] coordinates {(0.43,168) (0.27,167) (0.20,165) (0.16,162)};
+\legend{{$\fsw = \SI{2}{kHz}$}, {\SI{3}{kHz}}, {\SI{4}{kHz}}, {\SI{5}{kHz}}, {loss optimum}}
+\end{axis}
+\end{tikzpicture}
+\caption{Mass $m_L$ of the three-phase reactor (core and copper).}
+\end{subfigure}
+\caption{Ripple--inductance trade-off of the converter-side reactor of the \SI{450}{kW} AFE ($I_n = \SI{601}{A}$, $\Vdc = \SI{800}{V}$, SVM) against the ripple allowance $k_r$, for $\fsw = 2$, $3$, $4$, \SI{5}{kHz}. The dots mark the loss optimum \eqref{eq:Lopt}, which lies at the same $L \approx \SI{170}{\micro H}$ for the four frequencies. Reactor model of Section~\ref{sec:optL}: \SI{0.35}{mm} SiFe, $B_{max} = \SI{1.4}{T}$, $J = \SI{3}{A/mm^2}$, $k_u = 0.3$; mass decreasing monotonically, loss with a minimum.}
+\label{fig:optL}
+\end{figure}
+
+\begin{table}[htb]
+\centering\small\begin{onehalfspace}
+\setlength{\tabcolsep}{3.5pt}
+\caption{Loss optimum of the converter-side reactor of the \SI{450}{kW} AFE (model of Fig.~\ref{fig:optL}); $P_L$ and $m_L$ for the three phases; the last column is the loss and mass penalty of the conventional $k_r = 0.25$ with respect to the optimum.}
+\label{tab:optL}
+\begin{tabular}{@{}c c c c c c c c c c c@{}}
+\toprule
+$\fsw$ & $k_{r,opt}$ & $L_{opt}$ & $I_{pk}$ & $P_{cu} + P_{fe,1}$ & $P_{fe,sw}$ & $P_L$ & $m_L$ & $k_r$ within & $k_r$ at the & $k_r = 0.25$: \\
+kHz & -- & \si{\micro H} (\% $L_b$) & A & W & W & W (\% $S_n$) & kg & \SI{1}{\percent} of $P_{L,min}$ & cost optimum & $\Delta P_L$, $\Delta m_L$ \\
+\midrule
+2 & 0.43 & 161 (13.2) & 1033 & 1436 & 905 & 2341 (0.47) & 168 & 0.37--0.50 & 0.47 & $+10\,\%$, $+42\,\%$ \\
+3 & 0.27 & 171 (14.0) & 965  & 1450 & 880 & 2331 (0.47) & 167 & 0.24--0.32 & 0.30 & $+0.3\,\%$, $+5\,\%$ \\
+4 & 0.20 & 173 (14.2) & 936  & 1444 & 884 & 2329 (0.47) & 165 & 0.18--0.23 & 0.22 & $+2\,\%$, $-14\,\%$ \\
+5 & 0.16 & 173 (14.2) & 919  & 1434 & 894 & 2328 (0.47) & 162 & 0.14--0.18 & 0.17 & $+9\,\%$, $-26\,\%$ \\
+\bottomrule
+\end{tabular}
+\end{onehalfspace}
+\end{table}
 
 \section{Filter structures and transfer functions}
 \label{sec:tf}
@@ -324,7 +445,7 @@ $> 1000$ & 15.0 & 7.0 & 6.0 & 2.5 & 1.4 & 20.0 \\
 \end{table}
 
 \subsection{Converter-side inductor $L_1$}
-From Section~\ref{sec:ripple}, with the ripple allowance $k_r = \Delta i_{\pp,max}/\hat I_n$ (\SIrange{15}{30}{\percent} is usual; a smaller value increases $L_1$, its losses and the voltage drop, a larger one the switching losses and the capacitor current),
+From Section~\ref{sec:ripple}, with the ripple allowance $k_r = \Delta i_{\pp,max}/\hat I_n$ (\SIrange{15}{30}{\percent} is usual at \SIrange{4}{5}{kHz} and \SIrange{40}{50}{\percent} at \SI{2}{kHz}, the loss optimum of the reactor scaling as $1/\fsw$, Section~\ref{sec:optL}; a smaller value increases $L_1$, its mass, its copper loss and the voltage drop, a larger one the peak current, the core loss and the capacitor current),
 \begin{equation}
 L_1 \ge \frac{k\,\Vdc}{\fsw\,k_r \hat I_n},\qquad k = \frac{1}{7}\ \text{(SVM, } m \approx 1),\quad \frac16\ \text{(worst case)},
 \label{eq:L1}
@@ -414,7 +535,7 @@ The unloaded resonance $f_0$ must sit between the highest fundamental and its lo
 The lower bound keeps the 5th and 7th harmonics generated by the dead time and by the inverter nonlinearity (at $5f_1$, $7f_1$, up to \SI{1.4}{kHz} for a \SI{200}{Hz} machine) away from the resonance, where they would be amplified by $Q = 1/(2\zeta)$, and keeps the current-loop crossover below $f_0/3$. The window exists only if $\fsw \ge (24 \ldots 40)\,f_{1,max}$: a \SI{50}{Hz} induction motor in field weakening up to \SI{75}{Hz} is served by $\fsw = \SI{4}{kHz}$, a high-speed or high-pole PMSM at \SI{200}{Hz} needs $\fsw \ge \SIrange{6}{8}{kHz}$ or a relaxed attenuation. This, with the capacitor current, is the main reason why sine filters are heavier for PMSM drives.
 
 \subsection{Sine filter: inductor, capacitor, loaded resonance}
-\textbf{Inductor.} Sized by the fundamental drop at $f_{1,max}$ and checked for the inverter ripple,
+\textbf{Inductor.} Sized by the fundamental drop at $f_{1,max}$ and checked for the inverter ripple (the allowance follows Section~\ref{sec:optL} as on the grid side: $k_{r,opt} \propto 1/\fsw$, $0.4$--$0.5$ at \SI{2}{kHz}),
 \begin{equation}
 \Lf \le \frac{\epsilon_L V_{ph}}{\omega_{1,max} I_n},\ \ \epsilon_L = \SIrange{0.05}{0.10}{};\qquad
 \Delta i_{\pp,max} = \frac{\Vdc}{6\fsw\Lf}\ \ \text{(the inverter reaches } m = 2/\sqrt3 \text{ at } f_{1,max}),
@@ -497,7 +618,7 @@ and from Table~\ref{tab:cluster} the lines at $\fsw \pm 2f_1$ have $k = 1/86.8$ 
 \begin{equation*}
 L_1 \ge \frac{k_{\pp,max}\Vdc}{\fsw k_r \hat I_n} = \frac{0.148 \cdot 800}{2000 \cdot 0.25 \cdot 851} = \SI{278}{\micro H} = \SI{22.7}{\percent},
 \end{equation*}
-which is too large at \SI{2}{kHz}: since the capacitor takes the whole ripple, the allowance is relaxed to $k_r = 0.40$ (the usual compromise of large converters at low $\fsw$), giving $L_1 \ge \SI{174}{\micro H}$ and
+which is too large at \SI{2}{kHz}: since the capacitor takes the whole ripple, the allowance is relaxed to $k_r = 0.40$ (the usual compromise of large converters at low $\fsw$, and the loss optimum of the reactor at \SI{2}{kHz}, Section~\ref{sec:optL}), giving $L_1 \ge \SI{174}{\micro H}$ and
 \begin{gather*}
 L_1 = \SI{180}{\micro H}\ (\SI{14.7}{\percent}):\qquad
 \Delta i_{\pp,max} = \frac{0.148 \cdot 800}{2000 \cdot 180\cdot 10^{-6}} = \SI{328}{A}\ (\SI{39}{\percent}\ \hat I_n),\qquad
@@ -573,7 +694,7 @@ f_2 = \frac{1}{2\pi\sqrt{\Lg C}},\qquad \fres = f_2\sqrt{1 + \frac{\Lg}{L_1}} \a
 \end{equation}
 with the line limit then checked through \eqref{eq:ka}. Since $\Lg$ is only \SIrange{0.5}{2}{\percent}, \eqref{eq:gridL2} can be met only with a large capacitor and a high pulse ratio ($\fsw/f_1 \gtrsim 60$): it is the ``large capacitor'' design, whose resonance is wherever the grid puts it.
 
-\textbf{D1 -- Base quantities and ripple.} $Z_b = \SI{1.73}{\ohm}$, $L_b = \SI{5.51}{mH}$, $C_b = \SI{1.84}{mF}$; $m = 1.045$, $k_{\pp,max} = 1/6.6$, $k_{rms} = 1/43.7$; at pulse ratio 80 the lines $\fsw \pm 2f_1$ have $k = 1/84.5$ and $1/86.2$. With \eqref{eq:L1} and $k_r = 0.25$, $L_1 \ge 1100/(6.6 \cdot 4000 \cdot 0.25 \cdot 325) = \SI{510}{\micro H}$: the \SI{500}{\micro H} (\SI{9.1}{\percent}) are exactly the \SI{25}{\percent} allowance,
+\textbf{D1 -- Base quantities and ripple.} $Z_b = \SI{1.73}{\ohm}$, $L_b = \SI{5.51}{mH}$, $C_b = \SI{1.84}{mF}$; $m = 1.045$, $k_{\pp,max} = 1/6.6$, $k_{rms} = 1/43.7$; at pulse ratio 80 the lines $\fsw \pm 2f_1$ have $k = 1/84.5$ and $1/86.2$. With \eqref{eq:L1} and $k_r = 0.25$, $L_1 \ge 1100/(6.6 \cdot 4000 \cdot 0.25 \cdot 325) = \SI{510}{\micro H}$: the \SI{500}{\micro H} (\SI{9.1}{\percent}) are exactly the \SI{25}{\percent} allowance (on the flat part of the loss curve of Section~\ref{sec:optL}, whose optimum at \SI{4}{kHz} is $k_r \approx 0.2$),
 \begin{gather*}
 \Delta i_{\pp,max} = \frac{1100}{6.6 \cdot 4000 \cdot 500\cdot 10^{-6}} = \SI{83}{A}\ (\SI{25}{\percent}),\qquad
 I_{rip,rms} = \frac{1100}{43.7 \cdot 4000 \cdot 500\cdot 10^{-6}} = \SI{12.6}{A},\\

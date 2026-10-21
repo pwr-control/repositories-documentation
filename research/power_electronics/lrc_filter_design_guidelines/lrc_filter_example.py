@@ -8,6 +8,8 @@ Part 0: exact switching ripple of the converter-side inductor current (SPWM, SVM
 Part 1: grid-side L(RC)L sine filter of a 480 V / 60 Hz / 500 kVA active front end, fsw = 2 kHz.
 Part 2: L(RC) sine filter of a 450 kW / 480 V drive at fsw = 2 kHz, induction motor and PMSM.
 Part 3: comparison table AFE / IM / PMSM.
+Part 4: ripple-inductance trade-off of the converter-side reactor (loss and mass model, optimum k_r
+        versus fsw = 2-5 kHz, pgfplots coordinates of the figure in the note).
 
 Only numpy is required:  python3 lrc_filter_example.py
 """
@@ -557,3 +559,104 @@ rows = [
 ]
 for r in rows:
     print(f"{r[0]:28s}{r[1]:>16s}{r[2]:>16s}{r[3]:>16s}")
+
+
+# ============================================================================
+# PART 4 - ripple-inductance trade-off of the converter-side reactor (Section 2.x of the note)
+# ============================================================================
+def vhf_ms(m, mode, npts=720):
+    """Mean square of the switching part of the inductor voltage, <(v_1n - v_ref)^2>/Vdc^2,
+    over one fundamental period (capacitor node stiff). It does not depend on fsw."""
+    th = np.linspace(0, 2 * PI, npts, endpoint=False)
+    acc = 0.0
+    for t in th:
+        w = period_wave(m, t, mode, npts=4096)                 # Vdc = T = L = 1: di/dt = v_L/Vdc
+        v = np.diff(np.concatenate([w, w[:1]])) * 4096
+        acc += np.mean(v ** 2)
+    return acc / npts
+
+
+# reactor model: family of geometrically similar gapped reactors, same B_max and J
+REACTOR = dict(Bmax=1.4, J=3.0e6, ku=0.30,                      # T, A/m^2, window fill factor
+               rho_cu=2.2e-8, d_cu=8900.0,                      # copper at ~85 C
+               d_fe=7650.0, stack=0.95,                         # SiFe
+               kh=0.024, ke=5.3e-5,                             # W/kg/(Hz T^2), W/kg/(Hz^2 T^2): 0.35 mm NO, ~3 W/kg at 1.5 T / 50 Hz
+               win_w=0.8, win_h=2.5, Fr0=2.0, Fr1=1.0 / 2000.0) # window 0.8a x 2.5a on a square leg a; R_ac/R_dc = Fr0 + Fr1 fsw
+
+
+def reactor(fsw, kr, In, Ipk1, Vdc, f1, kmax, krms, q, P=REACTOR):
+    """Three single-phase reactors (one per phase) at the ripple allowance kr = dI_pp,max/Ipk1.
+    Returns L, currents, dimensions, masses and the loss split (totals for the three phases)."""
+    L = kmax * Vdc / (fsw * kr * Ipk1)
+    Ipk = Ipk1 * (1 + kr / 2)
+    Irip = (krms / kmax) * kr * Ipk1
+    Irms = np.hypot(In, Irip)
+    Ap = L * Ipk * Irms / (P['ku'] * P['Bmax'] * P['J'])
+    a = (Ap / (P['win_w'] * P['win_h'])) ** 0.25                # A_c = a^2, A_w = win_w a x win_h a
+    Ac, Aw = a * a, P['win_w'] * P['win_h'] * a * a
+    lfe = 2 * (P['win_h'] * a + a) + 2 * (P['win_w'] * a + a)  # UI core, mean magnetic path
+    MLT = 4 * a + PI * P['win_w'] * a
+    mfe = P['d_fe'] * P['stack'] * Ac * lfe
+    mcu = P['d_cu'] * P['ku'] * Aw * MLT
+    N = L * Ipk / (P['Bmax'] * Ac)
+    Rdc = P['rho_cu'] * N * N * MLT / (P['ku'] * Aw)
+    Fr = P['Fr0'] + P['Fr1'] * fsw
+    Pcu1, Pcuhf = Rdc * In ** 2, Fr * Rdc * Irip ** 2
+    B1 = P['Bmax'] * Ipk1 / Ipk
+    p1 = (P['kh'] * f1 + P['ke'] * f1 ** 2) * B1 ** 2
+    dBdt2 = q * Vdc ** 2 * (P['Bmax'] / (L * Ipk)) ** 2         # <(dB/dt)^2> from the switched voltage
+    pe = P['ke'] / (2 * PI ** 2) * dBdt2                        # classical eddy loss (no lamination skin effect)
+    Bsw = SQ3 * P['Bmax'] * Irip / Ipk                          # triangle-equivalent amplitude of the ripple flux
+    ph = P['kh'] * fsw * Bsw ** 2
+    Pfe1, Pfesw = mfe * p1, mfe * (pe + ph)
+    return dict(L=L, Ipk=Ipk, Irip=Irip, a=a, N=N, Ap=Ap, mfe=3 * mfe, mcu=3 * mcu, mass=3 * (mfe + mcu),
+                Pcu=3 * (Pcu1 + Pcuhf), Pcuhf=3 * Pcuhf, Pfe1=3 * Pfe1, Pfesw=3 * Pfesw,
+                PL=3 * (Pcu1 + Pcuhf + Pfe1 + Pfesw), Bsw=Bsw, pe=pe, ph=ph)
+
+
+print("\n" + "=" * 78)
+print("PART 4 - ripple-inductance optimum of the converter-side reactor, 480 V / 500 kVA AFE, fsw = 2-5 kHz")
+print("=" * 78)
+m4 = 1.02
+kmax4, kmean4, krms4 = ripple_coefficients(m4, 'svm')
+q4 = vhf_ms(m4, 'svm')
+Vdc4, f14 = 800.0, 60.0
+In4 = 500e3 / (SQ3 * 480.0); Ipk4 = SQ2 * In4                 # AFE of Example 1
+Lb4 = (480.0 ** 2 / 500e3) / (2 * PI * f14)
+print(f"In = {In4:.0f} A, Ipk = {Ipk4:.0f} A, m = {m4}: k_max = 1/{1/kmax4:.2f}, k_mean = 1/{1/kmean4:.2f}, k_rms = 1/{1/krms4:.2f}, "
+      f"k_mean/k_max = {kmean4/kmax4:.3f}")
+print(f"<v_L,hf^2> = {q4:.4f} Vdc^2 (rms {np.sqrt(q4):.3f} Vdc); analytic 1/4 - <v0^2> - m^2/8 with active fraction "
+      f"{0.827*m4:.3f}: {0.25 - (0.827*m4/36 + (1-0.827*m4)/4) - m4**2/8:.4f}; ratio to a triangle of equal rms "
+      f"(48 k_rms^2): {q4/(48*krms4**2):.2f}")
+print(f"first-order switching-loss sensitivity: dP_sw/P_sw = (E_off - E_on - E_rr)/E_tot x {PI/4*kmean4/kmax4:.3f} k_r")
+print(f"conduction: I_rip,rms/In = {SQ2*krms4/kmax4:.3f} k_r")
+krs4 = np.round(np.arange(0.10, 1.0001, 0.01), 2)
+cP, cm = 8.0, 12.0                                              # EUR/W of capitalised loss, EUR/kg of reactor
+coords = {}
+for fsw in (2000, 3000, 4000, 5000):
+    rows = [reactor(fsw, kr, In4, Ipk4, Vdc4, f14, kmax4, krms4, q4) for kr in krs4]
+    PL = np.array([r['PL'] for r in rows]); mass = np.array([r['mass'] for r in rows])
+    i = int(np.argmin(PL)); j = int(np.argmin(cP * PL + cm * mass))
+    r, rc = rows[i], rows[j]
+    within1 = krs4[PL <= 1.01 * PL[i]]
+    print(f"\nfsw = {fsw/1000:.0f} kHz: loss optimum k_r = {krs4[i]:.2f}, L = {r['L']*1e6:.0f} uH ({r['L']/Lb4*100:.1f}% pu), "
+          f"P_L = {r['PL']:.0f} W ({r['PL']/500e3*100:.2f}% Sn): Cu {r['Pcu']:.0f} (hf {r['Pcuhf']:.0f}), Fe f1 {r['Pfe1']:.0f}, "
+          f"Fe sw {r['Pfesw']:.0f}; P_fe,sw/P_rest = {r['Pfesw']/(r['PL']-r['Pfesw']):.2f}; mass {r['mass']:.0f} kg "
+          f"(Fe {r['mfe']:.0f}, Cu {r['mcu']:.0f}); leg a = {r['a']*1e3:.0f} mm, N = {r['N']:.1f}, B_sw = {r['Bsw']:.3f} T; "
+          f"I_pk = {r['Ipk']:.0f} A, I_rip = {r['Irip']:.0f} A; within +1%: k_r = {within1.min():.2f}-{within1.max():.2f}")
+    print(f"           cost optimum (cP = {cP} EUR/W, cm = {cm} EUR/kg): k_r = {krs4[j]:.2f}, L = {rc['L']*1e6:.0f} uH, "
+          f"P_L = {rc['PL']:.0f} W, mass = {rc['mass']:.0f} kg")
+    for kr in (0.15, 0.20, 0.25, 0.30, 0.40, 0.50, 0.60, 0.80):
+        rr = reactor(fsw, kr, In4, Ipk4, Vdc4, f14, kmax4, krms4, q4)
+        print(f"           k_r = {kr:.2f}: L = {rr['L']*1e6:4.0f} uH ({rr['L']/Lb4*100:4.1f}%), P_L = {rr['PL']:4.0f} W "
+              f"({rr['PL']/PL[i]*100-100:+5.1f}%) [Cu {rr['Pcu']:4.0f}, Fe1 {rr['Pfe1']:3.0f}, Fe sw {rr['Pfesw']:4.0f}], "
+              f"mass {rr['mass']:3.0f} kg ({rr['mass']/mass[i]*100-100:+5.1f}%), I_pk {rr['Ipk']:4.0f} A, I_rip {rr['Irip']:3.0f} A")
+    sel = krs4[::2]
+    coords[fsw] = (" ".join(f"({k:.2f},{reactor(fsw, k, In4, Ipk4, Vdc4, f14, kmax4, krms4, q4)['PL']/1000:.3f})" for k in sel),
+                   " ".join(f"({k:.2f},{reactor(fsw, k, In4, Ipk4, Vdc4, f14, kmax4, krms4, q4)['mass']:.0f})" for k in sel),
+                   (krs4[i], PL[i] / 1000, mass[i]))
+print("\npgfplots coordinates (k_r, P_L [kW]) and (k_r, m_L [kg]):")
+for fsw, (c1, c2, opt) in coords.items():
+    print(f"% fsw = {fsw}: loss optimum ({opt[0]:.2f},{opt[1]:.3f}) / ({opt[0]:.2f},{opt[2]:.0f})")
+    print(f"% PL   {c1}")
+    print(f"% mass {c2}")
