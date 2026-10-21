@@ -346,6 +346,75 @@ AFE = dict(Ln=L1, Lpu=L1/Lb, L2=L2, L2pu=L2/Lb, C=C1, Cpu=C1/Cb, C2=C2, R2=R2, z
            Ic=Ic_f/In, eps=(L1+L2)/Lb, In=In, Ipk=Ipk + dI_max/2, m=2*SQ2*V1/Vdc, bw=fr_min/3, Vdc=Vdc)
 
 # ============================================================================
+# PART 1b - L(RC) without L2 (grid as second inductance): check of a 690 V / 250 kW / 4 kHz design
+#           and its version aligned with the criteria of Example 1
+# ============================================================================
+print()
+print("=" * 78)
+print("PART 1b - 690 V / 250 kW / 4 kHz AFE: L(RC) with the grid as L2, and the aligned L(RC)L")
+print("=" * 78)
+Vll, fg, Sn, Vdc, fsw = 690.0, 50.0, 275e3, 1100.0, 4000.0
+fs = 2 * fsw
+wg, wsw = 2 * PI * fg, 2 * PI * fsw
+Vph = Vll / SQ3
+In = Sn / (SQ3 * Vll)
+Ipk = SQ2 * In
+Zb = Vll ** 2 / Sn
+Lb = Zb / wg
+Cb = 1 / (wg * Zb)
+m_r = 2 * SQ2 * Vph * 1.02 / Vdc
+kmax, kmean, krms = ripple_coefficients(m_r, 'svm')
+tot, cl, lines = cluster_split(m_r, 'svm', fsw / fg, nf=1)
+N = fsw / fg
+k_p, k_m = lines[round(N + 2, 2)], lines[round(N - 2, 2)]
+print(f"C1  In = {In:.0f} A ({Ipk:.0f} A pk), Zb = {Zb:.3f} ohm, Lb = {Lb*1e6:.0f} uH, Cb = {Cb*1e6:.0f} uF; m = {m_r:.3f}: k_pp,max = {inv(kmax)}, k_rms = {inv(krms)},"
+      f" lines fsw-2f1 {inv(k_m)}, fsw+2f1 {inv(k_p)}, first cluster {inv(cl[0])}; fs/6 = {fs/6:.0f} Hz (zone {0.8*fs/6:.0f}-{1.2*fs/6:.0f} Hz), fsw/2 = {fsw/2:.0f} Hz")
+L1, C, Rd = 500e-6, 200e-6, 0.050
+for k_r in (0.25, 0.40):
+    print(f"    ripple k_r = {k_r}: L1 >= {kmax*Vdc/(fsw*k_r*Ipk)*1e6:.0f} uH")
+dI = kmax * Vdc / (fsw * L1)
+I_rip = krms * Vdc / (fsw * L1)
+I1_p, I1_m, I1_cl = k_p * Vdc / (fsw * L1), k_m * Vdc / (fsw * L1), cl[0] * Vdc / (fsw * L1)
+w_p = 2 * PI * (fsw + 2 * fg)
+lim05, lim10 = 0.005 * In, 0.010 * In
+print(f"C2  L1 = {L1*1e6:.0f} uH ({L1/Lb*100:.1f}%): dI_pp,max = {dI:.0f} A ({dI/Ipk*100:.0f}%), I_rip = {I_rip:.1f} A, I1(fsw+2f1) = {I1_p:.2f} A, I1(fsw-2f1) = {I1_m:.2f} A,"
+      f" saturation {Ipk + dI/2:.0f} A; limits 0.5% = {lim05:.2f} A, 1.0% = {lim10:.2f} A")
+Ic = wg * C * Vph
+print(f"C3  C = {C*1e6:.0f} uF ({C/Cb*100:.1f}% Cb): Qc = {wg*C*Vll**2/1e3:.1f} kvar, Ic = {Ic:.1f} A ({Ic/In*100:.0f}% In), v_c,sw = {I1_cl/(wsw*C):.1f} V;"
+      f" Rd = {Rd*1e3:.0f} mohm: P_Rd = {3*Rd*(Ic**2+I_rip**2):.0f} W, attenuation penalty {np.sqrt(1+(wsw*Rd*C)**2):.3f}")
+print("C4  grid as L2 (no L2), over the grid inductance:")
+for Lg in (25e-6, 50e-6, 75e-6, 100e-6):
+    Zc = Zc_rd(w_p, C, Rd)
+    ka = abs(Zc / (Zc + 1j * w_p * Lg))
+    Lp = L1 * Lg / (L1 + Lg)
+    zeta = Rd / 2 * np.sqrt(C / Lp)
+    print(f"    Lg = {Lg*1e6:.0f} uH ({Lg/Lb*100:.1f}%): f2 = {1/(2*PI*np.sqrt(Lg*C)):.0f} Hz, f_res = {fres(L1, Lg, C):.0f} Hz ({fres(L1, Lg, C)/fsw:.2f} fsw),"
+          f" k_a(fsw+2f1) = {ka:.2f}, I2 = {ka*I1_p:.2f} A ({ka*I1_p/In*100:.2f}% In), zeta = {zeta:.3f}")
+print(f"    f_res enters the 0.8-1.2 fs/6 zone for Lg > {1/((2*PI*1.2*fs/6)**2*C)*1e6:.0f} uH; with C = {C*1e6:.0f} uF, f_res >= 1.2 fs/6 at Lg,max = 100 uH would need"
+      f" L1||L2' <= {1/((2*PI*1.2*fs/6)**2*C)*1e6:.0f} uH: no room for an L2")
+print("C5  aligned design: same L1, C1 = 5% bound or less, L2 such that f_res stays in [1.2 fs/6, fsw/2] over Lg = 25-100 uH, R-C branch n = 0.25")
+C1, L2 = 60e-6, 140e-6
+for Lg in (25e-6, 50e-6, 100e-6):
+    L2p = L2 + Lg
+    ka = 1 / (w_p ** 2 * L2p * C1 - 1)
+    print(f"    C1 = {C1*1e6:.0f} uF ({C1/Cb*100:.1f}%), L2 = {L2*1e6:.0f} uH ({L2/Lb*100:.1f}%), Lg = {Lg*1e6:.0f}: f_res = {fres(L1, L2p, C1):.0f} Hz ({fres(L1, L2p, C1)/fsw:.2f} fsw),"
+          f" k_a = {ka:.3f}, I2(fsw+2f1) = {ka*I1_p:.2f} A ({ka*I1_p/In*100:.2f}%)")
+n = 0.25
+Lp = L1 * (L2 + 25e-6) / (L1 + L2 + 25e-6)
+R0 = np.sqrt(Lp / C1)
+C2 = n * C1
+R2 = rho_P(n) * R0
+I2f = wg * C2 * Vph / np.sqrt(1 + (wg * C2 * R2) ** 2)
+Zc = Zc_rc(wsw, C1, C2, R2)
+vcs = I1_cl * abs(Zc)
+Ib = vcs / abs(R2 + 1 / (1j * wsw * C2))
+ka_d = abs(Zc_rc(w_p, C1, C2, R2) / (Zc_rc(w_p, C1, C2, R2) + 1j * w_p * (L2 + 25e-6)))
+V1 = abs(Vph + 1j * wg * (L1 + L2) * In)
+print(f"    R-C: C2 = {C2*1e6:.0f} uF, Lp = {Lp*1e6:.0f} uH, R0 = {R0:.2f} ohm, R2 = rho_P R0 = {R2:.2f} ohm, zeta = {zeta_P(n):.3f}, P = {3*R2*I2f**2:.0f} + {3*R2*Ib**2:.0f} W,"
+      f" k_a with branch (Lg = 25) = {ka_d:.3f} -> I2 = {ka_d*I1_p:.2f} A; Ic(C1) = {wg*C1*Vph:.1f} A ({C1/Cb*100:.1f}%), total C = {(C1+C2)/Cb*100:.1f}% Cb;"
+      f" L1 + L2 = {(L1+L2)/Lb*100:.1f}% pu, V1 = {V1:.0f} V (+{(V1/Vph-1)*100:.1f}%), m = {2*SQ2*V1/Vdc:.3f}")
+
+# ============================================================================
 # PART 2 - L(RC) sine filter, 450 kW / 480 V drive at 2 kHz, IM and PMSM
 # ============================================================================
 print()

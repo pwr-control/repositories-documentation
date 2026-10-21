@@ -70,7 +70,7 @@ Design guidelines for the passive filters of two-level voltage-source converters
 All quantities are per phase of the star equivalent of the three-phase system; RMS values unless a hat (peak) or a ``pp'' (peak-to-peak) is written. Per-unit values refer to the base quantities of the converter ($Z_b$, $L_b$, $C_b$). The same filter symbols are used on the grid side (Fig.~\ref{fig:circ}a, inductances $L_1$, $L_2$) and on the motor side (Fig.~\ref{fig:circ}b, inductance $\Lf$); the damping-network symbols are common to both.
 
 \begin{onehalfspace}\small
-\begin{longtable}{@{}>{$}l<{$} p{10.3cm} l@{}}
+\begin{longtable}{@{}>{$}l<{$} p{10.1cm} l@{}}
 \toprule
 \text{Symbol} & Description & Unit \\
 \midrule
@@ -532,7 +532,7 @@ V_1 = \sqrt{V_{ph}^2 + \big(\omega_1 (L_1 + L_2) I_n\big)^2} = \sqrt{277^2 + 81.
 well inside the SVM range at $\Vdc = \SI{800}{V}$.
 
 \begin{mybox}
-\textbf{Why the filter is heavy at \SI{2}{kHz}.} The grid line $I_2(\fsw \pm 2f_1)$ scales as $1/(\fsw^3 L_1 L_2' C_1)$: at pulse ratio 33 the \SI{0.5}{\percent} line limit at $h = 35$ with the capacitor at \SI{5}{\percent} needs $L_1 L_2' \approx (\SI{15}{\percent})^2$, and a larger capacitor helps only as $1/\sqrt{C_1}$. The three ways out, in order of practice: (i) a trap inductor $L_t = 1/(\wsw^2 C_1) = \SI{22.6}{\micro H}$ in series with $C_1$ (LLCL filter \cite{wu2012}), which notches the first cluster; the second cluster ($2\fsw \pm f_1$, \SI{12.7}{A} at $L_1 = \SI{180}{\micro H}$) then sizes $L_2$ through the inductive divider $|Z_c|/|Z_c + Z_2|$ with $Z_c = j\SI{0.437}{\ohm}$ at \SI{4060}{Hz}, giving $L_2' \ge \SI{55}{\micro H}$; (ii) $\fsw = \SI{4}{kHz}$, which at the same $k_r$ and $C_1$ gives $L_1 = \SI{87}{\micro H}$ and $L_2' \ge \SI{51}{\micro H}$, \SI{11}{\percent} in total instead of \SI{30}{\percent}; (iii) the limit applied at the plant PCC with the actual maximum demand current $I_L$ of IEEE~519 rather than with $I_n$ of the converter. The example continues with the plain L(RC)L to show the resonance and damping steps.
+\textbf{Why the filter is heavy at \SI{2}{kHz}.} The grid line $I_2(\fsw \pm 2f_1)$ scales as $1/(\fsw^3 L_1 L_2' C_1)$: at pulse ratio 33 the \SI{0.5}{\percent} line limit at $h = 35$ with the capacitor at \SI{5}{\percent} needs $L_1 L_2' \approx (\SI{15}{\percent})^2$, and a larger capacitor helps only as $1/\sqrt{C_1}$. The three ways out, in order of practice: (i) a trap inductor $L_t = 1/(\wsw^2 C_1) = \SI{22.6}{\micro H}$ in series with $C_1$ (LLCL filter \cite{wu2012}), which notches the first cluster; the second cluster ($2\fsw \pm f_1$, \SI{12.7}{A} at $L_1 = \SI{180}{\micro H}$) then sizes $L_2$ through the inductive divider $|Z_c|/|Z_c + Z_2|$ with $Z_c = j\SI{0.437}{\ohm}$ at \SI{4060}{Hz}, giving $L_2' \ge \SI{55}{\micro H}$; (ii) $\fsw = \SI{4}{kHz}$, which at the same $k_r$ and $C_1$ gives $L_1 = \SI{87}{\micro H}$ and $L_2' \ge \SI{51}{\micro H}$, \SI{11}{\percent} in total instead of \SI{30}{\percent}; (iii) the limit applied at the plant PCC with the actual maximum demand current $I_L$ of IEEE~519 rather than with $I_n$ of the converter. A fourth option, the L(RC) without $L_2$ and with a large capacitor, needs a high pulse ratio and is reviewed in Section~\ref{sec:gridL2}. The example continues with the plain L(RC)L to show the resonance and damping steps.
 \end{mybox}
 
 \textbf{A6 -- Resonance.} From \eqref{eq:lcl} and \eqref{eq:resband}:
@@ -562,6 +562,56 @@ $n$ & $C_2$ & total $C$ & $\rho_P$ & $R_2$ & $\zeta$ & $P_{R_2}$ fund.\,+\,sw. &
 The branch is added to $C_1$ rather than carved out of it: the attenuation and $\fres$ stay those of $C_1$ (the branch even adds shunt admittance at $\fsw$, hence the slightly better $k_a$), whereas splitting a fixed total into $C_1$ and $C_2$ would raise the shunt impedance at $\fsw$ by $(1 + n)$ and, with $\fres$ only one octave below $\fsw$, lose the limit. The series resistor loses it for the same reason. Selected: $n = 0.25$, $C_2 = \SI{70}{\micro F}$, $R_2 = \SI{2.59}{\ohm}$, $\zeta = 0.06$ ($Q \approx 8$), \SI{550}{W}; the total capacitance is \SI{6.1}{\percent} of $C_b$ (\SI{30}{kvar}), the price of the backstop. $n = 0.5$ is the alternative where more passive damping is wanted against a weak or resonant grid.
 
 \textbf{A8 -- Ratings and control.} $L_1$: \SI{601}{A} RMS, saturation $\ge \SI{1015}{A}$, ripple \SI{50}{A} RMS at \SI{2}{kHz} (core loss). $L_2$: \SI{601}{A} line reactor, or the leakage of a dedicated transformer. $C_1$: $\ge 1.1V = \SI{528}{V}$ AC, switching ripple $\hat v_{c,sw} = \SI{17}{V}$, $\sqrt{I_c^2 + I_{1,sw}^2} = \SI{52}{A}$ RMS. $C_2$: \SI{7.3}{A}; $R_2$: \SI{2.59}{\ohm}, \SI{550}{W} for the three phases. Control: $f_c \le \fres^{min}/3 = \SI{315}{Hz}$ ($\fsw/6.3$), phase margin to be verified at both $\Lg$ with the \SI{375}{\micro s} delay; PLL $\le \SI{20}{Hz}$ at $S_{sc,min}$.
+
+\subsection{Example 1b: L(RC) without $L_2$, the grid as second inductance}
+\label{sec:gridL2}
+The lighter and very common alternative to Example~1 is the L(RC) filter alone, with the transformer and network inductance $\Lg$ as the second inductance of the current divider and a capacitor larger than the \SI{5}{\percent} bound. It is reviewed here on a field design for a \SI{690}{V}, \SI{250}{kW}, \SI{4}{kHz} AFE ($S_n = \SI{275}{kVA}$, $I_n = \SI{230}{A}$, $\Vdc = \SI{1100}{V}$, $f_1 = \SI{50}{Hz}$, double update $f_s = \SI{8}{kHz}$, SVM, $i_1$ feedback): $L_1 = \SI{500}{\micro H}$, $C = \SI{200}{\micro F}$ with $R_d = \SI{50}{m\ohm}$ in series, $\Lg \approx \SI{50}{\micro H}$ ($S_{sc} = \SI{30}{MVA}$, $I_{sc}/I_L = 110$). The criterion that such a filter must meet, with the \emph{stiffest} grid expected ($\Lg^{min}$, where the divider is weakest and the resonance highest), is
+\begin{equation}
+f_2 = \frac{1}{2\pi\sqrt{\Lg C}},\qquad \fres = f_2\sqrt{1 + \frac{\Lg}{L_1}} \approx f_2,\qquad
+1.2\,\frac{f_s}{6} \le \fres(\Lg^{max}) \quad\text{and}\quad \fres(\Lg^{min}) \le \frac{\fsw}{2.5}\ \ (k_a \le 0.19),
+\label{eq:gridL2}
+\end{equation}
+with the line limit then checked through \eqref{eq:ka}. Since $\Lg$ is only \SIrange{0.5}{2}{\percent}, \eqref{eq:gridL2} can be met only with a large capacitor and a high pulse ratio ($\fsw/f_1 \gtrsim 60$): it is the ``large capacitor'' design, whose resonance is wherever the grid puts it.
+
+\textbf{D1 -- Base quantities and ripple.} $Z_b = \SI{1.73}{\ohm}$, $L_b = \SI{5.51}{mH}$, $C_b = \SI{1.84}{mF}$; $m = 1.045$, $k_{\pp,max} = 1/6.6$, $k_{rms} = 1/43.7$; at pulse ratio 80 the lines $\fsw \pm 2f_1$ have $k = 1/84.5$ and $1/86.2$. With \eqref{eq:L1} and $k_r = 0.25$, $L_1 \ge 1100/(6.6 \cdot 4000 \cdot 0.25 \cdot 325) = \SI{510}{\micro H}$: the \SI{500}{\micro H} (\SI{9.1}{\percent}) are exactly the \SI{25}{\percent} allowance,
+\begin{gather*}
+\Delta i_{\pp,max} = \frac{1100}{6.6 \cdot 4000 \cdot 500\cdot 10^{-6}} = \SI{83}{A}\ (\SI{25}{\percent}),\qquad
+I_{rip,rms} = \frac{1100}{43.7 \cdot 4000 \cdot 500\cdot 10^{-6}} = \SI{12.6}{A},\\
+I_1(\fsw \pm 2f_1) = \SIrange{6.5}{6.4}{A},\qquad \hat I_n + \frac{\Delta i_{\pp,max}}{2} = \SI{367}{A}.
+\end{gather*}
+
+\textbf{D2 -- Capacitor.} $C = \SI{200}{\micro F} = \SI{10.9}{\percent}\,C_b$, twice the bound of \eqref{eq:Cf}: $Q_c = \SI{30}{kvar}$ (\SI{11}{\percent} of $S_n$, the no-load current of the converter), $I_c = \SI{25}{A}$, $v_{c,sw} = \SI{2.2}{V}$. The size is not a choice but the consequence of D3.
+
+\textbf{D3 -- Attenuation with the grid only.} From \eqref{eq:ka} with the series resistor and the limits \SI{1.15}{A} (\SI{0.5}{\percent}) and \SI{2.3}{A} (\SI{1.0}{\percent}, the row of this grid):
+\begin{center}\small\begin{onehalfspace}
+\begin{tabular}{@{}c ccc cc c@{}}
+\toprule
+$\Lg$ & $f_2$ & $\fres$ & $\fres/\fsw$ & $k_a(\fsw + 2f_1)$ & $I_2(\fsw + 2f_1)$ & $\zeta$ from $R_d$ \\
+\midrule
+\SI{25}{\micro H} (\SI{0.5}{\percent})  & \SI{2251}{Hz} & \SI{2306}{Hz} & 0.58 & 0.44 & \SI{2.83}{A} (\SI{1.23}{\percent}) & 0.072 \\
+\SI{50}{\micro H} (\SI{0.9}{\percent})  & \SI{1592}{Hz} & \SI{1669}{Hz} & 0.42 & 0.18 & \SI{1.17}{A} (\SI{0.51}{\percent}) & 0.052 \\
+\SI{75}{\micro H} (\SI{1.4}{\percent})  & \SI{1299}{Hz} & \SI{1394}{Hz} & 0.35 & 0.12 & \SI{0.74}{A} (\SI{0.32}{\percent}) & 0.044 \\
+\SI{100}{\micro H} (\SI{1.8}{\percent}) & \SI{1125}{Hz} & \SI{1233}{Hz} & 0.31 & 0.08 & \SI{0.54}{A} (\SI{0.23}{\percent}) & 0.039 \\
+\bottomrule
+\end{tabular}
+\end{onehalfspace}\end{center}
+At the nominal \SI{50}{\micro H} the line is \SI{0.51}{\percent} of $I_n$: inside the \SI{1.0}{\percent} of its own grid, at the edge of the \SI{0.5}{\percent} used in Example~1. The attenuation is however entirely the grid's: a stiffer PCC (\SI{25}{\micro H}, e.g.\ a larger transformer) doubles the harmonic to \SI{1.23}{\percent} and fails both limits, a weaker one improves it. The same filter at $\fsw = \SI{2}{kHz}$ would have its lines at $1900$ and \SI{2100}{Hz} on the resonance, $k_a = 2.3$ and $1.3$ (\SI{7}{\percent} and \SI{4}{\percent} of $I_n$): the reason why Example~1 needs $L_2$.
+
+\textbf{D4 -- Resonance and damping.} $\fres = \SI{1669}{Hz} = 0.42\fsw$ lies above $1.2 f_s/6 = \SI{1600}{Hz}$, but only just: for $\Lg > \SI{49}{\micro H}$ the resonance enters the band \SIrange{1067}{1600}{Hz} around $f_s/6$ and at \SI{100}{\micro H} it is at \SI{1233}{Hz}, below $f_s/6$, where $i_1$ feedback is unstable without damping \cite{parker2014}. The \SI{50}{m\ohm} give $\zeta = \SIrange{0.04}{0.07}{}$ ($Q = 7$--$12$) with $P_{R_d} = 3R_d(I_c^2 + I_{rip,rms}^2) = \SI{118}{W}$ and an attenuation penalty $\sqrt{1 + (\wsw R_d C)^2} = 1.03$: a correct backstop at the nominal grid, the only stabiliser at a weak one, to be verified with the controller gains and the \SI{188}{\micro s} delay.
+
+\textbf{D5 -- Aligned version.} With the criteria of Example~1 (capacitor within the \SI{5}{\percent} bound, $L_2$ as a design variable, resonance band inside $[1.2 f_s/6,\ \fsw/2]$ for $\Lg = \SIrange{25}{100}{\micro H}$, R--C branch with $n = 0.25$), the same $L_1 = \SI{500}{\micro H}$ gives
+\begin{gather*}
+C_1 = \SI{60}{\micro F}\ (\SI{3.3}{\percent}),\qquad L_2 = \SI{140}{\micro H}\ (\SI{2.5}{\percent}),\\
+\fres = \frac{1}{2\pi}\sqrt{\frac{L_1 + L_2'}{L_1 L_2' C_1}} = \SI{1845}{Hz}\ (\Lg = \SI{25}{\micro H}),\qquad \SI{1751}{Hz}\ (\SI{50}{\micro H}),\qquad \SI{1614}{Hz}\ (\SI{100}{\micro H}),\\
+k_a = \frac{1}{\omega^2 L_2' C_1 - 1} = 0.18,\ 0.15,\ 0.12\ \Rightarrow\ I_2(\fsw + 2f_1) = 1.15,\ 0.97,\ \SI{0.75}{A}\ (\SIrange{0.50}{0.32}{\percent}\ I_n),\\
+L_p = L_1 \parallel L_2' = \SI{124}{\micro H},\qquad R_0 = \sqrt{L_p/C_1} = \SI{1.44}{\ohm},\qquad C_2 = 0.25\,C_1 = \SI{15}{\micro F},\\
+R_2 = \rho_P R_0 = 4.5 \cdot 1.44 = \SI{6.5}{\ohm},\qquad \zeta = 0.06,\qquad P_{R_2} = 68 + 20 = \SI{88}{W},
+\end{gather*}
+with the total capacitance at \SI{4.1}{\percent} of $C_b$ ($I_c = \SI{7.5}{A}$ instead of \SI{25}{A}), the drop of $L_1 + L_2 = \SI{11.6}{\percent}$ in quadrature ($V_1 = \SI{401}{V}$, $+\SI{0.7}{\percent}$, $m = 1.03$) and the attenuation of the original design at its nominal grid now guaranteed over the whole $\Lg$ range, with the resonance pinned between $0.40$ and $0.46\fsw$. Keeping $C = \SI{200}{\micro F}$ and adding $L_2$ is not an option: $\fres \ge 1.2 f_s/6$ at $\Lg^{max}$ would require $L_1 \parallel L_2' \le \SI{49}{\micro H}$, i.e.\ no room for any $L_2$; the large capacitor and the absence of $L_2$ go together.
+
+\begin{mybox}
+\textbf{Review of the \SI{690}{V} design in one paragraph.} What is already aligned: $L_1$ at the \SI{25}{\percent} ripple allowance, the \SI{50}{m\ohm} at $\zeta \approx 0.05$ with negligible loss and attenuation penalty, and the line at $\fsw + 2f_1$ within the limit of its grid at \SI{4}{kHz}. What the criteria of this note change: the capacitor from \SI{11}{\percent} to \SI{3.3}{\percent} (plus \SI{0.8}{\percent} in the damping branch), a \SI{2.5}{\percent} line reactor ($L_2 = \SI{140}{\micro H}$) that makes attenuation and resonance independent of the PCC, and the R--C branch (\SI{15}{\micro F}, \SI{6.5}{\ohm}) in place of the series resistor. The price is the reactor and the \SI{11.6}{\percent} series reactance (in quadrature, hence harmless for the voltage); the gain is the reactive power (\SI{30}{kvar} to \SI{11}{kvar}), a resonance that cannot drift onto $f_s/6$ or onto the switching cluster when the transformer changes, and a design that would survive a move to \SI{2}{kHz} with the method of Example~1 rather than fail silently.
+\end{mybox}
 
 \subsection{Example 2: L(RC) sine filter between inverter and motor}
 \label{sec:ex2}
@@ -664,7 +714,7 @@ stability constraint & $\fres > f_s/6 = \SI{667}{Hz}$ with $i_1$ feedback & $f_p
 current-loop bandwidth & $f_c \le \fres/3 = \SI{315}{Hz}$ & stator loop $\le f_p/5 = \SI{133}{Hz}$ & \SI{134}{Hz} \\
 sensorless / PLL & PLL $\le \SI{20}{Hz}$ at $S_{sc,min}$ & flux observer with the filter model & back-EMF observer with the filter model; HF injection $\le \SI{220}{Hz}$ \\
 what it protects & PCC harmonics, grid resonance & motor insulation (\SI{1440}{V} peak without filter), losses, noise & same, plus magnet losses and demagnetisation margin \\
-how to lighten it & trap $L_t = \SI{22.6}{\micro H}$, or \SI{4}{kHz} (\SI{11}{\percent} total $L$) & \SI{4}{kHz}: window opens, $\Lf$ and $\Cf$ halve & same; lower pole count would need higher $\fsw$ \\
+how to lighten it & trap $L_t = \SI{22.6}{\micro H}$, or \SI{4}{kHz} (\SI{11}{\percent} total $L$; at \SI{4}{kHz} also the grid as $L_2$, Section~\ref{sec:gridL2}) & \SI{4}{kHz}: window opens, $\Lf$ and $\Cf$ halve & same; lower pole count would need higher $\fsw$ \\
 \bottomrule
 \end{tabular}
 \end{onehalfspace}

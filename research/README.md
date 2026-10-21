@@ -68,8 +68,9 @@ Converters and control:
   filters for induction and PMSM drives (reflected wave with long cables, resonance window, loaded
   resonance set by the machine inductance, damping, consequences for the current control and for
   sensorless control), with two step-by-step worked examples for a 450 kW, 480 V, 2 kHz drive (AFE
-  grid filter; IM and PMSM sine filters) and a comparison table; `lrc_filter_example.py` reproduces
-  the numbers.
+  grid filter; IM and PMSM sine filters), a review of a 690 V / 250 kW / 4 kHz L(RC) design without
+  $L_2$ (grid as second inductance) with its aligned version, and a comparison table;
+  `lrc_filter_example.py` reproduces the numbers.
 
 Line-commutated rectifiers and protection:
 - `six_pulses_thyristor_based_rectifier/acdc_thyristor_sizing_src` — *Sizing of a 400 V / 1 MW
