@@ -1,0 +1,205 @@
+% MIT License
+%
+% Copyright (c) 2026 Davide Bagnara
+%
+% Permission is hereby granted, free of charge, to any person obtaining a copy
+% of this software and associated documentation files (the "Software"), to deal
+% in the Software without restriction, including without limitation the rights
+% to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+% copies of the Software, and to permit persons to whom the Software is
+% furnished to do so, subject to the following conditions:
+%
+% The above copyright notice and this permission notice shall be included in all
+% copies or substantial portions of the Software.
+%
+% THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+% IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+% FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+% AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+% LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+% OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+% SOFTWARE.
+
+component tri_monophase_transformer
+% Three-Phase to Single-Phase Transformer with Two Star Primaries
+%
+% Transformer with two three-phase star-connected primaries, both wound on
+% the same three-limb core with no phase displacement between them (Yy0),
+% and one single-phase secondary. The secondary is made of coils wound on
+% the three limbs and connected in series: the parameter ws = [wa wb wc]
+% gives the relative turns, with sign (winding sense), of the secondary
+% coil on each limb. Typical distributions:
+%
+%   ws = [1 -1 0]      coils on limbs a and b in series opposition: the
+%                      output is proportional to the line-to-line voltage
+%                      V_AB and the reflected load current flows in lines
+%                      A and B only (default);
+%   ws = [1 -1/2 -1/2] T-type distribution: the output is in phase with
+%                      the phase voltage V_A, line A carries the whole
+%                      reflected load current, lines B and C one half each;
+%   ws = [1 0 0]       coil on limb a only: the reflected load current has
+%                      a zero-sequence component and needs the primary
+%                      neutral; with the neutral floating the load mmf is
+%                      balanced by the zero-sequence magnetizing path only,
+%                      the other two limbs are over-fluxed and the output
+%                      voltage drops.
+%
+% The magnetic circuit is linear. Two magnetizing inductances describe the
+% three-limb core, both referred to primary 1: lm, positive sequence (limb
+% and yoke path), and lm0, zero sequence (return of the sum of the three
+% limb fluxes through air, tank and clearances). lm0 = lm reproduces a bank
+% of three single-phase units or a five-limb core; lm0 << lm, a fraction of
+% a pu, a three-limb core. Core losses are a linear resistance rfe per limb.
+% No saturation, no hysteresis, no thermal port.
+%
+% Resistances, leakage inductances, magnetizing inductances and core-loss
+% resistance are entered in per unit on the rated apparent power Sr (the
+% single-phase output rating) and on the rated voltages, with base
+% impedances V1^2/Sr, V2^2/Sr and V3^2/Sr. The turns ratios follow from the
+% rated voltages: n2 = N2/N1 = V2/V1 and n3 = N3/N1 = sqrt(3)*V3/(gw*V1),
+% where gw = |wa + wb*exp(-j120deg) + wc*exp(+j120deg)| is the gain of the
+% secondary distribution under a balanced positive-sequence (A-B-C) flux
+% (sqrt(3) for [1 -1 0], 3/2 for [1 -1/2 -1/2], 1 for [1 0 0]).
+%
+% Positive current is taken into A1, B1, C1 (A2, B2, C2) towards the
+% neutral N1 (N2) and out of s1 on the secondary side. Leave N1 and N2
+% unconnected for isolated stars. The outputs psi_a, psi_b, psi_c are the
+% flux linkages of the primary-1 coils on the three limbs.
+
+nodes
+    A1 = foundation.electrical.electrical; % A1:left
+    B1 = foundation.electrical.electrical; % B1:left
+    C1 = foundation.electrical.electrical; % C1:left
+    N1 = foundation.electrical.electrical; % N1:left
+    A2 = foundation.electrical.electrical; % A2:left
+    B2 = foundation.electrical.electrical; % B2:left
+    C2 = foundation.electrical.electrical; % C2:left
+    N2 = foundation.electrical.electrical; % N2:left
+    s1 = foundation.electrical.electrical; % s1:right
+    s2 = foundation.electrical.electrical; % s2:right
+end
+
+outputs
+    psi_a = {0, 'V*s'};  % psi_a:right
+    psi_b = {0, 'V*s'};  % psi_b:right
+    psi_c = {0, 'V*s'};  % psi_c:right
+end
+
+parameters
+    Sr  = {100e3, 'V*A'};   % Rated apparent power (single-phase output)
+    V1  = {400,   'V'  };   % Primary 1 rated line-to-line voltage (rms)
+    V2  = {400,   'V'  };   % Primary 2 rated line-to-line voltage (rms)
+    V3  = {230,   'V'  };   % Secondary rated voltage (rms)
+    fr  = {50,    'Hz' };   % Rated frequency
+    ws  = {[1 -1 0], '1'};  % Secondary turns distribution on limbs a, b, c [wa wb wc]
+    r1  = {0.005, '1'  };   % Primary 1 coil resistance (pu)
+    l1  = {0.030, '1'  };   % Primary 1 coil leakage inductance (pu)
+    r2  = {0.005, '1'  };   % Primary 2 coil resistance (pu)
+    l2  = {0.030, '1'  };   % Primary 2 coil leakage inductance (pu)
+    r3  = {0.005, '1'  };   % Secondary winding resistance (pu)
+    l3  = {0.030, '1'  };   % Secondary leakage inductance (pu)
+    lm  = {100,   '1'  };   % Positive-sequence magnetizing inductance (pu)
+    lm0 = {0.5,   '1'  };   % Zero-sequence magnetizing inductance (pu)
+    rfe = {500,   '1'  };   % Core-loss resistance per limb (pu)
+end
+
+parameters(Access=private)
+    wb  = {2*pi,'rad'}*fr;    % rated angular frequency
+    Zb1 = V1^2/Sr;            % primary 1 base impedance
+    Zb2 = V2^2/Sr;            % primary 2 base impedance
+    Zb3 = V3^2/Sr;            % secondary base impedance
+    gw  = sqrt((ws(1) - (ws(2) + ws(3))/2)^2 + 3/4*(ws(3) - ws(2))^2); % |wa + a^2 wb + a wc|
+    n2  = V2/V1;              % N2/N1
+    n3  = sqrt(3)*V3/(gw*V1); % N3/N1
+    R1  = r1*Zb1;             % primary 1 coil resistance
+    L1  = l1*Zb1/wb;          % primary 1 coil leakage inductance
+    R2  = r2*Zb2;             % primary 2 coil resistance
+    L2  = l2*Zb2/wb;          % primary 2 coil leakage inductance
+    R3  = r3*Zb3;             % secondary winding resistance
+    L3  = l3*Zb3/wb;          % secondary leakage inductance
+    Lm  = lm*Zb1/wb;          % positive-sequence magnetizing inductance, primary 1 referred
+    Lm0 = lm0*Zb1/wb;         % zero-sequence magnetizing inductance, primary 1 referred
+    Lc  = (Lm - Lm0)/3;       % limb-to-limb coupling term of the magnetizing inductance matrix
+    Rfe = rfe*Zb1;            % core-loss resistance per limb, primary 1 referred
+end
+
+variables
+    i1a = {0, 'A'};  % current A1 -> N1, primary 1 coil on limb a
+    i1b = {0, 'A'};  % current B1 -> N1, primary 1 coil on limb b
+    i1c = {0, 'A'};  % current C1 -> N1, primary 1 coil on limb c
+    i2a = {0, 'A'};  % current A2 -> N2, primary 2 coil on limb a
+    i2b = {0, 'A'};  % current B2 -> N2, primary 2 coil on limb b
+    i2c = {0, 'A'};  % current C2 -> N2, primary 2 coil on limb c
+    i3  = {0, 'A'};  % secondary current, out of s1
+end
+
+variables(Access=private)
+    psia = {0, 'V*s'};  % flux linkage of the primary 1 coil on limb a
+    psib = {0, 'V*s'};  % flux linkage of the primary 1 coil on limb b
+    psic = {0, 'V*s'};  % flux linkage of the primary 1 coil on limb c
+    ima  = {0, 'A'};    % magnetizing current of limb a, primary 1 referred
+    imb  = {0, 'A'};    % magnetizing current of limb b, primary 1 referred
+    imc  = {0, 'A'};    % magnetizing current of limb c, primary 1 referred
+end
+
+branches
+    i1a : A1.i -> N1.i;
+    i1b : B1.i -> N1.i;
+    i1c : C1.i -> N1.i;
+    i2a : A2.i -> N2.i;
+    i2b : B2.i -> N2.i;
+    i2c : C2.i -> N2.i;
+    i3  : s2.i -> s1.i;
+end
+
+equations
+    assert(Sr  > 0, 'Rated power must be positive')
+    assert(V1  > 0 && V2 > 0 && V3 > 0, 'Rated voltages must be positive')
+    assert(fr  > 0, 'Rated frequency must be positive')
+    assert(r1 >= 0 && r2 >= 0 && r3 >= 0, 'Winding resistances must be non-negative')
+    assert(l1 >= 0 && l2 >= 0 && l3 >= 0, 'Leakage inductances must be non-negative')
+    assert(lm  > 0 && lm0 > 0, 'Magnetizing inductances must be positive')
+    assert(rfe > 0, 'Core-loss resistance must be positive')
+    assert(gw  > 0, 'ws must have a non-zero positive-sequence component')
+
+    % Primary 1 coils: terminal voltage = resistive and leakage drop plus
+    % the voltage induced by the limb flux linkage.
+    A1.v - N1.v == R1*i1a + L1*der(i1a) + der(psia);
+    B1.v - N1.v == R1*i1b + L1*der(i1b) + der(psib);
+    C1.v - N1.v == R1*i1c + L1*der(i1c) + der(psic);
+
+    % Primary 2 coils, same limbs, n2 times the turns of primary 1.
+    A2.v - N2.v == R2*i2a + L2*der(i2a) + n2*der(psia);
+    B2.v - N2.v == R2*i2b + L2*der(i2b) + n2*der(psib);
+    C2.v - N2.v == R2*i2c + L2*der(i2c) + n2*der(psic);
+
+    % Secondary: series connection of the limb coils with the distribution ws.
+    s1.v - s2.v == n3*(ws(1)*der(psia) + ws(2)*der(psib) + ws(3)*der(psic)) ...
+                   - R3*i3 - L3*der(i3);
+
+    % Magneto-motive force balance of each limb, referred to primary 1; the
+    % core-loss current e/Rfe is subtracted from the net mmf.
+    ima == i1a + n2*i2a - n3*ws(1)*i3 - der(psia)/Rfe;
+    imb == i1b + n2*i2b - n3*ws(2)*i3 - der(psib)/Rfe;
+    imc == i1c + n2*i2c - n3*ws(3)*i3 - der(psic)/Rfe;
+
+    % Magnetic circuit of the three-limb core: psi = Lm*im - Lc*(ima+imb+imc),
+    % i.e. inductance Lm for the positive and negative sequence and Lm0 for
+    % the zero sequence of the magnetizing currents.
+    psia == Lm*ima - Lc*(ima + imb + imc);
+    psib == Lm*imb - Lc*(ima + imb + imc);
+    psic == Lm*imc - Lc*(ima + imb + imc);
+
+    psi_a == psia;
+    psi_b == psib;
+    psi_c == psic;
+end
+
+annotations
+    UILayout = [
+        UIGroup('Ratings', Sr, V1, V2, V3, fr)
+        UIGroup('Secondary distribution', ws)
+        UIGroup('Impedances', r1, l1, r2, l2, r3, l3, lm, lm0, rfe)];
+end
+
+end
