@@ -119,6 +119,12 @@ Magnetics and thermal:
 - `tap_staggering_master_follower` — master-follower on-load tap changer control for parallel
   transformers.
 - `transformers/scott` — *The Scott-T transformer*, with `scott_t.ssc`.
+- `transformers/tri_monophase_transformer` — *Three-phase to single-phase transformer with two
+  star-connected primaries*: magnetic model of the three-limb core (positive- and zero-sequence
+  magnetizing inductances), secondary turns distribution on the limbs, no-load ratio and phase,
+  line currents reflected by the single-phase load, short-circuit impedance, role of the neutral
+  and of the zero-sequence flux, two primaries in parallel or on two sources; with
+  `tri_monophase_transformer.ssc` and the Python check script that reproduces the numbers.
 - `transformers/transformer_sizing_theory` — single-phase HF high-power transformer sizing
   (800 V / 800 V, 10 kHz, 250 kW example).
 - `transformers/induttanza_dispersione` — leakage inductance from nameplate data (IT).
