@@ -10,6 +10,7 @@ Part 2: L(RC) sine filter of a 450 kW / 480 V drive at fsw = 2 kHz, induction mo
 Part 3: comparison table AFE / IM / PMSM.
 Part 4: ripple-inductance trade-off of the converter-side reactor (loss and mass model, optimum k_r
         versus fsw = 2-5 kHz, pgfplots coordinates of the figure in the note).
+Part 5: star and delta values of the shunt branches of the examples (Section 3.2 of the note).
 
 Only numpy is required:  python3 lrc_filter_example.py
 """
@@ -660,3 +661,28 @@ for fsw, (c1, c2, opt) in coords.items():
     print(f"% fsw = {fsw}: loss optimum ({opt[0]:.2f},{opt[1]:.3f}) / ({opt[0]:.2f},{opt[2]:.0f})")
     print(f"% PL   {c1}")
     print(f"% mass {c2}")
+
+
+# ============================================================================
+# PART 5 - star / delta values of the shunt branches (Section 3.2 of the note)
+# ============================================================================
+print("\n" + "=" * 78)
+print("PART 5 - star (per phase) and delta (per branch) values of the shunt branches: Z_delta = 3 Z_star")
+print("=" * 78)
+branches = [  # name, C_Y [F], R_Y [ohm], V_ph [V], I_Y [A] at the fundamental
+    ("AFE C1 (A4)",               280e-6, None,  277.1, 29.3),
+    ("AFE C2-R2, n = 0.25 (A7)",   70e-6, 2.59,  277.1, 7.3),
+    ("690 V AFE C-Rd (Ex. 1b)",   200e-6, 0.050, 398.4, 25.0),
+    ("IM Cf (B4)",                660e-6, None,  277.1, 69.0),
+    ("IM C2-R2 (B6)",             165e-6, 1.63,  277.1, 17.2),
+    ("PMSM Cf (B4)",              500e-6, None,  277.1, 52.2),
+    ("PMSM C2-R2 (B6)",           125e-6, 2.13,  277.1, 13.0),
+]
+print(f"{'branch':28s} {'C_Y uF':>7s} {'R_Y ohm':>8s} {'V_Y V':>6s} {'I_Y A':>6s} | {'C_D uF':>7s} {'R_D ohm':>8s} {'V_D V':>6s} {'I_D A':>6s} | {'loss W':>7s}")
+for name, CY, RY, Vph, IY in branches:
+    CD, RD, VD, ID = CY / 3, (3 * RY if RY else None), SQ3 * Vph, IY / SQ3
+    P = 3 * RY * IY ** 2 if RY else None
+    r = lambda x, f: (f % x) if x is not None else "-"
+    print(f"{name:28s} {CY*1e6:7.1f} {r(RY, '%8.3f'):>8s} {Vph:6.0f} {IY:6.1f} | {CD*1e6:7.1f} {r(RD, '%8.3f'):>8s} {VD:6.0f} {ID:6.1f} | {r(P, '%7.0f'):>7s}")
+print("same reactive power, stored energy, damping ratio, attenuation and losses in the two connections;")
+print("delta losses check: 3 R_D I_D^2 = 3 (3 R_Y)(I_Y/sqrt3)^2 = 3 R_Y I_Y^2")

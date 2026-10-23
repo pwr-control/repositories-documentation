@@ -65,7 +65,8 @@ Converters and control:
   filters for active front ends (exact PWM inductor ripple for SPWM, SVM and DPWM, the ripple-inductance
   trade-off of the reactor with its loss optimum versus the switching frequency, capacitor reactive
   power, attenuation against IEEE 519, resonance placement versus the critical frequency $f_s/6$,
-  passive damping and its losses, grid-impedance interaction) and LC / L(RC) sine and dv/dt output
+  passive damping and its losses, star or delta connection of the shunt branches, grid-impedance
+  interaction) and LC / L(RC) sine and dv/dt output
   filters for induction and PMSM drives (reflected wave with long cables, resonance window, loaded
   resonance set by the machine inductance, damping, consequences for the current control and for
   sensorless control), with two step-by-step worked examples for a 450 kW, 480 V, 2 kHz drive (AFE

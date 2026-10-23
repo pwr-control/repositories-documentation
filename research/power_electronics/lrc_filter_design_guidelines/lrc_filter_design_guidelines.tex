@@ -138,6 +138,7 @@ f_c & crossover frequency of the current loop & Hz \\
 f_s/6 & critical resonance frequency of the digital current loop (Parker--McGrath--Holmes) & Hz \\
 Y_c,\ Z_g & converter output admittance and grid impedance of the impedance-based stability criterion & S, $\Omega$ \\
 \multicolumn{3}{@{}l}{\textit{Damping networks (both sides)}} \\
+\text{Y},\ \Delta \text{ (subscripts)} & star (per-phase) and delta (per-branch) values of a shunt branch, $Z_\Delta = 3Z_Y$, Section~\ref{sec:stardelta} & -- \\
 R_d & resistor in series with $\Cf$ (series damping) & $\Omega$ \\
 C_1,\ C_2,\ n & main capacitor and damping-branch capacitor of the R--C network, $n = C_2/C_1$; $C_1 + C_2$ is the total capacitance & F, -- \\
 R_2 & resistor of the R--C damping branch & $\Omega$ \\
@@ -381,6 +382,7 @@ kHz & -- & \si{\micro H} (\% $L_b$) & A & W & W & W (\% $S_n$) & kg & \SI{1}{\pe
 
 \section{Filter structures and transfer functions}
 \label{sec:tf}
+\subsection{Transfer functions and damping networks}
 With $Z_1 = sL_1$, $Z_2 = s(L_2 + \Lg)$ and $Z_c$ the impedance of the shunt network of Fig.~\ref{fig:circ}(a), and the grid voltage a short at the switching harmonics,
 \begin{equation}
 \frac{i_1}{v_1} = \frac{Z_c + Z_2}{Z_1 Z_2 + Z_c (Z_1 + Z_2)},\qquad
@@ -414,6 +416,44 @@ f_p = f_0\sqrt{1 + \frac{\Lf}{\Lhf}},\qquad
 \label{eq:lc}
 \end{equation}
 where $f_0$ is the unloaded resonance and $f_p$ the resonance with the machine connected.
+
+\subsection{Star or delta connection of the shunt branches}
+\label{sec:stardelta}
+All formulas of this note use the star (per-phase) equivalent of the shunt branches; the hardware is usually delta. The two are exchanged through $Z_\Delta = 3Z_Y$, element by element (the topology of the branch does not change):
+\begin{equation}
+C_\Delta = \frac{C_Y}{3},\qquad R_\Delta = 3R_Y,\qquad V_\Delta = \sqrt3\,V_Y = V,\qquad I_\Delta = \frac{I_Y}{\sqrt3},
+\label{eq:stardelta}
+\end{equation}
+with the same reactive power, the same stored energy ($3\cdot\tfrac12 C_\Delta V^2 = 3\cdot\tfrac12 C_Y V_{ph}^2$), the same damping ratio, attenuation and losses ($3R_\Delta I_\Delta^2 = 3R_Y I_Y^2$). Table~\ref{tab:stardelta} lists both sets for the branches of the worked examples: the delta capacitor holds one third of the capacitance at $\sqrt3$ the voltage and $1/\sqrt3$ the current, the delta resistor is three times larger at $1/\sqrt3$ the current, which for the low-ohmic series resistor (\SI{150}{m\ohm} at \SI{14}{A} instead of \SI{50}{m\ohm} at \SI{25}{A}) is the easier part to build.
+
+\textbf{Which one.} In low voltage (\SIrange{400}{690}{V}) the industrial choice is the delta: three-phase MKP filter capacitors are supplied as single delta-connected units rated at the line voltage (the \SIrange{525}{600}{V} classes on a \SI{480}{V} line, \SIrange{760}{800}{V} on \SI{690}{V}, to cover the switching ripple and the overvoltage margin), no star point is needed and there is no zero-sequence path: the common-mode voltage of the converter ($\pm\Vdc/6$ on the active vectors, $\pm\Vdc/2$ on the zero vectors, plus the zero-sequence injection of SVM) does not drive the capacitors, exactly as with a floating star point. The star is chosen when the star point is needed: on the motor side, tied to the DC-link midpoint, it gives the common-mode current a path and attenuates the common-mode $dv/dt$ and the bearing currents, at the price of capacitors rated for the pole voltage, a common-mode choke that limits that current and a larger capacitor current; with single-phase units in medium voltage or at very large currents; or when the phase voltages are to be measured directly. On the grid side the star point is never tied to ground or to the DC link (triplen harmonics, leakage current, earth-fault relays).
+
+\textbf{Where the resistor goes.} A resistor directly across the capacitor is not a damping option at the fundamental: $\zeta = Z_0/(2R)$ asks for $R = Z_0/(2\zeta) \approx \SIrange{2.5}{5}{\ohm}$ at $\zeta = 0.06$ and dissipates $3V_{ph}^2/R$, tens of kW. The usable networks are the series resistor in the capacitor branch and the R--C branch in parallel with $C_1$ (Sections~\ref{sec:dampgrid} and~\ref{sec:dampmotor}, in star or in delta alike), and the resistor in parallel with $L_2$, whose fundamental loss is low only while the drop $\epsilon_L V_{ph}$ on $L_2$ is small and which lets the switching-frequency current bypass $L_2$ through $R$, i.e. costs attenuation. Industrial practice: AFE and LCL filters use delta capacitors with a small series resistor ($\zeta \approx 0.05$, attenuation penalty \SIrange{2}{3}{\percent}, as the \SI{50}{m\ohm} of Example~1b) or no passive damping and active damping in the current loop; the split R--C branch is less common in catalogue filters (two capacitor banks) and is the choice where the losses matter or $\fsw$ is low, as in Example~1 (\SI{414}{W} against \SI{1.9}{kW} of the series resistor at the same $\zeta$). Motor sine filters are delta LC without resistor, the resonance at $\fsw/3$ being damped by the cable, the machine and the inductor loss; the R--C branch is added for sensorless control, long cables or a low $\fsw$ (Example~2), and $dv/dt$ filters use the R--C as a terminator at the motor terminals.
+
+\begin{table}[htb]
+\centering\small\begin{onehalfspace}
+\setlength{\tabcolsep}{4pt}
+\caption{Star and delta values of the shunt branches of the worked examples (\SI{480}{V} line unless noted; voltages and currents at the fundamental, rated point; the loss is the fundamental-frequency part, equal in the two connections).}
+\label{tab:stardelta}
+\begin{tabular}{@{}l cccc cccc c@{}}
+\toprule
+ & \multicolumn{4}{c}{star (per phase)} & \multicolumn{4}{c}{delta (per branch)} & loss \\
+\cmidrule(lr){2-5}\cmidrule(lr){6-9}
+branch & $C_Y$ & $R_Y$ & $V_Y$ & $I_Y$ & $C_\Delta$ & $R_\Delta$ & $V_\Delta$ & $I_\Delta$ & \\
+ & \si{\micro F} & \si{\ohm} & V & A & \si{\micro F} & \si{\ohm} & V & A & W \\
+\midrule
+AFE, $C_1$ (A4)                        & 280 & --    & 277 & 29.3 & 93.3 & --    & 480 & 16.9 & --   \\
+AFE, $C_2$--$R_2$, $n = 0.25$ (A7)     & 70  & 2.59  & 277 & 7.3  & 23.3 & 7.8   & 480 & 4.2  & 414  \\
+\SI{690}{V} AFE, $C$--$R_d$ (Ex.~1b)   & 200 & 0.050 & 398 & 25.0 & 66.7 & 0.150 & 690 & 14.4 & 94 (118 with ripple) \\
+IM, $\Cf$ (B4)                         & 660 & --    & 277 & 69.0 & 220  & --    & 480 & 39.8 & --   \\
+IM, $C_2$--$R_2$ (B6)                  & 165 & 1.63  & 277 & 17.2 & 55   & 4.9   & 480 & 9.9  & 1436 \\
+PMSM, $\Cf$ (B4)                       & 500 & --    & 277 & 52.2 & 167  & --    & 480 & 30.1 & --   \\
+PMSM, $C_2$--$R_2$ (B6)                & 125 & 2.13  & 277 & 13.0 & 41.7 & 6.4   & 480 & 7.5  & 1079 \\
+\bottomrule
+\end{tabular}
+\end{onehalfspace}
+\end{table}
+
 
 \section{Grid-side filter of an active front end}
 \label{sec:grid}
@@ -554,6 +594,7 @@ the last two relations giving the inverter current and voltage that set the inve
 \textbf{Loaded resonance.} With the machine connected the resonance moves from $f_0$ to $f_p = f_0\sqrt{1 + \Lf/\Lhf}$ of \eqref{eq:lc}, where $\Lhf$ is the inductance the machine presents at kilohertz frequencies: the transient (total leakage) inductance $\sigma L_s = L_{ls} + L_{lr}'$ of the induction motor, \SIrange{0.15}{0.25}{pu}, or $L_d$, $L_q$ of the PMSM, \SIrange{0.1}{0.3}{pu} for surface magnets and \SIrange{0.3}{0.8}{pu} for interior magnets with $L_q > L_d$ and a strong dependence on $i_q$ (saturation). The shift is \SIrange{4}{20}{\percent} and must be included in \eqref{eq:window}; for an IPM it differs between the $d$ and $q$ axes, so the plant seen by the current controller is anisotropic. The damping contributed by the machine is small because $\Lhf \gg \Lf$ decouples it from the capacitor node: the machine branch acts at $f_p$ as a conductance $G_m = \Rhf/(\Rhf^2 + (2\pi f_p \Lhf)^2)$ and gives $\zeta_m = \tfrac12 G_m\sqrt{L_p/\Cf}$ with $L_p = \Lf \parallel \Lhf$, i.e.\ a few $10^{-3}$ even with the deep-bar rotor resistance of the IM (\SIrange{0.05}{0.15}{pu} at \SI{1}{kHz}), and $10^{-4}$ for the PMSM, whose rotor has no cage. The resonance therefore has $Q \approx 10$--$20$, set by the inductor losses, unless it is damped explicitly.
 
 \subsection{Sine filter: damping}
+\label{sec:dampmotor}
 The same two passive networks of Section~\ref{sec:dampgrid} apply with $\wres \to 2\pi f_p$ and $L_p = \Lf \parallel \Lhf$; on the motor side the fundamental reaches $f_{1,max}$ and the capacitor is a larger fraction of $C_b$, so the fundamental term dominates the loss of both networks and the R--C branch, which adds $C_2 = n\Cf$ to the capacitance, costs typically twice the series resistor. The series resistor $R_d = 1/(3\cdot 2\pi f_p \Cf)$ ($\zeta \approx 0.17$) is the usual passive choice at \SIrange{0.5}{1}{\percent} of $P_n$; it also reduces the attenuation by the factor $\sqrt{1 + (2\pi\fsw R_d \Cf)^2}$. Active damping (a virtual resistor through capacitor-voltage or capacitor-current feedback, or the cascaded control of the next section) is lossless and is preferred where the control has the necessary measurements; the passive resistor is then kept small as a backstop for the V/f mode and for the resonance excited by the dead-time harmonics.
 
 \subsection{Consequences for the control, IM versus PMSM}
