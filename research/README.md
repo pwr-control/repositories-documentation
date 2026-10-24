@@ -73,6 +73,18 @@ Converters and control:
   grid filter; IM and PMSM sine filters), a review of a 690 V / 250 kW / 4 kHz L(RC) design without
   $L_2$ (grid as second inductance) with its aligned version, and a comparison table;
   `lrc_filter_example.py` reproduces the numbers.
+- `grid_forming_control` — *Grid-forming control in the synchronous dq frame: structure,
+  continuous-time design and discrete implementation*: the controller of the library block
+  `grid_forming_dqctrl` (`afe_dq_ctrl_pwm`, TELEMA VFC0 at 16.7 Hz) and of the study model
+  `grid_forming_dq.slx` of modelization-and-control (400 V / 250 kW / 50 Hz): free-running phase
+  generator, FHT sequence separation, positive- and negative-sequence voltage PIs, PI plus resonant
+  current loop, limiters and anti-windup; continuous-time analysis with complex space vectors
+  (current loop, pole-displacement rule of the resonant term and the rule $k_r = 2k_{i,i}$,
+  closed-form FHT gains and sequence-separation leakage, output impedance of the voltage loops) and
+  the discrete implementation operation by operation, stating where the discretization must be exact
+  (resonant term: semi-implicit form with $a = 2\sin(\omega_r t_s/2)$ or zero-order hold, forward
+  Euler unstable at 100 Hz / 125 µs; FHT: $\delta = 0$ and quadrature output at the same instant as
+  the in-phase one); `grid_forming_control_analysis.py` reproduces every number and figure.
 
 Line-commutated rectifiers and protection:
 - `six_pulses_thyristor_based_rectifier/acdc_thyristor_sizing_src` — *Sizing of a 400 V / 1 MW
