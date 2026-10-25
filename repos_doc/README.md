@@ -49,10 +49,16 @@ is loaded as `../../AAA_template_latex_settings/settings`.
 
 ## Grid-tied converters and power supplies
 
-- `single_phase_grid_tied_inverter_analysis` — *Single Phase Inverter: model derivation and
-  control architecture* (June 2020). Resonant PI, SOGI virtual-dq and harmonic-observer
-  virtual-dq control compared on a unified state-space model with LC/LCL filter; results at 50,
-  80 and 400 Hz.
+- `single_phase_grid_tied_inverter_analysis` — *Single-Phase Grid-Tied T-Type Inverter: model,
+  control design and discrete implementation* (Rev. 01, October 2026; Rev. 00 of June 2020
+  compared three control strategies). The controller of the library block
+  `afe_single_phase_ttype` (`afe_sp_ttype_ctrl_pwm`), the AC module of the SST bench: LCL plant
+  with the line inductance, first harmonic tracker and vector PI on the fundamental of the
+  single-phase current with the exact stationary-frame equivalent (a PR controller shaped by the
+  tracker: gain stabilization of the 1.4 kHz resonance, DC mode and the condition
+  k_i/k_p < 190 rad/s), single-phase PLL as SOGI-QSG, DC-link voltage loop, three-level
+  modulator and the discrete implementation. Companion Python script reproduces every number
+  and figure.
 - `single_phase_inverter` — *Single Phase Inverter: analysis of architecture and control
   strategies* (June 2026), same body updated.
 - `three_phase_grid_tied_inverter_analysis` — despite the folder name, another copy of the
