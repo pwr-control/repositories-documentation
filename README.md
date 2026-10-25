@@ -3,8 +3,12 @@
 Open-source documentation for the public repositories of the project:
 [library](https://github.com/pwr-control/library),
 [modelization-and-control](https://github.com/pwr-control/modelization-and-control),
-solid-state-transformers and
+[solid-state-transformers](https://github.com/pwr-control/solid-state-transformers) and
 [advanced-control-engineering](https://github.com/pwr-control/advanced-control-engineering).
+The documents of the SST project (`repos_doc/solid_state_transformers`, `repos_doc/cllc_dcx`,
+`repos_doc/single_phase_grid_tied_inverter_analysis`) are also kept, with the same sources, in
+`library/library/documentation/` of the library repository, so that the Simulink models can link
+their PDFs.
 
 Everything is LaTeX. Documents are technical reports and notes on power electronics, electrical
 machines, semiconductor devices and control, written to accompany the models of the other
@@ -14,7 +18,7 @@ repositories.
 
 | Folder | Content |
 |---|---|
-| [`repos_doc`](repos_doc) | Reports documenting the models and studies of the other repositories: machines, converters, hydraulics, batteries, fuel cell, drives, single-phase inverters, PLLs, solid-state transformers, power supplies, IGBT selection |
+| [`repos_doc`](repos_doc) | Reports documenting the models and studies of the other repositories: machines, converters, hydraulics, batteries, fuel cell, drives, single-phase inverters, PLLs, solid-state transformers and their CLLC-DCX stage, power supplies, IGBT selection |
 | [`research`](research) | Shorter technical notes grouped by domain: electrical machines and transformers, electronics, mathematics, physics, power electronics, power semiconductor devices, power systems, signal processing, space vector modulation, varistors, system engineering |
 | `standards_analysis` | Notes on standards: IEC 60034-27-4 (insulation tests on rotating machines, Italian) and the nomenclature of line-commutated converter connections (DIN 41761, IEC 60146, ANSI/IEEE) |
 | `texbook` | Tooling that assembles the standalone notes into a single book (see its own README) |

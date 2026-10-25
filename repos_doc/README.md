@@ -65,8 +65,23 @@ is loaded as `../../AAA_template_latex_settings/settings`.
   Flux-linkage matrix, T-equivalent, MMF balance and port relations of the transformer used in
   the input-series output-parallel rail supply.
 - `solid_state_transformers` — *Solid State Transformers: architecture, modelization and
-  control* (May 2021). DAB, three-phase DAB and CLLC stages with NPC and T-type inverters,
-  control loops, HF transformer design, simulation comparison.
+  control* (Rev. 01, October 2026). DAB, three-phase DAB and CLLC stages with NPC and T-type
+  inverters, control loops, HF transformer design, simulation comparison (the 2025 study), and
+  the two-module bench the repository keeps today: CLLC-DCX 800 V / 800 V, 50 kW, 50 kHz and
+  T-type single-phase inverter per module, inverters in series on the line, the two models
+  (compact library blocks, discrete blocks with losses), `param` structure, timing and
+  Backward Euler settings. Figures are referenced without extension (EPS here, PDF in the copy
+  kept in `library/library/documentation/`).
+- `cllc_dcx` — *CLLC-DCX isolated DC/DC stage: 800 V / 800 V, 50 kW, 50 kHz, sizing, simulation
+  model and library block* (Rev. 00, October 2026). The isolated stage of the SST module as an
+  open-loop DC transformer: FHA gain, why the stage is not regulated (tank reactance, power
+  against phase), resonant tank and magnetizing inductance for ZVS, transformer on stacked
+  UU93 ferrite sets, SiC modules and synchronous rectifier drive, DC links, loss budget; the
+  35 kHz variant 790 V → 700 V and its origin; the Simscape bench of `solid-state-transformers`
+  (modes, switch model, Backward Euler damping against the solver step); the library block
+  `cllc_dcx` (ports, measurement and gate vectors, control chain, control log, parameter
+  structure). Analytic figures from `py/cllc_dcx_figures.py` (pgfplots data in `figures/`).
+  Same source in `library/library/documentation/cllc_dcx/`.
 - `ps_25V_12kA` — *Power supply for electrolysis* (July 2026). 300 kW, 25 V / 12 kA from a 480 V
   grid: AFE with LCL filter, phase-shift full bridge with centre-tapped HF transformers, diode
   rectifier; design and simulation results.
