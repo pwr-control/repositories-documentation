@@ -85,6 +85,18 @@ Converters and control:
   (resonant term: semi-implicit form with $a = 2\sin(\omega_r t_s/2)$ or zero-order hold, forward
   Euler unstable at 100 Hz / 125 µs; FHT: $\delta = 0$ and quadrature output at the same instant as
   the in-phase one); `grid_forming_control_analysis.py` reproduces every number and figure.
+- `dc_bias_single_phase_transformers` — *Componente continua nei trasformatori monofase alimentati da un
+  inverter V/f in anello aperto* (IT): three gapless single-phase 1.7 MVA transformers fed by an open-loop
+  V/f two-level IGBT inverter (1070 V, 1.25 kHz): why a DC current of the order of the no-load current
+  saturates the core (half-cycle saturation, averaged magnetizing characteristic, incremental
+  inductance), tolerable levels, DC loop resistance (2–4 mΩ), inverter DC error sources, dead-time
+  damping, energization; DC compensation acting only on the $\alpha\beta$ components of the voltage
+  space vector (with isolated neutral the three DC currents sum to zero and are driven by $\alpha\beta$
+  only): Clarke of the one-period mean of the phase currents, PI per axis added to the open-loop V/f
+  reference, why a pure integrator is not enough ($L_m/R \approx 100$ s), $k_p$ as virtual resistance
+  limited by the saturated core, discrete implementation, sensor offset (common mode rejected,
+  auto-zero, flux-gate) and the offset-insensitive 2nd-harmonic alternative; `dc_bias_analysis.py`
+  reproduces every number and figure (nonlinear time simulation of the four scenarios).
 
 Line-commutated rectifiers and protection:
 - `six_pulses_thyristor_based_rectifier/acdc_thyristor_sizing_src` — *Sizing of a 400 V / 1 MW
