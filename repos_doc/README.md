@@ -88,6 +88,18 @@ is loaded as `../../AAA_template_latex_settings/settings`.
   `cllc_dcx` (ports, measurement and gate vectors, control chain, control log, parameter
   structure). Analytic figures from `py/cllc_dcx_figures.py` (pgfplots data in `figures/`).
   Same source in `library/library/documentation/cllc_dcx/`.
+- `three_phase_dab` — *Three-phase dual active bridge (DAB3): 1200 V / 1200 V, 250 kW, 10 kHz,
+  sizing, control, simulation model and runs* (Rev. 00, October 2026). The isolated stage of
+  `advanced-dcdc-converters/analysis_three_phase_dab` between two batteries: six-step bridges,
+  three single-phase transformers in star-star, power against phase shift and harmonic model,
+  comparison with the single-phase DAB, series inductance, transformer and choice of the
+  frequency, SiC modules and ZVS map, DC links, loss budget; current loop with feed-forward and
+  its sample rate; DC bias of the transformers (origin, gap and ZVS damping, flux-centred start,
+  updates of the phase shift, measurement with slow sampling, DC regulators); the Simscape bench
+  (`param` structure, changes from the original model, Backward Euler damping, phase
+  quantization) and runs 01 to 04 against the harmonic model. Analytic figures from
+  `py/three_phase_dab_figures.py`, figures of the runs from `py/three_phase_dab_runs.py`
+  (pgfplots data in `figures/`).
 - `ps_25V_12kA` — *Power supply for electrolysis* (July 2026). 300 kW, 25 V / 12 kA from a 480 V
   grid: AFE with LCL filter, phase-shift full bridge with centre-tapped HF transformers, diode
   rectifier; design and simulation results.
