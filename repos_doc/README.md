@@ -88,6 +88,19 @@ is loaded as `../../AAA_template_latex_settings/settings`.
   `cllc_dcx` (ports, measurement and gate vectors, control chain, control log, parameter
   structure). Analytic figures from `py/cllc_dcx_figures.py` (pgfplots data in `figures/`).
   Same source in `library/library/documentation/cllc_dcx/`.
+- `grid_forming_following_afe` — *Grid-forming and grid-following AFE blocks: two-level bridge
+  with LCL filter, description and user guide* (Rev. 00, October 2026). The library blocks
+  `grid_forming_dqctrl` and `grid_following_dqctrl` (one Simscape component for the power
+  stage, one MATLAB Function for the control and the PWM): quick-start user guide, power stage
+  (two-level bridge, DC link, LCL filter, switch model, measurement and gate vectors), the
+  control parts common to both blocks (local clock and carrier, acquisitions, Clarke and Park,
+  first harmonic tracker and sequences, vector PI, SVPWM and dead time), the grid-forming chain
+  (phase generator, voltage and current loops, master/slave `sync` ports, negative-sequence
+  compensator), the grid-following chain (PLL, DC-link loop, zero-sequence loop), ports and
+  control logs, the `p` parameter structure with the example values, what the blocks do not
+  model. All figures are TikZ. Same source in
+  `library/library/documentation/grid_forming_following_afe/`; that PDF is the Help of the two
+  block masks.
 - `three_phase_dab` — *Three-phase dual active bridge (DAB3): 1200 V / 1200 V, 250 kW, 10 kHz,
   sizing, control, simulation model and runs* (Rev. 00, October 2026). The isolated stage of
   `advanced-dcdc-converters/analysis_three_phase_dab` between two batteries: six-step bridges,
