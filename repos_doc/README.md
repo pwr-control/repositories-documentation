@@ -63,6 +63,17 @@ is loaded as `../../AAA_template_latex_settings/settings`.
   strategies* (June 2026), same body updated.
 - `three_phase_grid_tied_inverter_analysis` — despite the folder name, another copy of the
   single-phase inverter study.
+- `single_phase_afe_power_decoupling` — *Active power decoupling of a single-phase AFE: the ripple
+  port and its control in the model `single_phase_afe`* (Rev. 00, October 2026). Why the power of a
+  single-phase converter pulsates at 2f and the energy that moves (P/ω); the ripple port of the
+  model `single_phase_afe` of `modelization-and-control` (second full bridge, two inductors, buffer
+  capacitor at 2000 V, boost type) and the sizing of its parts; the control step by step:
+  double-integrator observer that isolates the 100 Hz ripple of the DC-link voltage, phase-shift
+  filter that builds its quadrature, rotation at 2θ, vector PI, and why the output is applied
+  through the β axis (it compensates the 90° of the DC-link capacitor); buffer voltage and current
+  loops; averaged simulation with the discrete loops (ripple 16 % → 0.8 %, third harmonic 13 % →
+  0.5 %), check of the numbers and margins of the model, open points. Companion Python script and
+  PDF figures in the folder; same source in `library/library/documentation/`.
 - `single_phase_lock_loop` — *Single Phase Lock Loop*. SOGI-QSG based PLL and moving-average
   filter implemented on dSPACE SCALEXIO with C-Caller and DFT.
 - `three_phase_inductors` — *Three Phase Inductors: mathematical model and construction*. Four-
