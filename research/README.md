@@ -110,6 +110,17 @@ Converters and control:
   an active load, sensitivity table) and a review of the library EKF (`ekf_im_setup`,
   `inv_im_param.slx`: mechanical row 632 times too high, bilinear terms counted twice, voltage
   scale, output inductor missing); `im_foc_ekf_analysis.py` reproduces every number and figure.
+- `fcs_mpc_ttype_psm` — *Finite-set predictive current control of a T-type wind-generator inverter:
+  analysis and fixes of the model `mpc_ttype_psm`*: one of the six 267 kW systems of the 1.6 MW /
+  17.8 rpm PM wind generator of modelization-and-control on a three-level T-type bridge with split DC
+  link and battery, FCS-MPC over the 27 states at 8 kHz and a six-state EKF. Voltage of a state in the
+  per unit of the machine (the prediction was 2.9 times too weak), delay compensation and the error
+  equation $e(k+1) = (1-g)\,e(k-1)$ of the current loop, neutral-point term, switching term that
+  breaks the ties between redundant states, voltage, inductance (active flux), state prediction and
+  speed output of the EKF, turn-on delay against the one-step capacitor short at the O→P and O→N
+  changes; switched check of the whole chain (torque within 0.4 % of the torque curve, neutral point
+  within ±9 V, sensorless range of the machine inductances) and remaining points;
+  `fcs_mpc_ttype_psm_analysis.py` reproduces every number and figure.
 
 Line-commutated rectifiers and protection:
 - `six_pulses_thyristor_based_rectifier/acdc_thyristor_sizing_src` — *Sizing of a 400 V / 1 MW
