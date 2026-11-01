@@ -97,6 +97,19 @@ Converters and control:
   limited by the saturated core, discrete implementation, sensor offset (common mode rejected,
   auto-zero, flux-gate) and the offset-insensitive 2nd-harmonic alternative; `dc_bias_analysis.py`
   reproduces every number and figure (nonlinear time simulation of the four scenarios).
+- `im_foc_ekf_sensorless` — *Controllo a orientamento di campo del motore asincrono e stima senza
+  sensore di velocità con un filtro di Kalman esteso* (IT): the 261 kW / 460 V / 60 Hz induction
+  machine of the modelization-and-control models `im_analysis_and_design` and `inv_im`. Per-unit
+  model including the inverter output inductor; current (200 Hz, zero on the pole), flux
+  (feed-forward plus PI with clamping) and speed loops, compared with the gains of the models;
+  six-state EKF (stator currents, rotor flux, speed, load torque): why forward Euler at 8 kHz makes
+  the flux mode unstable above 0.28 pu speed (−18° angle bias at rated speed) and the second-order
+  prediction that removes it, observability (lost at zero stator frequency), voltage input and
+  dead-time compensation; simulations (estimators in open loop against the encoder, sensorless
+  operation at rated torque down to 5 % speed, parameter and compensation errors, slow reversal under
+  an active load, sensitivity table) and a review of the library EKF (`ekf_im_setup`,
+  `inv_im_param.slx`: mechanical row 632 times too high, bilinear terms counted twice, voltage
+  scale, output inductor missing); `im_foc_ekf_analysis.py` reproduces every number and figure.
 
 Line-commutated rectifiers and protection:
 - `six_pulses_thyristor_based_rectifier/acdc_thyristor_sizing_src` — *Sizing of a 400 V / 1 MW
