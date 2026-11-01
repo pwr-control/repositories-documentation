@@ -121,6 +121,16 @@ Converters and control:
   changes; switched check of the whole chain (torque within 0.4 % of the torque curve, neutral point
   within ±9 V, sensorless range of the machine inductances) and remaining points;
   `fcs_mpc_ttype_psm_analysis.py` reproduces every number and figure.
+- `isop_rail_auxiliary_supply` — *Input-series output-parallel phase-shift full bridges for a 3 kV rail
+  auxiliary supply (model `ps_isop_rail`)*: the four 250 kW phase-shift full bridges of modelization-and-control
+  in series on the catenary and in parallel at 750 V, with the transformers of two modules paralleled on the AC
+  side on one diode rectifier. Averaged module (the duty-cycle loss as the lossless resistance 4n²Lsf), turns
+  ratio and leakage against the catenary voltage, why a common phase shift balances the input voltages of
+  modules on separate rectifiers (1.2 ms) and why the balance almost disappears inside an AC-paralleled pair
+  (reactive coupling through the leakages: 64 ms, a 5 % leakage difference splits the module voltages by
+  ±15 %), remedies (one rectifier per module, a pair loop on the relative phase of the bridges), start,
+  DC magnetizing current and voltage loop; `isop_rail_auxiliary_supply_analysis.py` (with the switched
+  simulator `isop_sim.py`) reproduces every number and figure.
 
 Line-commutated rectifiers and protection:
 - `six_pulses_thyristor_based_rectifier/acdc_thyristor_sizing_src` — *Sizing of a 400 V / 1 MW

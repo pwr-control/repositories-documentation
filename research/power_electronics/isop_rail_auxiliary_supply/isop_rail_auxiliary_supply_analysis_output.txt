@@ -1,0 +1,56 @@
+
+====================================================================================================
+1. Data and operating point (values of init_model.m)
+====================================================================================================
+module: n = 1.00, f = 4000 Hz, Ls = 26.04 uH (Ld1 = Ld2 = 13.02 uH), Lm = 1.00 mH, Cin = 1.20 mF
+Req = 4 n^2 Ls f = 0.4167 Ohm, duty-cycle loss at 375 A: 156.2 V
+load 0.5 Ohm: 750 V, 1500 A, 1.1250 MW = 4 x 281.2 kW (112 % of 250 kW)
+emulator: open circuit 4696.1 V at soc 0.85, string current 239.6 A, module input 1171.0 V
+phase shift needed D = 0.7765 (rectifier diodes and switches: 3.08 V)
+nominal catenary 3000 V: 750 V per module, largest output (D = 1) at 375 A: 590.7 V
+  catenary 3600 V: 900 V per module
+  catenary 3900 V: 975 V per module
+
+====================================================================================================
+2. Turns ratio and leakage for a phase-shift bridge (design rule, D_max = 0.9, duty-cycle loss 10 %)
+====================================================================================================
+750 V at 3000 V (750 V per module): n = 1.235, Req = 0.222 Ohm, Ls = 9.11 uH referred to the primary
+750 V at 2000 V (500 V per module): n = 1.852, Req = 0.222 Ohm, Ls = 4.05 uH referred to the primary
+
+====================================================================================================
+3. Input-voltage sharing of modules on separate rectifiers (common phase shift)
+====================================================================================================
+restoring conductance g = (vo/v)(nD/Req - i/v) = 0.9885 S -> tau = Cin/g = 1.214 ms (first order, output inductors left out)
+  term nD/Req = 1.864 S, term i/v = 0.320 S, factor vo/v = 0.6405
+equal modules           : v =  1170.9,  1170.9,  1170.9,  1170.9 V, i =  375.0,  375.0,  375.0,  375.0 A, D = 0.7740
+module 1 turns +2 %     : v =  1150.0,  1177.9,  1177.9,  1177.9 V, i =  368.3,  377.2,  377.2,  377.2 A, D = 0.7702
+module 2 leakage +5 %   : v =  1167.8,  1180.1,  1167.8,  1167.8 V, i =  374.0,  377.9,  374.0,  374.0 A, D = 0.7757
+module 2 leakage +20 %  : v =  1158.4,  1208.3,  1158.4,  1158.4 V, i =  371.0,  387.0,  371.0,  371.0 A, D = 0.7809
+
+====================================================================================================
+4. Voltage loop (averaged plant, PI as continuous, 1.5 samples of delay) and input filter
+====================================================================================================
+output filter (two 250 uH branches on 1.2 mF): 411 Hz; plant gain 1.292 pu/pu
+kp 0.5 ki  18.0: crossover    4.8 Hz, phase margin   129 deg, gain margin  9.1 dB, closed-loop pole (static plant)  -14.1 rad/s
+kp 0.6 ki 100.0: crossover   32.8 Hz, phase margin   135 deg, gain margin  7.2 dB, closed-loop pole (static plant)  -72.8 rad/s
+kp 0.8 ki  60.0: crossover  510.7 Hz, phase margin    39 deg, gain margin  4.9 dB, closed-loop pole (static plant)  -38.1 rad/s
+input filter: 2.0 mH, 0.30 mF -> 205 Hz, Z0 = 2.58 Ohm; converter input -V^2/P = -19.5 Ohm
+
+====================================================================================================
+5. Switched simulation (isop_sim.py)
+====================================================================================================
+start (DoDC on): 95 % at 178 ms, 99 % at 295 ms, max 750.5 V; max module input voltage 1208 V; max |iLm| 67.7 A
+  t =      5 ms: mean magnetizing current -21.42 A, output  323.3 V
+  t =    200 ms: mean magnetizing current  -7.11 A, output  721.9 V
+  t =    500 ms: mean magnetizing current  -7.69 A, output  750.1 V
+  t =    750 ms: mean magnetizing current  -2.23 A, output  750.1 V
+  t =   1000 ms: mean magnetizing current  -0.66 A, output  750.1 V
+steady state: output mean 751.5 V (sampled 750.1 V), ripple 3.26 V p-p, phase shift 0.7823, module input 1170.9 V, primary 380.1 A rms / 459.5 A peak, magnetizing peak 51.9 A, rectifiers 751.5 / 751.5 A, string current 245.7 A
+start from 0 V: module input up to 2290 V, string current up to 1809 A
+emulator at 3 kV: output 603.6 V, phase shift 1.000, module input 747.0 V
+sharing, 80 V initial deviation at the operating point (fixed phase shift): between the pairs envelope tau 2.75 ms, inside a pair tau 63.6 ms
+module 1 turns +2 %     : pairs (simulation) v =  1152.9,  1176.5,  1176.5,  1176.9 V; primary rms   381,   382,   382,   382 A, peak   463,   464,   464,   466 A
+module 2 leakage +5 %   : pairs (simulation) v =  1164.3,  1350.5,  1005.4,  1164.3 V; primary rms   378,   541,   306,   378 A, peak   460,   782,   524,   460 A
+module 2 leakage +20 %  : pairs (simulation) v =  1136.5,  1450.3,   958.9,  1136.5 V; primary rms   369,   605,   312,   369 A, peak   450,   900,   592,   450 A
+
+figures: ['fig_sharing.pdf', 'fig_start.pdf', 'fig_waveforms.pdf']

@@ -1,0 +1,256 @@
+% isop_rail_auxiliary_supply.tex
+% Input-series output-parallel phase-shift full bridges for a 3 kV rail auxiliary supply (model ps_isop_rail of
+% modelization-and-control): averaged model, input-voltage sharing with a common phase shift and why transformer
+% pairs on one rectifier weaken it, start, flux balance and voltage loop.
+% pwr-control template (AAA_template_latex_settings); numbers and figures: isop_rail_auxiliary_supply_analysis.py
+% (python3, numpy, scipy, matplotlib, numba; uses isop_sim.py). Compile: pdflatex (three times, for references).
+% Rev. 00 - November 2026 - first issue
+\documentclass[10pt,a4paper]{scrartcl}
+\input{../../../AAA_template_latex_settings/settings}
+% the document sits three levels below the repository root: logo path of settings.tex corrected here
+\rhead{\includegraphics[height=0.75cm]{../../../AAA_template_latex_settings/pwr-control_logo_doc.png}}
+\rfoot{\small Rev.~00}
+\geometry{left=2.0cm, right=2.0cm}
+\usetikzlibrary{arrows.meta,positioning,calc}
+
+\sisetup{per-mode=symbol,range-phrase={\text{--}},range-units=single,retain-explicit-plus}
+\setlist{nosep}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{3pt}
+\allowdisplaybreaks
+
+% --- shorthand ---
+\newcommand{\jj}{\mathrm{j}}
+\newcommand{\ee}{\mathrm{e}}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\Req}{R_{eq}}
+\newcommand{\Ls}{L_s}
+\newcommand{\vo}{v_o}
+
+% =============================================================
+%  DOCUMENT DATA (title page: AAA_template_latex_settings/titlepage.tex)
+% =============================================================
+\newcommand{\DocCategory}{Technical Note}
+\newcommand{\DocField}{Power Electronics and Control Systems}
+\newcommand{\DocTitle}{%
+	{\fontsize{20}{24}\selectfont\bfseries Input-Series Output-Parallel} \\[12pt]
+	{\fontsize{16}{26}\selectfont\bfseries Phase-Shift Full Bridges \\[4pt] for a \SI{3}{kV} Rail Auxiliary Supply \\[8pt] (model \texttt{ps\_isop\_rail})}
+}
+\newcommand{\DocSubtitle}{Averaged model, input-voltage sharing with a common phase shift, \\[6pt] why transformer pairs on one rectifier weaken it, start and flux balance}
+\newcommand{\DocAuthor}{Davide Bagnara}
+\newcommand{\DocRevision}{00}
+\newcommand{\DocDate}{November 2026}
+\newcommand{\DocAbstract}{%
+The model \texttt{ps\_isop\_rail} is a \SI{1}{MW} class auxiliary supply for a \SI{3}{kV} DC catenary: four \SI{250}{kW} phase-shift full bridges in series at the input and in parallel at the output (ISOP), with one output-voltage loop that gives the same phase shift to the four bridges and no input-voltage sharing loop. Its special feature is that the transformers work in pairs: the secondaries of two modules are paralleled on the AC side and feed one diode rectifier. This note derives the averaged model of a module, shows why a common phase shift balances the input voltages of modules on separate rectifiers (time constant \SI{1.2}{ms}) and why the balance almost disappears between two modules on one rectifier: they are tied through leakage reactances, so a voltage difference drives a reactive circulating current and no restoring power. A switched simulation confirms it: \SI{64}{ms} instead of \SI{2.7}{ms}, and a \SI{5}{\percent} leakage difference puts \SI{1351}{V} and \SI{1005}{V} on the two modules of a pair. The note also covers the turns ratio against the catenary voltage, the start, the DC magnetizing current and the voltage loop, and lists the remedies. A companion Python script reproduces every number and figure.
+}
+\newcommand{\RevisionHistory}{%
+	00 & November 2026 & First issue. & \DocAuthor \\
+}
+\newcommand{\MetaLabelA}{Project Repository}
+\newcommand{\MetaValueAUrl}{https://github.com/pwr-control/modelization-and-control.git}
+\newcommand{\MetaValueALabel}{modelization-and-control.git (foundations\_of\_power\_electronics/ps\_isop\_rail)}
+\newcommand{\MetaLabelB}{Framework}
+\newcommand{\MetaValueB}{MATLAB/Simulink/Simscape; Python 3 (companion script)}
+
+\begin{document}
+\input{../../../AAA_template_latex_settings/titlepage}
+\tableofcontents
+\newpage
+\begin{onehalfspace}
+
+% =====================================================================================================
+\section{Scope}
+\label{sec:scope}
+
+The model \code{ps\_isop\_rail} (\path{foundations_of_power_electronics/ps_isop_rail} of modelization-and-control) is an auxiliary power supply for a \SI{3}{kV} DC railway catenary. The catenary voltage (\SIrange{2000}{3600}{V} of permanent range in EN~50163 \cite{en50163}) is too high for one bridge with \SI{1.7}{kV} devices, so four isolated modules share it in series at the input and give a common \SI{750}{V} output in parallel (input series, output parallel: ISOP). Each module is a phase-shift full bridge (PSFB) \cite{sabate1990}; one voltage loop gives the same phase shift to the four bridges (common-duty control \cite{giri2006}) and there is no input-voltage sharing loop.
+
+During the migration of the model to the parameter structure of the repository (November 2026, pull request \#26 of modelization-and-control) a design check with a switched simulation of the whole circuit was made. This note collects it: Sect.~\ref{sec:system} gives the system, Sect.~\ref{sec:averaged} the averaged model of a module and the turns ratio, Sect.~\ref{sec:sharing} the input-voltage sharing (the main point), Sect.~\ref{sec:start} the start, the flux balance and the voltage loop, Sect.~\ref{sec:summary} the summary. Every number comes from the companion script \code{isop\_rail\_auxiliary\_supply\_analysis.py}, which uses the switched simulator \code{isop\_sim.py} (the same circuit and values as \code{init\_model.m} of the model: backward Euler at \SI{0.625}{\micro s} like the Simscape local solver, ideal switches and piecewise-linear diodes, the modulator and the voltage PI of the model).
+
+% =====================================================================================================
+\section{The system}
+\label{sec:system}
+
+Fig.~\ref{fig:system} shows the power stage and Table~\ref{tab:data} the data. A lithium-ion battery emulates the catenary; it is set to $1.5$ times the catenary voltage (\SI{4696}{V} open circuit), a choice that Sect.~\ref{sec:ratio} explains. The four input capacitors are in series; each one feeds its own full bridge and transformer. The secondaries of modules 1 and 4 are paralleled on the AC side and feed rectifier~1, those of modules 2 and 3 feed rectifier~2; each rectifier has its own \SI{250}{\micro H} inductor and the two share the output capacitor and the load.
+
+\begin{figure}[htb]
+\centering
+\begin{tikzpicture}[x=1cm,y=1cm,font=\small,>=Stealth,
+	blk/.style={draw,rounded corners=2pt,align=center,fill=white,inner sep=3pt},
+	ac/.style={line width=1.4pt}]
+\foreach \k/\y in {1/2.55,2/0.85,3/-0.85,4/-2.55} {
+	\node[blk,minimum width=3.7cm,minimum height=1.15cm] (m\k) at (4.3,\y) {module \k\\[-1pt]{\footnotesize $C_{in}$, full bridge, $T_{\k}$ (1:1)}};
+	\draw (m\k.west) ++(0,0.34) -- ++(-0.45,0) coordinate (p\k);
+	\draw (m\k.west) ++(0,-0.34) -- ++(-0.45,0) coordinate (n\k);
+}
+\draw (n1) -- (p2) (n2) -- (p3) (n3) -- (p4);
+\node[blk,minimum width=1.9cm,minimum height=2.4cm] (bat) at (-0.6,0) {catenary\\emulator\\\SI{4.5}{kV}\\(battery)};
+\coordinate (bp) at ($(bat.east)+(0,0.8)$);
+\coordinate (bn) at ($(bat.east)+(0,-0.8)$);
+\draw (p1) -- ++(-0.5,0) coordinate (a1) |- (bp);
+\node[left,font=\footnotesize,align=right] at ($(a1)+(-0.05,-0.85)$) {\SI{1}{mH} line\\+ \SI{1}{mH} $L_{in}$};
+\draw (n4) -- ++(-0.5,0) |- (bn);
+\node[blk,minimum width=1.9cm,minimum height=1.0cm] (r1) at (9.4,1.7) {rectifier 1};
+\node[blk,minimum width=1.9cm,minimum height=1.0cm] (r2) at (9.4,-1.7) {rectifier 2};
+\draw[ac] (m1.east) -- (7.3,2.55) |- ($(r1.west)+(0,0.22)$);
+\draw[ac] (m4.east) -- (7.9,-2.55) |- ($(r1.west)+(0,-0.22)$);
+\draw[ac] (m2.east) -- (7.0,0.85) |- ($(r2.west)+(0,0.22)$);
+\draw[ac] (m3.east) -- (6.7,-0.85) |- ($(r2.west)+(0,-0.22)$);
+\node[font=\footnotesize,align=center] at (7.6,3.1) {AC side};
+\node[blk,minimum width=2.2cm,minimum height=1.6cm] (out) at (13.6,0) {$C_{out}$ \SI{1.2}{mF}\\load \SI{0.5}{\ohm}\\\SI{750}{V}};
+\draw (r1.east) -- node[above,font=\footnotesize]{\SI{250}{\micro H}} (11.8,1.7) |- ($(out.west)+(0,0.3)$);
+\draw (r2.east) -- node[below,font=\footnotesize]{\SI{250}{\micro H}} (11.8,-1.7) |- ($(out.west)+(0,-0.3)$);
+\end{tikzpicture}
+\caption{Power stage of \code{ps\_isop\_rail}: four modules in series at the input; the transformers of modules 1+4 and 2+3 are paralleled on the AC side (thick lines), one diode rectifier and one inductor per pair, common output capacitor.}
+\label{fig:system}
+\end{figure}
+
+\begin{table}[htb]
+\centering
+\caption{Data of the model (values of \code{init\_model.m}).}
+\label{tab:data}
+\small
+\begin{tabularx}{\textwidth}{@{}l>{\raggedright\arraybackslash}X@{}}
+\toprule
+Item & Value \\
+\midrule
+catenary emulator & battery, \SI{4500}{V} nominal, \SI{4696}{V} open circuit (soc 0.85), \SI{1}{mH} line; string inductor $L_{in}$ \SI{1}{mH} \\
+module & \SI{250}{kW}; $C_{in}$ \SI{1.2}{mF}; full bridge of ideal switches (\SI{1.5}{m\ohm}), \SI{4}{kHz}, dead time \SI{3}{\micro s} \\
+transformer & $n = 1$, $L_m = \SI{1}{mH}$, leakage $\Ls = \SI{26.0}{\micro H}$ referred to the primary (half on each side), \SI{1}{m\ohm} per winding \\
+output & two diode rectifiers, \SI{250}{\micro H} each, $C_{out}$ \SI{1.2}{mF}, load \SI{0.5}{\ohm}: \SI{750}{V}, \SI{1500}{A}, \SI{1.125}{MW} (\SI{112}{\percent} of $4\times\SI{250}{kW}$) \\
+control & \SI{8}{kHz} (two updates per carrier period); voltage PI $k_p = 0.5$, $k_i = \SI{18}{s^{-1}}$, output = phase shift $D \in [0,1]$ (pu of $\pi$) of the four bridges; reference \SI{750}{V} applied as a step \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% =====================================================================================================
+\section{Averaged model of a module}
+\label{sec:averaged}
+
+\subsection{Duty-cycle loss and output resistance}
+
+With the phase shift $D$ the bridge puts $\pm v_k$ on the primary for the fraction $D$ of each half period. The secondary current is the inductor current $i_k$ (ripple neglected); at each change of polarity the primary current must go from $+n\,i_k$ to $-n\,i_k$ through the leakage, under the full voltage $v_k$, and during that time the rectifier short-circuits the secondary. The lost fraction of the half period is
+\begin{equation}
+\Delta D = \frac{2\,n\,i_k\,\Ls}{v_k}\cdot 2f = \frac{4\,n\,\Ls\,f\,i_k}{v_k},
+\end{equation}
+so the rectified output and the input current of module $k$ are
+\begin{equation}
+\vo = n\,v_k\,(D - \Delta D) = n\,D\,v_k - \Req\,i_k, \qquad \Req = 4\,n^2\,\Ls\,f, \qquad i_{in,k} = n\,(D-\Delta D)\,i_k = \frac{\vo\,i_k}{v_k}.
+\label{eq:avg}
+\end{equation}
+$\Req$ is a lossless resistance that models the duty-cycle loss \cite{sabate1990}: here $\Req = \SI{0.417}{\ohm}$, which costs \SI{156}{V} at the \SI{375}{A} of one module. At the operating point (\SI{1171}{V} per module) the phase shift is $D = 0.777$ (the switched simulation gives 0.782). Fig.~\ref{fig:waveforms} shows the switched waveforms there: the primary current reverses through the leakage at each change of polarity of the bridge voltage (the duty-cycle loss), the magnetizing current is small (\SI{52}{A} peak against \SI{460}{A}), and the two secondaries of a pair carry the same current when the modules are equal. Each module has \SI{1170.9}{V} and \SI{380}{A} rms in its primary, and each rectifier gives \SI{751.5}{A}.
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=0.74\textwidth]{figures/fig_waveforms.pdf}
+\caption{Steady state with identical modules (switched simulation): bridge voltage, primary and magnetizing current of module 1, secondary currents of the pair 1+4 and output current of rectifier 1.}
+\label{fig:waveforms}
+\end{figure}
+
+\subsection{Turns ratio, leakage and catenary voltage}
+\label{sec:ratio}
+
+With $n = 1$ and this leakage a module needs about \SI{1170}{V} to give \SI{750}{V}: that is why the emulator is set to $1.5$ times the catenary. At the nominal \SI{3}{kV} (\SI{750}{V} per module) the largest output at full load is \SI{591}{V}; the simulation with the emulator at \SI{3}{kV} stops at \SI{604}{V} with the PI saturated (Fig.~\ref{fig:start}a). The leakage was sized with the formula of a dual active bridge (maximum power $V_1V_2/(8f\Ls) = 2.7\,P$), but in a PSFB the leakage does not transfer power: it gives the soft switching and the duty-cycle loss. A PSFB is sized the other way round: the turns ratio from the lowest catenary voltage at which full output is needed, the leakage from an allowed duty-cycle loss. With a largest phase shift of 0.9 and \SI{10}{\percent} duty-cycle loss: $n = 1.24$ and $\Ls = \SI{9.1}{\micro H}$ for full output at \SI{3}{kV}, $n = 1.85$ and $\Ls = \SI{4.05}{\micro H}$ at \SI{2}{kV}. The soft switching of the lagging leg at light load then sets a lower limit to $\Ls$ \cite{sabate1990}.
+
+% =====================================================================================================
+\section{Input-voltage sharing with a common phase shift}
+\label{sec:sharing}
+
+The modules are in series at the input, so they carry the same string current. In steady state each input capacitor has zero average current, so each module must draw the same average input current; the input voltages settle where this is true. Whether they settle at equal values, and how fast, depends on how a module's input current reacts to its own input voltage.
+
+\subsection{Modules on separate rectifiers: a resistive coupling}
+
+With separate rectifiers the modules meet on the DC side. With $D$ common and $\vo$ held by the output capacitor, \eqref{eq:avg} gives $i_k = (n D v_k - \vo)/\Req$ and
+\begin{equation}
+\frac{\partial i_{in,k}}{\partial v_k} = g = \frac{\vo}{v_k}\left(\frac{n\,D}{\Req} - \frac{i_k}{v_k}\right) = 0.6405\,(1.864 - 0.320)\,\si{S} = \SI{0.989}{S}.
+\end{equation}
+A module whose voltage rises gives more output current, draws more input current and discharges its capacitor: every difference between the module voltages decays with $\tau = C_{in}/g = \SI{1.2}{ms}$ (first order; the output inductors make the decay oscillating). This is the known self-balancing of ISOP modules with a common duty ratio \cite{giri2006}. The coupling goes through $\Req$, which acts like a resistance: it moves real power from the module with the higher voltage. A mismatch only shifts the balance a little: in the averaged steady state a module with \SI{20}{\percent} more leakage settles at \SI{1208}{V} against \SI{1158}{V} for the others (\SI{+3}{\percent}).
+
+\subsection{Two modules on one rectifier: a reactive coupling}
+
+In a pair the two transformers meet on the AC side, before the rectifier. With the fundamental-harmonic model each bridge is a voltage source in phase with the other (same carrier and phase shift), $V_k = \tfrac{4}{\pi}\,v_k \sin(\pi D/2)$, connected through its leakage reactance $X_k = 2\pi f\,\Ls n^2$ (referred to the secondary) to the rectifier input, of voltage $V_r\,\ee^{-\jj\theta}$. The current and the real power of module $k$ are
+\begin{equation}
+\underline{I}_k = \frac{n V_k - V_r\,\ee^{-\jj\theta}}{\jj X_k}, \qquad P_k = \mathrm{Re}\{n V_k\,\underline{I}_k^*\} = \frac{n\,V_k\,V_r\sin\theta}{X_k}, \qquad i_{in,k} = \frac{P_k}{v_k} = \frac{4\,n\sin(\pi D/2)\,V_r\sin\theta}{\pi\,X_k}.
+\label{eq:fha}
+\end{equation}
+The input current does not depend on $v_k$: there is no restoring term. A difference $n(V_a - V_b)$ between the two bridges of a pair drives a circulating current $n(V_a - V_b)/(\jj(X_a + X_b))$ in quadrature with the bridge voltages: reactive power, no real power. Only second-order effects (winding and switch resistances, the commutation of the rectifier) give some restoring power. And \eqref{eq:fha} shows that the leakage enters directly: the module with the larger $X_k$ draws less input current, its capacitor charges and its voltage rises until the weak second-order terms balance the difference. A turns-ratio difference is harmless: the circulating current vanishes when $n_a v_a = n_b v_b$, and the pair settles there.
+
+The four-winding transformer derived in \path{ps_isop_rail/trafo} (two primaries and two secondaries on one core) puts the two bridges of a pair on the same flux, so they are again tied through leakage reactances; it can save a core but it should have the same weak sharing (not simulated).
+
+\subsection{Switched simulation}
+
+Fig.~\ref{fig:sharing} and Table~\ref{tab:sharing} give the sharing; with identical modules it is perfect. With the phase shift fixed at the operating point and \SI{80}{V} of initial deviation, the deviation between the two pairs decays with an envelope time constant of \SI{2.7}{ms} (oscillating, through the output inductors), the deviation inside a pair with \SI{64}{ms}, about 23 times slower. A \SI{5}{\percent} leakage difference inside a pair puts \SI{1351}{V} and \SI{1005}{V} on its two modules (\SI{+15}{\percent} and \SI{-14}{\percent}); \SI{20}{\percent} gives \SI{1450}{V} and \SI{959}{V}, and the module with the higher voltage carries about \SI{357}{kW} (\SI{143}{\percent} of its rating) with \SI{606}{A} rms and \SI{900}{A} peak in its primary. The turns-ratio case settles at equal $n\,v$, as expected.
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=\textwidth]{figures/fig_sharing.pdf}
+\caption{Input-voltage sharing. (a) Decay of an \SI{80}{V} deviation at the operating point (phase shift fixed): between the pairs and inside a pair. (b) Steady-state module voltages of the model with one module different (switched simulation). (c) The same with one rectifier per module (averaged model \eqref{eq:avg}).}
+\label{fig:sharing}
+\end{figure}
+
+\begin{table}[htb]
+\centering
+\caption{Steady-state input voltages of the modules with one module different.}
+\label{tab:sharing}
+\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+Case & Pairs on one rectifier (switched simulation) & One rectifier per module (averaged) \\
+\midrule
+equal modules & \SI{1171}{V} on each module & \SI{1171}{V} on each module \\
+module 1: $n$ \SI{+2}{\percent} & module 1 \SI{1153}{V}, the others \SI{1177}{V} & \SI{1150}{V} / \SI{1178}{V} \\
+module 2: $\Ls$ \SI{+5}{\percent} & module 2 \SI{1351}{V}, module 3 \SI{1005}{V}, 1 and 4 \SI{1164}{V} & \SI{1180}{V} / \SI{1168}{V} \\
+module 2: $\Ls$ \SI{+20}{\percent} & module 2 \SI{1450}{V}, module 3 \SI{959}{V}, 1 and 4 \SI{1137}{V} & \SI{1208}{V} / \SI{1158}{V} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Remedies}
+
+\begin{enumerate}
+\item \textbf{One rectifier per module.} Two more rectifiers and inductors, and the modules meet on the DC side again: the classic ISOP with the resistive coupling of the first subsection (\SI{+3}{\percent} for a \SI{20}{\percent} leakage difference).
+\item \textbf{A sharing loop per pair that acts on the relative phase.} A duty correction changes only the amplitude of a bridge voltage, which in a pair gives reactive current again. A small time shift $\varphi$ between the two bridges of a pair moves real power through the leakages, like a dual active bridge \cite{dedoncker1991}: $P_{ab} \approx n^2 V_a V_b \sin\varphi/(X_a + X_b)$. A PI on $v_a - v_b$ that sets $\varphi$ restores the sharing; the modulator then needs one carrier per bridge instead of one for all.
+\item \textbf{An active input-voltage loop for all modules} as in \cite{ayyanar2004}, acting on the duty for the sharing between the pairs and on the relative phase inside each pair.
+\end{enumerate}
+
+% =====================================================================================================
+\section{Start, flux balance and voltage loop}
+\label{sec:start}
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[width=0.86\textwidth]{figures/fig_start.pdf}
+\caption{Start (switched simulation). (a) Output voltage and (b) phase shift with the emulator of the model and with the emulator at \SI{3}{kV}. (c) Input voltage of a module with the string precharged and from \SI{0}{V}. (d) Mean magnetizing current of a transformer.}
+\label{fig:start}
+\end{figure}
+
+\textbf{Start.} The model starts from the DC steady state of the network (string precharged); the output reaches \SI{95}{\percent} of \SI{750}{V} in \SI{178}{ms} without overshoot (Fig.~\ref{fig:start}a,b), and the input filter (\SI{2}{mH} with the four capacitors in series, \SI{205}{Hz}) rings a little at the start. If the string capacitors start at \SI{0}{V} (their initial target in the model), the input filter rings up to \SI{2290}{V} per module, twice the nominal, with \SI{1.8}{kA} in the string (Fig.~\ref{fig:start}c): the real system needs a precharge of the string and a soft start of the reference.
+
+\textbf{DC magnetizing current.} The phase shift changes at every half period during the start; each change between a positive and a negative half period gives unequal volt-seconds on the transformer and a step of DC magnetizing current. They add up to \SI{-21}{A}, \SI{40}{\percent} of the \SI{52}{A} AC peak, which decays only through the winding and switch resistances ($L_m/R \approx \SI{0.2}{s}$, Fig.~\ref{fig:start}d); with a real core this is a saturation risk. The "DC transformer current" PI of the model cannot correct it: its output is not connected, it measures the input current of the string (a DC current by nature) and it acts on the duty of both legs together, which gives no DC voltage on the transformer. A flux balance needs the DC part of each primary current and a differential action on the two legs; the usual alternatives are a DC-blocking capacitor in series with each primary or peak-current-mode control.
+
+\textbf{Voltage loop.} With the averaged plant (gain $n\,v_k/\SI{750}{V}$ reduced by the droop of $\Req$: \num{1.29} pu/pu), the output filter and 1.5 samples of delay, the gains of the model give a crossover of \SI{4.8}{Hz} (phase margin \ang{129}, gain margin \SI{9.1}{dB}, closed-loop pole \SI{-14}{rad/s}). The proportional gain is limited by the resonance of the output filter at \SI{411}{Hz}: with $k_p = 0.8$ the loop crosses over at the resonance (\SI{511}{Hz}, gain margin \SI{4.9}{dB}). A faster loop needs more integral gain: $k_p = 0.6$, $k_i = \SI{100}{s^{-1}}$ gives \SI{33}{Hz}, \ang{135}, \SI{7.2}{dB} and a pole five times faster. Faster still, the input filter (characteristic impedance \SI{2.6}{\ohm}) must be checked against the \SI{-19.5}{\ohm} constant-power input of the converter \cite{middlebrook1976}.
+
+
+% =====================================================================================================
+\section{Summary}
+\label{sec:summary}
+
+\begin{itemize}
+\item A phase-shift module behaves on average like $n D v_k$ behind the lossless resistance $\Req = 4n^2\Ls f$; with a common phase shift this resistance balances the input voltages of ISOP modules on separate rectifiers in about a millisecond.
+\item Two modules whose transformers are paralleled on the AC side are tied through leakage reactances, so a voltage difference gives only reactive current: in \code{ps\_isop\_rail} the sharing inside a pair is about 23 times slower and a \SI{5}{\percent} leakage difference splits the voltages by \SI{\pm 15}{\percent}. One rectifier per module or a pair loop on the relative phase fixes it; a common-core four-winding transformer does not.
+\item With $n = 1$ and a DAB-style leakage the output reaches \SI{750}{V} only with the emulator at $1.5$ times the catenary; a PSFB needs the turns ratio from the lowest catenary voltage and a small leakage.
+\item The start needs a precharge; the DC magnetizing current left by the start is not controlled; the voltage loop is slow and its proportional gain is limited by the output filter.
+\end{itemize}
+
+{\small
+\begin{thebibliography}{9}
+\bibitem{en50163} EN~50163, \emph{Railway applications --- Supply voltages of traction systems}, CENELEC.
+\bibitem{sabate1990} J.~A.~Sabaté, V.~Vlatkovic, R.~B.~Ridley, F.~C.~Lee, B.~H.~Cho, ``Design considerations for high-voltage high-power full-bridge zero-voltage-switched PWM converter,'' in \emph{Proc. IEEE APEC}, 1990, pp.~275--284.
+\bibitem{giri2006} R.~Giri, R.~Choudhary, R.~Ayyanar, N.~Mohan, ``Common-duty-ratio control of input-series connected modular DC--DC converters with active input voltage and load-current sharing,'' \emph{IEEE Trans. Ind. Appl.}, vol.~42, no.~4, pp.~1101--1111, 2006.
+\bibitem{ayyanar2004} R.~Ayyanar, R.~Giri, N.~Mohan, ``Active input-voltage and load-current sharing in input-series and output-parallel connected modular DC--DC converters using dynamic input-voltage reference scheme,'' \emph{IEEE Trans. Power Electron.}, vol.~19, no.~6, pp.~1462--1473, 2004.
+\bibitem{dedoncker1991} R.~W.~De~Doncker, D.~M.~Divan, M.~H.~Kheraluwala, ``A three-phase soft-switched high-power-density DC/DC converter for high-power applications,'' \emph{IEEE Trans. Ind. Appl.}, vol.~27, no.~1, pp.~63--73, 1991.
+\bibitem{middlebrook1976} R.~D.~Middlebrook, ``Input filter considerations in design and application of switching regulators,'' in \emph{Proc. IEEE IAS Annual Meeting}, 1976, pp.~366--382.
+\end{thebibliography}
+}
+
+\end{onehalfspace}
+\end{document}
