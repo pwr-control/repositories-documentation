@@ -129,12 +129,12 @@ Converters and control:
   modules on separate rectifiers (1.2 ms) and why the balance almost disappears inside an AC-paralleled pair
   (reactive coupling through the leakages: 64 ms, a 5 % leakage difference splits the module voltages by
   ±15 %), remedies (one rectifier per module, a pair loop on the relative phase of the bridges), start,
-  DC magnetizing current and voltage loop. Rev. 01 adds the balancing controls: a PI per pair on the relative
-  phase of its two bridges plus a slow trim of the phase shift between the pairs (20 % more leakage in one
-  module: all four voltages within 0.1 % in 10 ms), why the classic per-module loop diverges with the
-  modulator of the model (one leg moved), and why the measured voltages must be averaged over a switching
-  period (DC bias); `isop_rail_auxiliary_supply_analysis.py` (with the switched simulator `isop_sim.py`)
-  reproduces every number and figure.
+  DC magnetizing current and voltage loop. Rev. 01 adds the balancing controls, with a block diagram of the
+  whole control: a PI per pair on the relative phase of its two bridges plus a slow trim of the phase shift
+  between the pairs (20 % more leakage in one module: all four voltages within 0.1 % in 10 ms), why the
+  classic per-module loop diverges with the modulator of the model (one leg moved), and why the measured
+  voltages must be averaged over a switching period (DC bias); `isop_rail_auxiliary_supply_analysis.py`
+  (with the switched simulator `isop_sim.py`) reproduces every number and figure.
 
 Line-commutated rectifiers and protection:
 - `six_pulses_thyristor_based_rectifier/acdc_thyristor_sizing_src` — *Sizing of a 400 V / 1 MW
