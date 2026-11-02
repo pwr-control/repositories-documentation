@@ -14,12 +14,17 @@ fixed step tc = 0.625 us, piecewise-linear switches and diodes):
                dead time 3 us, TRGO at the carrier peaks -> 8 kHz), voltage PI of the library (pi_ctrl, back
                calculation), feedback quantized (1/2^11) and delayed by one sample, reference udc_ref from t = 0.
 The "DC transformer current" PI is not simulated: in the model its output is not connected (d1_m/Sum input 2).
+Input-voltage balancing (not in the model, for the note): per-module carrier phase offset and phase-shift trim, with
+  mode 1: pair loop, PI on v_a - v_b of each AC-paralleled pair -> relative phase of the two bridges (+-phi/2),
+  mode 2: classic per-module loop, PI on v_k - mean(v) -> trim of the phase shift of module k (sum of trims = 0),
+  mode 3: mode 1 + pair-to-pair loop, PI on (v1 + v4) - (v2 + v3) -> phase shift +d (pair 1+4) and -d (pair 2+3);
+  modulator: leg B delayed by pd*T/2 (the model) or symmetric (legs A and B moved by -+pd*T/4, pulse centre fixed).
 
 Usage: python3 isop_sim.py <case> [<case> ...]   (numpy + numba; writes case_<name>.npz next to this script)
   cases: smoke, nominal, zero_init, catenary_3kV, mismatch, mm_n1, mm_n2, mm_L1, mm_L2, mm_L2s, mm_C3, mm_Lm4,
-         split_in_pair, split_pairs, split_in_pair_ss, split_pairs_ss (see __main__ at the end)
-  figures: python3 plots.py (needs nominal, zero_init, catenary_3kV, mm_n1, mm_L2s, mm_L2, split_in_pair_ss,
-           split_pairs_ss); numbers: python3 analyze.py <case> ..., python3 analyze_win.py <case> ...
+         split_in_pair, split_pairs, split_in_pair_ss, split_pairs_ss, bal_off, bal_phase, bal_phase_d, bal_ivs,
+         bal_ivs_sym, bal_phase_d_L2s, bal_phase_d_n1, bal_phase_d_nom, bal_phase_d_n1_raw (see __main__)
+  numbers and figures of the note: python3 isop_rail_auxiliary_supply_analysis.py (imports this module)
 """
 import os
 import sys
@@ -192,9 +197,11 @@ def ramp(t, phase, period):
 
 @nb.njit(cache=True)
 def simulate(Rel, Lel, Cel, Sel, Del, Tel, prm, x_init, iL0, vC0, nsteps, win_start, win_len,
-             Q_ah, pd_fixed, ref_t, ref_v):
+             Q_ah, pd_fixed, ref_t, ref_v, bal):
     """prm: [h, fpwm, dead_time, ts, N, E_1, E0, E1, E2, E3, Elog, alpha, M, R0, kp, ki, udc2_bez, q, soc0]
-    pd_fixed < 0: closed loop, else fixed phase displacement. ref_t/ref_v: piecewise-constant reference."""
+    pd_fixed < 0: closed loop, else fixed phase displacement. ref_t/ref_v: piecewise-constant reference.
+    bal: [mode, symmetric, t_on, kp_phi, ki_phi, phi_max, kp_d, ki_d, d_max, q_in, ubez_in, avg] (balancing
+    loops; avg = 1: module voltages averaged over one switching period, i.e. the last two samples)"""
     h = prm[0]; fpwm = prm[1]; dt = prm[2]; ts = prm[3]
     Ncell = prm[4]; E_1 = prm[5]; E0 = prm[6]; E1 = prm[7]; E2 = prm[8]; E3 = prm[9]; Elog = prm[10]
     alpha = prm[11]; Mh = prm[12]; R0 = prm[13]; kp = prm[14]; ki = prm[15]; ubez = prm[16]; qz = prm[17]
@@ -249,8 +256,23 @@ def simulate(Rel, Lel, Cel, Sel, Del, Tel, prm, x_init, iL0, vC0, nsteps, win_st
     pd = 0.0           # PI output (phase displacement, pu)
     pd_f = 0.0         # after the 1/(tc s + 1) filter of the modulator
     trgo_prev = 1      # no trigger at the first evaluation (TriggerPort default)
+    # input-voltage balancing
+    mode = int(bal[0]); sym = int(bal[1]); t_on = bal[2]
+    kpp = bal[3]; kip = bal[4]; phimax = bal[5]; kpd = bal[6]; kid = bal[7]; dmax = bal[8]
+    qin = bal[9]; ubin = bal[10]; avg = int(bal[11])
+    vin_fb = np.zeros(4)       # measured module voltages used by the loops (one sample old)
+    vin_delay = np.zeros(4)
+    vin_prev = np.zeros(4)     # previous sample (full-period average)
+    vin_use = np.zeros(4)
+    xphi = np.zeros(2)         # PI states of the two pair loops
+    phi = np.zeros(2)          # relative phase of the two bridges of pair 1+4 and pair 2+3 (rad)
+    off = np.zeros(4)          # carrier delay of each module (rad)
+    xd = np.zeros(4)           # PI states of the phase-shift trims
+    dpd = np.zeros(4)          # phase-shift trim of each module (pu)
+    dtmp = np.zeros(4)
+    pdk_f = np.zeros(4)        # per-module phase shift after the 1/(tc s + 1) filter
     n_trig_max = int(nsteps*h/ts*1.05) + 16
-    rec = np.zeros((n_trig_max, 30))
+    rec = np.zeros((n_trig_max, 36))
     amax = np.zeros(6)
     acc = np.zeros(16)
     nacc = 0
@@ -280,6 +302,49 @@ def simulate(Rel, Lel, Cel, Sel, Del, Tel, prm, x_init, iL0, vC0, nsteps, win_st
             pd = vs
             if pd_fixed >= 0.0:
                 pd = pd_fixed
+            # ---- input-voltage balancing: module voltages quantized and delayed by one sample
+            for k in range(4):
+                vm = qin*np.floor(vC[2 + 5*k]/ubin/qin + 0.5)*ubin
+                vin_fb[k] = vin_delay[k]
+                vin_delay[k] = vm
+                # two samples per switching period: their mean removes the ripple at the switching frequency,
+                # which would otherwise make the trims alternate between the two half periods (DC bias)
+                vin_use[k] = 0.5*(vin_fb[k] + vin_prev[k]) if avg == 1 else vin_fb[k]
+                vin_prev[k] = vin_fb[k]
+            if mode > 0 and t >= t_on:
+                if mode == 1 or mode == 3:
+                    for pr in range(2):
+                        a = 0 if pr == 0 else 1
+                        b = 3 if pr == 0 else 2
+                        e = vin_use[a] - vin_use[b]
+                        v = kpp*e + kip*ts*e + xphi[pr]
+                        vs = min(max(v, -phimax), phimax)
+                        xphi[pr] = vs - kpp*e
+                        phi[pr] = vs
+                    off[0] = -0.5*phi[0]      # higher voltage -> this bridge leads -> takes more power
+                    off[3] = 0.5*phi[0]
+                    off[1] = -0.5*phi[1]
+                    off[2] = 0.5*phi[1]
+                if mode == 3:
+                    e = (vin_use[0] + vin_use[3]) - (vin_use[1] + vin_use[2])
+                    v = kpd*e + kid*ts*e + xd[0]
+                    vs = min(max(v, -dmax), dmax)
+                    xd[0] = vs - kpd*e
+                    dpd[0] = vs
+                    dpd[3] = vs
+                    dpd[1] = -vs
+                    dpd[2] = -vs
+                if mode == 2:
+                    vav = 0.25*(vin_use[0] + vin_use[1] + vin_use[2] + vin_use[3])
+                    for k in range(4):
+                        e = vin_use[k] - vav
+                        v = kpd*e + kid*ts*e + xd[k]
+                        vs = min(max(v, -dmax), dmax)
+                        xd[k] = vs - kpd*e
+                        dtmp[k] = vs
+                    mtr = 0.25*(dtmp[0] + dtmp[1] + dtmp[2] + dtmp[3])
+                    for k in range(4):
+                        dpd[k] = dtmp[k] - mtr
             if itrig < n_trig_max:
                 # record: averages over the last control interval and instantaneous values
                 rec[itrig, 0] = t
@@ -295,6 +360,10 @@ def simulate(Rel, Lel, Cel, Sel, Del, Tel, prm, x_init, iL0, vC0, nsteps, win_st
                 rec[itrig, 23] = vC[1]
                 for kk in range(6):
                     rec[itrig, 24 + kk] = amax[kk]
+                rec[itrig, 30] = phi[0]
+                rec[itrig, 31] = phi[1]
+                for kk in range(4):
+                    rec[itrig, 32 + kk] = dpd[kk]
                 itrig += 1
             for kk in range(6):
                 amax[kk] = 0.0
@@ -303,16 +372,21 @@ def simulate(Rel, Lel, Cel, Sel, Del, Tel, prm, x_init, iL0, vC0, nsteps, win_st
             nacc = 0
         trgo_prev = trgo
         pd_f = 0.5*(pd_f + pd)          # backward Euler of 1/(tc s + 1) with step tc
-        rB = ramp(t, np.pi*pd_f, period)
-        gA_up = 1 if rA >= 0.5 + dtf else 0
-        gA_lo = 1 if rA <= 0.5 - dtf else 0
-        gB_up = 1 if rB >= 0.5 + dtf else 0
-        gB_lo = 1 if rB <= 0.5 - dtf else 0
         for k in range(4):
-            sw[4*k + 0] = gA_up
-            sw[4*k + 1] = gA_lo
-            sw[4*k + 2] = gB_up
-            sw[4*k + 3] = gB_lo
+            pk = min(max(pd + dpd[k], 0.0), 1.0)
+            pdk_f[k] = 0.5*(pdk_f[k] + pk)
+            if sym == 1:                # legs moved by -+pd*T/4: centre of the v_AB pulse fixed
+                phA = off[k] - 0.5*np.pi*pdk_f[k]
+                phB = off[k] + 0.5*np.pi*pdk_f[k]
+            else:                       # the model: leg A fixed, leg B delayed by pd*T/2
+                phA = off[k]
+                phB = off[k] + np.pi*pdk_f[k]
+            rAk = ramp(t, phA, period)
+            rBk = ramp(t, phB, period)
+            sw[4*k + 0] = 1 if rAk >= 0.5 + dtf else 0
+            sw[4*k + 1] = 1 if rAk <= 0.5 - dtf else 0
+            sw[4*k + 2] = 1 if rBk >= 0.5 + dtf else 0
+            sw[4*k + 3] = 1 if rBk <= 0.5 - dtf else 0
         # ---- battery source
         zc = min(max(z, 0.0), 1.0)
         ocv = E_1*np.exp(-zc*alpha) + E0 + E1*zc + E2*zc*zc + E3*zc*zc*zc + Elog*np.log(abs(1.0 - zc + 1e-2))
@@ -449,7 +523,7 @@ def simulate(Rel, Lel, Cel, Sel, Del, Tel, prm, x_init, iL0, vC0, nsteps, win_st
                 win[w, 18 + k] = iL[2 + 3*k + 1]     # magnetizing current
             win[w, 22] = iL[nL - 2]
             win[w, 23] = iL[nL - 1]
-            win[w, 24] = gA_up + 2*gA_lo + 4*gB_up + 8*gB_lo
+            win[w, 24] = sw[0] + 2*sw[1] + 4*sw[2] + 8*sw[3]
             win[w, 25] = pd_f
     return rec[:itrig], win, iL, vC, z, hyst, nfact, maxit_hit
 
@@ -486,8 +560,13 @@ def prm_vector(p):
                      p['soc0']])
 
 
+# balancing loops: gains (see the note, section on the balancing controls)
+BAL = dict(mode=0, symmetric=0, t_on=0.0, kp_phi=3.6e-4, ki_phi=0.0216, phi_max=0.2, kp_d=1e-4, ki_d=0.014,
+           d_max=0.05, q_in=1.0/2**11, ubez_in=1500.0, avg=1)
+
+
 def run_case(name, tend, p=None, mod=None, precharged=True, pd_fixed=-1.0, win_t=0.0, win_ms=2.0,
-             ref=((0.0, 1.0),), vcin0=None):
+             ref=((0.0, 1.0),), vcin0=None, bal=None):
     p = dict(P if p is None else p)
     el = build(p, mod)
     x0, iL0, vC0 = initial_state(el, p, precharged)
@@ -500,19 +579,42 @@ def run_case(name, tend, p=None, mod=None, precharged=True, pd_fixed=-1.0, win_t
     win_start = int(round(win_t/p['h']))
     win_len = int(round(win_ms*1e-3/p['h']))
     ref_t = np.array([r[0] for r in ref]); ref_v = np.array([r[1]*p['udc_ref'] for r in ref])
+    b = dict(BAL); b.update(bal or {})
+    bal_v = np.array([b['mode'], b['symmetric'], b['t_on'], b['kp_phi'], b['ki_phi'], b['phi_max'], b['kp_d'],
+                      b['ki_d'], b['d_max'], b['q_in'], b['ubez_in'], b['avg']], dtype=np.float64)
     t0 = time.time()
     rec, win, iL, vC, z, hyst, nfact, maxit = simulate(el['R'], el['L'], el['C'], el['S'], el['D'], el['T'],
                                                        prm_vector(p), x0, iL0, vC0, nsteps, win_start, win_len,
-                                                       p['Q'], pd_fixed, ref_t, ref_v)
+                                                       p['Q'], pd_fixed, ref_t, ref_v, bal_v)
     dtime = time.time() - t0
     np.savez_compressed(os.path.join(HERE, f'case_{name}.npz'), rec=rec, win=win, iL=iL, vC=vC, z=z, hyst=hyst,
-                        params=np.array([str(p)]), mod=np.array([str(mod)]))
+                        params=np.array([str(p)]), mod=np.array([str(mod)]), bal=np.array([str(b)]))
     print(f'{name}: {tend:.3f} s, {nsteps} steps in {dtime:.1f} s, LU factorizations {nfact}, '
           f'steps without diode convergence {maxit}', flush=True)
     return rec, win
 
 
 MISMATCH = [dict(n=1.02), dict(Ld1=1.2*P['Ld1'], Ld2=1.2*P['Ld2']), dict(Cin=0.9*P['Cin']), dict(Lm=0.8*P['Lm'])]
+
+# balancing loops switched on at t = 0.5 s; module 2 leakage +20 % unless the name says otherwise
+_L2 = [{}, dict(Ld1=1.2*P['Ld1'], Ld2=1.2*P['Ld2']), {}, {}]
+BAL_CASES = {
+    'bal_off': (_L2, dict(mode=0)),                                    # no balancing loop (same as mm_L2)
+    'bal_phase': (_L2, dict(mode=1, t_on=0.5)),                        # pair loops on the relative phase only
+    'bal_phase_d': (_L2, dict(mode=3, t_on=0.5)),                      # pair loops + pair-to-pair trim
+    'bal_ivs': (_L2, dict(mode=2, t_on=0.5, kp_d=1e-4, ki_d=0.01, d_max=0.1)),               # classic loop
+    'bal_ivs_sym': (_L2, dict(mode=2, symmetric=1, t_on=0.5, kp_d=1e-4, ki_d=0.01, d_max=0.1)),  # + symmetric
+    'bal_phase_d_L2s': ([{}, dict(Ld1=1.05*P['Ld1'], Ld2=1.05*P['Ld2']), {}, {}], dict(mode=3, t_on=0.5)),
+    'bal_phase_d_n1': ([dict(n=1.02), {}, {}, {}], dict(mode=3, t_on=0.5)),
+    'bal_phase_d_nom': (None, dict(mode=3, t_on=0.5)),
+    'bal_phase_d_n1_raw': ([dict(n=1.02), {}, {}, {}], dict(mode=3, t_on=0.5, avg=0)),  # no period average
+}
+
+
+def run_bal(name):
+    mod, bal = BAL_CASES[name]
+    return run_case(name, 1.0, mod=mod, bal=bal, win_t=0.996, win_ms=4.0)
+
 
 if __name__ == '__main__':
     which = sys.argv[1:] or ['smoke']
@@ -546,6 +648,8 @@ if __name__ == '__main__':
         elif w == 'split_pairs_ss':   # same as split_pairs but from the operating point (fixed phase shift, no PI)
             v = ocv_pack(P, P['soc0'])/4
             run_case(w, 0.1, vcin0=[v + 80, v - 80, v - 80, v + 80], pd_fixed=0.7823, win_t=0.096, win_ms=4.0)
+        elif w.startswith('bal_'):    # balancing loops switched on at t = 0.5 s (see BAL_CASES)
+            run_bal(w)
         elif w == 'catenary_3kV':     # emulator at the nominal catenary voltage (open circuit 3 kV)
             p = dict(P); p['N'] = int(round(P['N']*3000.0/ocv_pack(P, P['soc0'])))
             run_case('catenary_3kV', 0.8, p=p, win_t=0.796, win_ms=4.0)
