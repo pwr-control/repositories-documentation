@@ -8,10 +8,12 @@ modules 1+4 and 2+3 are paralleled on the AC side, one diode rectifier per pair.
 
 Part 1 (analytic, instant): averaged phase-shift full bridge, operating point, nominal catenary, turns ratio,
 input-voltage sharing of modules on separate rectifiers (linearized, and steady state with one module
-different), voltage loop margins, input filter.
+different), voltage loop margins, input filter, gains of the balancing controls (rev. 01).
 Part 2 (switched simulation with isop_sim.py, numpy + numba, about one minute): start and steady state,
 sharing between and inside the pairs, mismatch cases, start from 0 V, emulator at 3 kV, DC magnetizing
 current.
+Part 3 (rev. 01, switched simulation, about one minute more): balancing controls switched on at 0.5 s (pair
+loops on the relative phase, pair-to-pair trim of the phase shift, classic per-module loop).
 
 Usage: python3 isop_rail_auxiliary_supply_analysis.py
        (prints the numbers, writes figures/*.pdf; the simulation results are cached in _cache/)
@@ -141,6 +143,34 @@ Cf = P['Cin']/N
 print(f'input filter: {Lf*1e3:.1f} mH, {Cf*1e3:.2f} mF -> {1/(2*np.pi*np.sqrt(Lf*Cf)):.0f} Hz, Z0 = {np.sqrt(Lf/Cf):.2f} Ohm; '
       f'converter input -V^2/P = {-Vs**2/(vo*io):.1f} Ohm')
 
+section('5. Balancing controls: gains of the two handles of a bridge (fundamental-harmonic model of a pair)')
+X = 2*np.pi*f*Ls*n**2                          # leakage reactance referred to the secondary
+Vb = 4/np.pi*u_in*np.sin(np.pi*D/2)            # fundamental of a bridge voltage (peak)
+Vr = 4/np.pi*vo                                # fundamental of the rectifier input voltage (peak)
+Pm = vo*imod
+th = np.arcsin(2*X*Pm/(n*Vb*Vr))               # load angle: P = n Vb Vr sin(theta) / (2 X)
+Kphi = n*Vb*Vr*np.cos(th)/(2*X*u_in)           # d(i_in,a - i_in,b)/d(phi), the two bridges moved by +-phi/2
+Kamp = i_string*np.pi/2/np.tan(np.pi*D/2)      # d(i_in,k)/dD_k with the angle fixed (amplitude only)
+dI20 = 2*i_string*0.2/2.2                      # input-current difference, 20 % more leakage in one bridge
+print(f'X = {X:.4f} Ohm, bridge fundamental {Vb:.0f} V peak, rectifier fundamental {Vr:.0f} V peak, '
+      f'load angle {np.degrees(th):.1f} deg')
+print(f'relative phase of the two bridges: K_phi = {Kphi:.0f} A/rad; with 20 % more leakage in one bridge the input '
+      f'currents differ by {dI20:.1f} A -> phi = {np.degrees(dI20/Kphi):.2f} deg (time shift {dI20/Kphi/(2*np.pi*f)*1e6:.2f} us)')
+print(f'amplitude (phase shift of one bridge, angle fixed): K_amp = {Kamp:.0f} A per unit; the same case would need '
+      f'+-{dI20/(2*Kamp):.3f} on the two bridges')
+B = isop_sim.BAL
+wcp = Kphi*B['kp_phi']/P['Cin']
+print(f'pair loop: kp {B["kp_phi"]:.1e} rad/V, ki {B["ki_phi"]:.4f} rad/(V s), limit {np.degrees(B["phi_max"]):.1f} deg '
+      f'-> crossover {wcp:.0f} rad/s ({wcp/2/np.pi:.0f} Hz), PI zero {B["ki_phi"]/B["kp_phi"]:.0f} rad/s')
+Kd = n*vo/Req                                  # d(i_in,k)/dD with separate rectifiers, from (avg)
+poles = np.roots([P['Cin'], g + 4*Kd*B['kp_d'], 4*Kd*B['ki_d']])
+print(f'pair-to-pair trim: d(i_in)/dD = n vo/Req = {Kd:.0f} A per unit and module; kp {B["kp_d"]:.1e} 1/V, '
+      f'ki {B["ki_d"]:.3f} 1/(V s), limit {B["d_max"]:.2f} -> poles {", ".join(f"{p_.real:.0f}" for p_ in poles)} rad/s')
+print(f'classic per-module loop, trims +-x on the two bridges of a pair: modulator of the model (leg B moved, the '
+      f'pulse centre moves by x T/4): d(i_a - i_b)/dx = -pi K_phi + 2 K_amp = {-np.pi*Kphi + 2*Kamp:.0f} A (wrong sign); '
+      f'symmetric modulator: +2 K_amp = {2*Kamp:.0f} A (right sign, {np.pi*Kphi/(2*Kamp):.1f} times smaller than the '
+      f'phase effect)')
+
 
 # ============================================================================================ part 2
 def case(name, run):
@@ -168,7 +198,7 @@ def run_3kV():
     isop_sim.run_case('catenary_3kV', 0.8, p=p, win_t=0.796, win_ms=4.0)
 
 
-section('5. Switched simulation (isop_sim.py)')
+section('6. Switched simulation (isop_sim.py)')
 rec, win = case('nominal', lambda: isop_sim.run_case('nominal', 1.75, win_t=1.746, win_ms=4.0))
 rz, wz = case('zero_init', lambda: isop_sim.run_case('zero_init', 0.5, precharged=False, win_t=0.0, win_ms=12.0))
 rc, wc = case('catenary_3kV', run_3kV)
@@ -318,5 +348,64 @@ ax[0, 0].set_xlabel('time [s]')
 ax[0, 1].set_xlabel('time [s]')
 fig.tight_layout()
 fig.savefig(os.path.join(FIG, 'fig_start.pdf'))
+plt.close(fig)
+
+# ============================================================================================ part 3
+section('7. Balancing controls in the switched simulation (module 2 leakage +20 % unless named, loops on at 0.5 s)')
+BC = ['bal_phase_d', 'bal_phase', 'bal_ivs', 'bal_ivs_sym', 'bal_phase_d_L2s', 'bal_phase_d_n1', 'bal_phase_d_nom',
+      'bal_phase_d_n1_raw']
+bal = {nm: case(nm, lambda nm=nm: isop_sim.run_bal(nm)) for nm in BC}
+
+
+def deviation(r):
+    vc = r[:, 7:11]
+    return np.abs(vc - vc.mean(1, keepdims=True)).max(1)/vc.mean(1)
+
+
+def settling(r, lim=0.02):
+    """time after 0.5 s from which the largest module deviation stays below lim (nan: never)"""
+    dev = deviation(r)
+    bad = np.where((r[:, 0] >= 0.5) & (dev >= lim))[0]
+    if bad.size == 0:
+        return 0.0
+    return np.nan if bad[-1] == len(dev) - 1 else r[bad[-1] + 1, 0] - 0.5
+
+
+for nm in BC:
+    r, ww = bal[nm]
+    ww = ww[ww[:, 0] > 0]
+    dev = deviation(r)
+    v = [ww[:, 2 + k].mean() for k in range(4)]
+    print(f'{nm:19s}: v = {", ".join(f"{x:7.1f}" for x in v)} V; largest deviation {dev[np.argmin(abs(r[:, 0] - 0.49))]*100:4.1f} % '
+          f'before, {dev[-1]*100:5.2f} % at the end, below 2 % after {settling(r)*1e3:5.1f} ms')
+    print(f'{"":19s}  phi14 {np.degrees(r[-1, 30]):5.2f} deg, phi23 {np.degrees(r[-1, 31]):5.2f} deg (largest '
+          f'{np.degrees(np.abs(r[:, 30:32]).max()):5.2f} deg), trims {", ".join(f"{x:+.4f}" for x in r[-1, 32:36])}; '
+          f'primary rms {", ".join(f"{np.sqrt(np.mean(ww[:, 6 + k]**2)):4.0f}" for k in range(4))} A, peak '
+          f'{", ".join(f"{np.abs(ww[:, 6 + k]).max():4.0f}" for k in range(4))} A; mean magnetizing current '
+          f'{", ".join(f"{r[-16:, 11 + k].mean():6.1f}" for k in range(4))} A')
+
+# 4. balancing controls
+fig, ax = plt.subplots(2, 2, figsize=(7.0, 4.4), sharex=True)
+panels = [('bal_phase_d', '(a) pair loops (phase) + pair-to-pair trim', (900, 1500)),
+          ('bal_phase', '(b) pair loops (phase) only', (900, 1500)),
+          ('bal_ivs', "(c) classic loop per module, model's modulator", (0, 2500)),
+          ('bal_ivs_sym', '(d) classic loop per module, symmetric modulator', (900, 1500))]
+for a, (nm, title, yl) in zip(ax.flat, panels):
+    r = bal[nm][0]
+    m = (r[:, 0] >= 0.45) & (r[:, 0] <= 0.75)
+    for k in range(4):
+        a.plot(r[m, 0], r[m, 7 + k], color=S[k], ls='--' if k == 3 else '-', label=f'module {k + 1}')
+    a.axhline(Vs/4, color=INK2, lw=0.8, ls=':')
+    a.axvline(0.5, color=INK2, lw=0.8, ls=':')
+    a.set_ylim(*yl)
+    a.set_xlim(0.45, 0.75)
+    a.set_title(title, loc='left')
+for a in ax[:, 0]:
+    a.set_ylabel('module input voltage [V]')
+for a in ax[1, :]:
+    a.set_xlabel('time [s]')
+ax[0, 0].legend(loc='upper right', ncol=2)
+fig.tight_layout()
+fig.savefig(os.path.join(FIG, 'fig_balancing.pdf'))
 plt.close(fig)
 print('\nfigures:', sorted(os.listdir(FIG)))
