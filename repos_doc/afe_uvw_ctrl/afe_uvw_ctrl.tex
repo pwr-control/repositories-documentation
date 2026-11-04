@@ -35,15 +35,16 @@
 }
 
 \newcommand{\DocAuthor}{Davide Bagnara}
-\newcommand{\DocRevision}{00}
+\newcommand{\DocRevision}{01}
 \newcommand{\DocDate}{November 2026}
 
 \newcommand{\DocAbstract}{%
-	The control of the three-phase active front end (AFE) of the model \code{afe\_uvw\_three\_phase} works in the stationary frame: one resonant PI per phase makes the converter current follow a sinusoidal reference, while the slow loops (reactive current of the positive and the negative sequence, fault ride-through) work on moving averages of the grid quantities in the positive and the negative synchronous frame. The library package \code{afe\_uvw\_ctrl} rewrites this control as five MATLAB Function blocks with one parameter structure. This note describes the algorithms as they are in the code: the Clarke and sequence transformations and the moving average with a fractional window, the voltage-rate observers and the state machine of the fault ride-through with the reactive current references of VDE-AR-N 4110, the three clamped PIs of the reactive current loops, the per-phase resonant PI with its forward Euler discretization, the vector limiter, the output delay and the zero-sequence loop, and the new passive islanding detector. The resonant PI is analysed in detail: with the damping of the model ($\delta = 0.015$) the forward Euler resonator has its poles just outside the unit circle ($|z| = 1.000182$), so the controller alone is marginally unstable and its gain at \SI{50}{\hertz} is 11.4 instead of the 4.3 of the continuous design; the current loop with the plant is stable (phase margin \ang{69}, sensitivity \SI{-41}{\decibel} at \SI{50}{\hertz}). The parameter structure, the mapping to the model init, the checks against the original block diagrams and the open points close the note.
+	The control of the three-phase active front end (AFE) of the model \code{afe\_uvw\_three\_phase} works in the stationary frame: one resonant PI per phase makes the converter current follow a sinusoidal reference, while the slow loops (reactive current of the positive and the negative sequence, fault ride-through) work on moving averages of the grid quantities in the positive and the negative synchronous frame. The library package \code{afe\_uvw\_ctrl} rewrites this control as five MATLAB Function blocks with one parameter structure. This note describes the algorithms as they are in the code: the Clarke and sequence transformations and the moving average with a fractional window, the voltage-rate observers and the state machine of the fault ride-through with the reactive current references of VDE-AR-N 4110, the three clamped PIs of the reactive current loops, the per-phase resonant PI with its forward-backward Euler discretization, the vector limiter, the output delay and the zero-sequence loop, and the new passive islanding detector. The resonant PI is analysed in detail: the forward Euler resonator of the model has its poles just outside the unit circle with the damping of the model ($\delta = 0.015$, $|z| = 1.000182$), so that controller alone is marginally unstable and its gain at \SI{50}{\hertz} is 11.4 instead of the 4.3 of the continuous design, while the current loop with the plant is stable (phase margin \ang{69}, sensitivity \SI{-41}{\decibel} at \SI{50}{\hertz}). Since rev.~03 of the library the block uses the updated $x_1$ in the update of $x_2$ (forward-backward Euler), whose poles are inside the circle for any $\delta > 0$, with $\delta = 0.005$ to keep the gain at the grid frequency and the same loop (sensitivity \SI{-41}{\decibel}). The parameter structure, the mapping to the model init, the checks against the original block diagrams and the open points close the note.
 }
 
 \newcommand{\RevisionHistory}{%
 	00 & November 2026 & First issue: the five blocks of \code{afe\_uvw\_ctrl} (library PR \#35), resonant PI analysis, parameters, checks, open points. & \DocAuthor \\
+	01 & November 2026 & The forward-backward Euler resonator proposed in rev.~00 is now in the block (library rev.~03) with $\delta = 0.005$: Section~\ref{sec:rpi_disc} describes it, Section~\ref{sec:rpi_fe} keeps the analysis of the forward Euler resonator of the model; figures, loop table, parameter table, differences and open points updated. & \DocAuthor \\
 }
 
 \newcommand{\MetaLabelA}{Project Repository}
@@ -122,7 +123,7 @@ The model \code{afe\_uvw\_three\_phase} of \code{pwr-control/modelization-and-co
 	\item \code{islanding\_detector}: a new passive islanding detector (the model only measured the 7th harmonic).
 \end{itemize}
 
-This note describes the algorithms as they are written in the code (folder \code{src/} of the package). It does not describe the Simulink diagrams that were replaced: Section~\ref{sec:differences} lists where the code differs from them. The equations use the same names as the code, so that the reader can go from the note to the function and back. Section~\ref{sec:current} on the resonant PI is the longest, because its discrete implementation has a property that is easy to miss: the resonator alone is marginally unstable, and the loop is stable only together with the plant.
+This note describes the algorithms as they are written in the code (folder \code{src/} of the package). It does not describe the Simulink diagrams that were replaced: Section~\ref{sec:differences} lists where the code differs from them. The equations use the same names as the code, so that the reader can go from the note to the function and back. Section~\ref{sec:current} on the resonant PI is the longest, because the discretization of the resonator has a property that is easy to miss: with the forward Euler step of the model the resonator alone is marginally unstable, and the loop is stable only together with the plant. The block uses a different step since rev.~03 of the library, with its damping chosen to keep the same loop.
 
 Three things are outside the five blocks and stay in the model: the PLL that gives the grid angle $\theta$ and the pulsation $\omega\ped{pu}$, the DC-link voltage controller that gives the active current reference $i\ped{\xi,ref}$ (and reads the power-limitation flag of the FRT), and the modulator that turns the voltage reference $u_{\alpha\beta\gamma}$ into the gate signals.
 
@@ -377,7 +378,7 @@ Inputs: \code{i\_xi\_ref} (positive-sequence active current, from the DC-link co
 		\node[gain] (kp) at (3.9,0.9) {$k\ped{p}$};
 		\draw[->, thick] (se.east) -- ++(0.4,0) |- (kp.west) node[lab, pos=0.25, above] {$e$};
 		% resonator
-		\node[blk, minimum width=3.6cm, minimum height=1.25cm, fill=orange!25] (res) at (5.6,-0.9) {resonator, forward Euler \eqref{eq:euler}\\$x_1^{+} = x_1 + t\ped{s} x_2$\\$x_2^{+} = x_2 + t\ped{s}(-\omega^2 x_1 - 2\delta\omega x_2 + k\ped{i} e)$};
+		\node[blk, minimum width=3.6cm, minimum height=1.25cm, fill=orange!25] (res) at (5.6,-0.9) {resonator, forward-backward Euler \eqref{eq:fb}\\$x_1^{+} = x_1 + t\ped{s} x_2$\\$x_2^{+} = x_2 + t\ped{s}(-\omega^2 x_1^{+} - 2\delta\omega x_2 + k\ped{i} e)$};
 		\draw[->, thick] (2.7,0) |- (res.west);
 		% sum of P and resonator
 		\node[sum] (so) at (8.1,0) {};
@@ -429,12 +430,12 @@ A PI controller cannot track a sinusoidal reference without error, because its g
 	C(s) = k\ped{p} + k\ped{i}\, \frac{s}{s^2 + 2\delta\omega s + \omega^2},
 	\label{eq:crpi}
 \end{equation}
-which has the same role for a sinusoid that the integrator has for a constant (internal model principle). With $\delta = 0$ the gain at $\omega$ is infinite and the steady-state error at the grid frequency is zero; the model uses $\delta = 0.015$ (\code{delta\_res}), which gives a finite peak
+which has the same role for a sinusoid that the integrator has for a constant (internal model principle). With $\delta = 0$ the gain at $\omega$ is infinite and the steady-state error at the grid frequency is zero; the class of the model has $\delta = 0.015$ (\code{delta\_res}), which gives a finite peak
 \begin{equation}
 	|C(j\omega)| = k\ped{p} + \frac{k\ped{i}}{2\delta\omega} = 0.6 + \frac{35}{2 \cdot 0.015 \cdot 314.2} = 0.6 + 3.71 = 4.31 \quad (\SI{12.7}{\decibel})
 	\label{eq:peak}
 \end{equation}
-and a $-3$ dB width of the peak $2\delta\omega = \SI{9.4}{\radian\per\second}$ (\SI{1.5}{\hertz}), so the controller still has a high gain when the grid frequency moves by a fraction of a hertz. The resonator alone is a second-order system with poles at $s = -\delta\omega \pm j\omega\sqrt{1 - \delta^2} = -4.7 \pm j314.1$ \si{\radian\per\second}: its free response decays by $e^{-2\pi\delta} = 0.91$ every grid period.
+and a $-3$ dB width of the peak $2\delta\omega = \SI{9.4}{\radian\per\second}$ (\SI{1.5}{\hertz}), so the controller still has a high gain when the grid frequency moves by a fraction of a hertz. The resonator alone is a second-order system with poles at $s = -\delta\omega \pm j\omega\sqrt{1 - \delta^2} = -4.7 \pm j314.1$ \si{\radian\per\second}: its free response decays by $e^{-2\pi\delta} = 0.91$ every grid period. The block uses $\delta = 0.005$ (Section~\ref{sec:rpi_disc}): peak $0.6 + 11.14 = 11.74$ (\SI{21.4}{\decibel}), width \SI{0.5}{\hertz}, decay $0.97$ per period.
 
 The code writes the resonator in the state-space form that the model's class \code{ctrl\_afe\_setup} uses (fields \code{Ares}, \code{Bres}, \code{Cres} of \code{res\_pi}):
 \begin{equation}
@@ -446,33 +447,73 @@ that is $A = \begin{bmatrix} 0 & 1 \\ -\omega^2 & -2\delta\omega \end{bmatrix}$,
 \subsection{The discrete implementation, as in the code}
 \label{sec:rpi_disc}
 
-The block updates the two states of each phase with the forward Euler step, exactly as the model does (\code{Aresd = eye(2) + Ares*ts}, \code{Bresd = Bres*ts} in \code{ctrl\_afe\_setup.resonant\_pi}). The lines of \code{current\_ctrl\_uvw.m} are, for the three phases at once (\code{x\_res} is $2 \times 3$, \code{e} is $3 \times 1$):
-{\footnotesize
+The block updates the two states of each phase once per control period with a forward Euler step on $x_1$ and a backward Euler step on $x_2$: the \emph{updated} $x_1$ is used in the update of $x_2$ (library rev.~03; rev.~00 to 02 used the plain forward Euler of the model, Section~\ref{sec:rpi_fe}). The lines of \code{current\_ctrl\_uvw.m} are, for the three phases at once (\code{x\_res} is $2 \times 3$, \code{e} is $3 \times 1$):
+{\scriptsize
 \begin{verbatim}
     e = i_abc_ref - is_abc;                                 % [3x1]
     d_abc = kp*e + x_res(2, :)';                            % output: P + resonator state x2
-    x1 = x_res(1, :);
-    x2 = x_res(2, :);
-    x_res(1, :) = x1 + ts*x2;
-    x_res(2, :) = x2 + ts*(-w^2*x1 - 2*delta*w*x2 + ki*e');
+    x1 = x_res(1, :) + ts*x_res(2, :);                      % new x1 ...
+    x2 = x_res(2, :) + ts*(-w^2*x1 - 2*delta*w*x_res(2, :) + ki*e');   % ... used in the update of x2
+    x_res(1, :) = x1;
+    x_res(2, :) = x2;
 \end{verbatim}
 }
 \noindent so the output of the step uses the state $x_2$ \emph{before} the update (no direct feed-through of $e$ into the resonator part, the controller is strictly proper apart from $k\ped{p}$), and the states move afterwards:
 \begin{equation}
-	x_1^{+} = x_1 + t\ped{s}\, x_2, \qquad x_2^{+} = x_2 + t\ped{s}\left(-\omega^2 x_1 - 2\delta\omega\, x_2 + k\ped{i}\, e\right).
-	\label{eq:euler}
+	x_1^{+} = x_1 + t\ped{s}\, x_2, \qquad x_2^{+} = x_2 + t\ped{s}\left(-\omega^2 x_1^{+} - 2\delta\omega\, x_2 + k\ped{i}\, e\right).
+	\label{eq:fb}
 \end{equation}
-In the $z$ domain, with $A\ped{d} = I + t\ped{s} A$ and $B\ped{d} = t\ped{s} B$, the controller is
+In the $z$ domain the controller is
 \begin{equation}
-	C\ped{d}(z) = k\ped{p} + \frac{k\ped{i}\, t\ped{s}\, (z - 1)}{(z - 1)(z - 1 + 2\delta\omega t\ped{s}) + \omega^2 t\ped{s}^2},
+	C\ped{d}(z) = k\ped{p} + \frac{k\ped{i}\, t\ped{s}\, (z - 1)}{z^2 - \left(2 - \omega^2 t\ped{s}^2 - 2\delta\omega t\ped{s}\right) z + 1 - 2\delta\omega t\ped{s}},
 	\label{eq:cd}
 \end{equation}
-whose poles are the roots of $z^2 - (2 - 2\delta\omega t\ped{s})\, z + 1 - 2\delta\omega t\ped{s} + \omega^2 t\ped{s}^2 = 0$. The product of the two (complex) roots is the constant term, so the radius of the poles is
+whose poles are the roots of the denominator. The product of the two complex roots is the constant term, so the radius of the poles is
 \begin{equation}
-	|z\ped{res}| = \sqrt{1 - 2\delta\omega t\ped{s} + \omega^2 t\ped{s}^2},
+	|z\ped{res}| = \sqrt{1 - 2\delta\omega t\ped{s}} \approx 1 - \delta\omega t\ped{s},
 	\label{eq:radius}
 \end{equation}
-to be compared with the radius $e^{-\delta\omega t\ped{s}} \approx 1 - \delta\omega t\ped{s}$ of the exact mapping. The forward Euler step adds the term $\omega^2 t\ped{s}^2$, which pushes the poles outwards: the discrete resonator is stable only when
+the radius $e^{-\delta\omega t\ped{s}}$ of the exact mapping to first order: exactly on the unit circle for $\delta = 0$ (a lossless resonator, which can now be used safely) and inside it for any $\delta > 0$. The resonance is at \SI{50.007}{\hertz} with $\delta = 0.005$ (the forward step does not warp the frequency noticeably at $\omega t\ped{s} = 0.039$, so no pre-warping is needed). This is the discretization that \cite{yepes2010} recommends for the two-integrator form; Tustin with pre-warping at $\omega$ gives the same poles with more arithmetic.
+
+The damping of the block is $\delta = 0.005$ (\code{delta\_res} of the example structure and of the model init), not the $0.015$ of the model's class, for a reason that Section~\ref{sec:rpi_fe} explains: the gains of the model were tuned with a forward Euler resonator whose gain at the grid frequency is $10.8$, about three times the $3.7$ of the continuous design with $\delta = 0.015$, and $\delta = 0.005$ keeps that gain with the new step ($k\ped{i}/(2\delta\omega) = 11.1$; the exact match would be $\delta = 0.0052$). The numbers of the block, and those of the same step with the damping of the model:
+\begin{center}
+	\footnotesize
+	\begin{tabular}{@{} l r r @{}}
+		\toprule
+		forward-backward Euler resonator, $t\ped{s} = \SI{125}{\micro\second}$ & $\delta = 0.005$ (the block) & $\delta = 0.015$ \\
+		\midrule
+		poles & $0.999033 \pm j\,0.039258$ & $0.998640 \pm j\,0.039246$ \\
+		radius $|z\ped{res}|$ by \eqref{eq:radius} & $0.999804$ & $0.999411$ \\
+		resonance frequency (angle of the poles divided by $2\pi t\ped{s}$) & \SI{50.007}{\hertz} & \SI{50.012}{\hertz} \\
+		decay of the free response per grid period, $|z\ped{res}|^{160}$ & $0.969$ & $0.910$ \\
+		gain $|C\ped{d}(e^{j\omega t\ped{s}})|$ at \SI{50}{\hertz} (resonator alone) & $11.74$ ($11.14$) & $4.31$ ($3.71$) \\
+		$-3$ dB width of the peak, $2\delta\omega$ & \SI{0.5}{\hertz} & \SI{1.5}{\hertz} \\
+		\bottomrule
+	\end{tabular}
+\end{center}
+With $\delta = 0.005$ the resonator is a lightly damped oscillator: left alone (zero error), its \SI{50}{\hertz} oscillation decays by \SI{3}{\percent} every period (time constant $1/(\delta\omega) = \SI{0.64}{\second}$, Figure~\ref{fig:poles}, right), its gain at the grid frequency is $11.7$ (\SI{21.4}{\decibel}, Figure~\ref{fig:bode}) and its peak is \SI{0.5}{\hertz} wide at $-3$ dB, which is the width the model's resonator had too (its poles are as close to the circle, $1.8 \cdot 10^{-4}$ outside against $2.0 \cdot 10^{-4}$ inside). The resonator is tuned at the nominal pulsation (\code{omega\_res}), not at the one of the PLL: with a grid frequency \SI{0.25}{\hertz} off the gain of the resonator drops to $0.71$ of its peak, still $7.9$, and the current loop keeps its \SI{50}{\hertz} notch within a few dB (Section~\ref{sec:rpi_loop}).
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{figures/res_pi_bode.pdf}
+	\caption{Frequency response of the resonant PI, $k\ped{p} = 0.6$, $k\ped{i} = \SI{35}{\per\second}$: continuous $C(s)$ with $\delta = 0.015$, the forward Euler resonator of the model ($\delta = 0.015$), the forward-backward Euler resonator of the block with $\delta = 0.015$ and with its $\delta = 0.005$. Right: the peak at $f\ped{0}$, $4.3$ for the continuous design and for the forward-backward step with $\delta = 0.015$, $11.4$ for the model and $11.7$ for the block. Script \code{afe\_uvw\_ctrl\_figures.py}.}
+	\label{fig:bode}
+\end{figure}
+
+\subsection{The forward Euler resonator of the model}
+\label{sec:rpi_fe}
+
+The class \code{ctrl\_afe\_setup} of the model discretizes the same state space with the plain forward Euler step (\code{Aresd = eye(2) + Ares*ts}, \code{Bresd = Bres*ts} in \code{resonant\_pi}), that is, with the \emph{old} $x_1$ in the update of $x_2$:
+\begin{equation}
+	x_1^{+} = x_1 + t\ped{s}\, x_2, \qquad x_2^{+} = x_2 + t\ped{s}\left(-\omega^2 x_1 - 2\delta\omega\, x_2 + k\ped{i}\, e\right),
+	\label{eq:euler}
+\end{equation}
+and the block did the same up to library rev.~02. The characteristic polynomial is then $z^2 - (2 - 2\delta\omega t\ped{s})\, z + 1 - 2\delta\omega t\ped{s} + \omega^2 t\ped{s}^2$ and the radius of the poles
+\begin{equation}
+	|z\ped{res,FE}| = \sqrt{1 - 2\delta\omega t\ped{s} + \omega^2 t\ped{s}^2}.
+	\label{eq:radius_fe}
+\end{equation}
+The forward Euler step adds the term $\omega^2 t\ped{s}^2$, which pushes the poles outwards: this resonator is stable only when
 \begin{equation}
 	\delta > \frac{\omega t\ped{s}}{2} = \frac{314.16 \cdot \num{125e-6}}{2} = 0.0196.
 	\label{eq:dlim}
@@ -483,27 +524,21 @@ With the damping of the model, $\delta = 0.015$, the condition is not met:
 	\begin{tabular}{@{} l r @{}}
 		\toprule
 		poles of the forward Euler resonator, $\delta = 0.015$, $t\ped{s} = \SI{125}{\micro\second}$ & $0.999411 \pm j\,0.039265$ \\
-		radius $|z\ped{res}|$ by \eqref{eq:radius} & $1.000182$ \\
+		radius $|z\ped{res,FE}|$ by \eqref{eq:radius_fe} & $1.000182$ \\
 		resonance frequency (angle of the poles divided by $2\pi t\ped{s}$) & \SI{49.998}{\hertz} \\
-		equivalent continuous damping, $-\ln|z\ped{res}|/(\omega t\ped{s})$ & $-0.0046$ \\
-		growth of the free response per grid period, $|z\ped{res}|^{160}$ & $1.030$ \\
+		equivalent continuous damping, $-\ln|z\ped{res,FE}|/(\omega t\ped{s})$ & $-0.0046$ \\
+		growth of the free response per grid period, $|z\ped{res,FE}|^{160}$ & $1.030$ \\
 		gain $|C\ped{d}(e^{j\omega t\ped{s}})|$ at \SI{50}{\hertz} (resonator alone) & $11.42$ ($10.82$) \\
 		\bottomrule
 	\end{tabular}
 \end{center}
-The resonator as implemented is a slightly \emph{growing} oscillator: left alone (zero error), its \SI{50}{\hertz} oscillation grows by \SI{3}{\percent} every period instead of decaying by \SI{9}{\percent} (Figure~\ref{fig:poles}, right). The resonance frequency is practically exact (forward Euler does not warp the frequency noticeably at $\omega t\ped{s} = 0.039$), but the peak gain is $11.4$ instead of the $4.3$ of the continuous design, because the poles are closer to the unit circle than the continuous poles are to the $j\omega$ axis (Figure~\ref{fig:bode}). The phase of $C\ped{d}$ wraps through \ang{180} at the resonance, which is the signature of a pole outside the unit circle.
+The resonator of the model is a slightly \emph{growing} oscillator: left alone (zero error), its \SI{50}{\hertz} oscillation grows by \SI{3}{\percent} every period instead of decaying by \SI{9}{\percent} (Figure~\ref{fig:poles}, right). The resonance frequency is practically exact, but the peak gain is $11.4$ instead of the $4.3$ of the continuous design, because the poles are closer to the unit circle than the continuous poles are to the $j\omega$ axis (Figure~\ref{fig:bode}); the phase of $C\ped{d}$ wraps through \ang{180} at the resonance, which is the signature of a pole outside the unit circle. The gains of the model ($k\ped{p}$, $k\ped{i}$, $\delta$) were tuned with this resonator, so the gain $10.8$ at the grid frequency is what the current loop of the model has, and it is the gain the block keeps: the forward-backward step with $\delta = 0.015$ would cut the gain at \SI{50}{\hertz} from $11.4$ to $4.3$ and the depth of the notch of the loop from \SI{41}{\decibel} to \SI{33}{\decibel} (Section~\ref{sec:rpi_loop}), while $\delta = 0.005$ gives $11.7$ and \SI{41}{\decibel} with the poles inside the circle.
 
-\begin{figure}[H]
-	\centering
-	\includegraphics[width=\textwidth]{figures/res_pi_bode.pdf}
-	\caption{Frequency response of the resonant PI, $k\ped{p} = 0.6$, $k\ped{i} = \SI{35}{\per\second}$, $\delta = 0.015$: continuous $C(s)$, the forward Euler implementation $C\ped{d}(z)$ of the code and the forward-backward Euler variant of Section~\ref{sec:rpi_alt}. Right: the peak at $f\ped{0}$, $4.3$ in continuous time and $11.4$ with forward Euler. Script \code{afe\_uvw\_ctrl\_figures.py}.}
-	\label{fig:bode}
-\end{figure}
 
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=\textwidth]{figures/res_pi_poles.pdf}
-	\caption{Left: radius of the resonator poles against the damping $\delta$ for the exact mapping, the forward Euler of the code and the forward-backward Euler variant (the last two curves coincide with the exact one at this scale); the forward Euler poles are outside the unit circle for $\delta < \omega t\ped{s}/2 = 0.0196$. Right: free response of the resonator state $x_2$ from $x_2(0) = 1$: the continuous resonator decays, the forward Euler one grows by \SI{3}{\percent} per period.}
+	\caption{Left: radius of the resonator poles against the damping $\delta$ for the exact mapping, the forward Euler of the model and the forward-backward Euler of the block (which coincides with the exact curve at this scale); the forward Euler poles are outside the unit circle for $\delta < \omega t\ped{s}/2 = 0.0196$. Right: free response of the resonator state $x_2$ from $x_2(0) = 1$: the continuous resonator with $\delta = 0.015$ decays by \SI{9}{\percent} per period, the forward Euler one of the model grows by \SI{3}{\percent}, the block ($\delta = 0.005$) decays by \SI{3}{\percent}.}
 	\label{fig:poles}
 \end{figure}
 
@@ -515,44 +550,37 @@ A growing resonator does not make the loop unstable by itself: the poles of the 
 	P(z) = \frac{K}{z - e\ped{p}}, \qquad e\ped{p} = e^{-r\omega t\ped{s}/x\ped{l}}, \quad K = \frac{1 - e\ped{p}}{r}, \qquad L(z) = C\ped{d}(z)\, z^{-1}\, P(z),
 	\label{eq:loop}
 \end{equation}
-where $z^{-1}$ is the one-step output delay of the block (Section~\ref{sec:limiter}). The plant of the model (\SI{690}{\volt}, \SI{250}{\kilo\watt}, \SI{500}{\micro\henry}: $x\ped{l} = 0.092$ pu, $r = 0.0023$ pu) gives almost the same numbers. The results of the companion script:
+where $z^{-1}$ is the one-step output delay of the block (Section~\ref{sec:limiter}). The plant of the model (\SI{690}{\volt}, \SI{250}{\kilo\watt}, \SI{500}{\micro\henry}: $x\ped{l} = 0.092$ pu, $r = 0.0023$ pu) gives almost the same numbers. The results of the companion script for the block, for the resonator of the model and for the forward-backward step with the damping of the model (FE = forward Euler, FB = forward-backward Euler):
 \begin{center}
 	\footnotesize
-	\begin{tabular}{@{} l c c c c @{}}
+	\setlength{\tabcolsep}{4pt}
+	\begin{tabular}{@{} l l c c c c @{}}
 		\toprule
-		plant, resonator & crossover & phase margin & largest closed-loop $|z|$ & $|S|$ at \SI{50}{\hertz} \\
+		plant & resonator & crossover & phase margin & largest closed-loop $|z|$ & $|S|$ at \SI{50}{\hertz} \\
 		\midrule
-		bench, forward Euler (the code) & \SI{300}{\hertz} & \ang{68.9} & $0.99656$ & $0.0088$ (\SI{-41.1}{\decibel}) \\
-		bench, forward-backward Euler & \SI{300}{\hertz} & \ang{68.9} & $0.99576$ & $0.0233$ (\SI{-32.7}{\decibel}) \\
-		model \SI{690}{\volt}, forward Euler (the code) & \SI{327}{\hertz} & \ang{66.5} & $0.99651$ & $0.0080$ (\SI{-41.9}{\decibel}) \\
-		model \SI{690}{\volt}, forward-backward Euler & \SI{327}{\hertz} & \ang{66.5} & $0.99571$ & $0.0213$ (\SI{-33.4}{\decibel}) \\
+		bench & the block (FB, $\delta = 0.005$) & \SI{300}{\hertz} & \ang{68.9} & $0.99617$ & $0.0086$ (\SI{-41.3}{\decibel}) \\
+		bench & the model (FE, $\delta = 0.015$) & \SI{300}{\hertz} & \ang{68.9} & $0.99656$ & $0.0088$ (\SI{-41.1}{\decibel}) \\
+		bench & FB, $\delta = 0.015$ & \SI{300}{\hertz} & \ang{68.9} & $0.99576$ & $0.0233$ (\SI{-32.7}{\decibel}) \\
+		model \SI{690}{\volt} & the block (FB, $\delta = 0.005$) & \SI{327}{\hertz} & \ang{66.5} & $0.99612$ & $0.0078$ (\SI{-42.1}{\decibel}) \\
+		model \SI{690}{\volt} & the model (FE, $\delta = 0.015$) & \SI{327}{\hertz} & \ang{66.5} & $0.99651$ & $0.0080$ (\SI{-41.9}{\decibel}) \\
+		model \SI{690}{\volt} & FB, $\delta = 0.015$ & \SI{327}{\hertz} & \ang{66.5} & $0.99571$ & $0.0213$ (\SI{-33.4}{\decibel}) \\
 		\bottomrule
 	\end{tabular}
 \end{center}
-The closed loop is stable with a good margin; the crossover (about \SI{300}{\hertz}, set by $k\ped{p}\omega\ped{nom}/x\ped{l}$) and the margin do not depend on the resonator, which is small away from \SI{50}{\hertz}. The resonant poles of the closed loop sit at $|z| = 0.9966$ (a time constant of \SI{36}{\milli\second}) and the sensitivity at \SI{50}{\hertz} is \SI{0.9}{\percent}: a \SI{50}{\hertz} disturbance (the grid voltage, when it is not fed forward by the modulator) is attenuated by \SI{41}{\decibel}, and the steady-state tracking error of a \SI{50}{\hertz} reference is below \SI{1}{\percent} of its amplitude. This is in fact \emph{better} than what the continuous design with $\delta = 0.015$ would give (\SI{2.3}{\percent}, the forward-backward row), because the implemented resonator has more gain at the grid frequency. The test bench confirms the order of magnitude: the stack current reaches its \SI{-0.85}{pu} reference within \num{6e-3} pu (Section~\ref{sec:checks}).
+The closed loop is stable with a good margin in every case; the crossover (about \SI{300}{\hertz}, set by $k\ped{p}\omega\ped{nom}/x\ped{l}$) and the margin do not depend on the resonator, which is small away from \SI{50}{\hertz}. With the block, the resonant poles of the closed loop sit at $|z| = 0.9962$ (a time constant of \SI{33}{\milli\second}) and the sensitivity at \SI{50}{\hertz} is \SI{0.9}{\percent}: a \SI{50}{\hertz} disturbance (the grid voltage, when it is not fed forward by the modulator) is attenuated by \SI{41}{\decibel}, and the steady-state tracking error of a \SI{50}{\hertz} reference is below \SI{1}{\percent} of its amplitude. This is the same loop as with the resonator of the model (\SI{0.9}{\percent}, \SI{36}{\milli\second}) and three times better than what the forward-backward step with $\delta = 0.015$ would give (\SI{2.3}{\percent}). The test bench confirms the order of magnitude: the stack current reaches its \SI{-0.85}{pu} reference within \num{6e-3} pu with either resonator (Section~\ref{sec:checks}).
 
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=\textwidth]{figures/res_pi_closed_loop.pdf}
-	\caption{Per-phase current loop on the bench plant ($x\ped{l} = 0.1$, $r = 0.01$, one step of delay). Left: the open-loop resonator poles of the code (on the circle at this scale, radius $1.000182$) and the closed-loop poles with the forward Euler and the forward-backward resonator; the loop pulls the resonant pair inside the circle. Right: sensitivity $|S| = |1/(1+L)|$; the notch at \SI{50}{\hertz} is \SI{41}{\decibel} deep with the implemented resonator.}
+	\caption{Per-phase current loop on the bench plant ($x\ped{l} = 0.1$, $r = 0.01$, one step of delay). Left: the open-loop resonator poles of the model (outside the circle, radius $1.000182$) and of the block (inside, $0.999804$), and the closed-loop poles with the three resonators: the loop pulls the resonant pair inside the circle in every case. Right: sensitivity $|S| = |1/(1+L)|$; the notch at \SI{50}{\hertz} is \SI{41}{\decibel} deep with the block and with the resonator of the model, \SI{33}{\decibel} with the forward-backward step at $\delta = 0.015$.}
 	\label{fig:closed}
 \end{figure}
 
 Two consequences are worth keeping in mind:
 \begin{itemize}[nosep]
-	\item the stability of the resonant mode depends on the loop gain at \SI{50}{\hertz}. When the vector limiter of Section~\ref{sec:limiter} divides the output by \code{scale}, the loop gain drops by the same factor: with the bench plant the largest closed-loop radius grows from $0.99656$ (scale 1) to $0.99807$ (scale 5) and $0.99927$ (scale 10, the largest allowed), still inside the circle, but with a mode that decays about five times more slowly;
-	\item the resonator states have no anti-windup: while the limiter is active, or while the modulator is disabled, $x_1$ and $x_2$ keep integrating with their own growing dynamics. The state of a locked loop (gates off) grows by \SI{3}{\percent} per period, so a long time with the gates off and a non-zero current error should be avoided, or the states should be reset (the block has no reset input: the subsystem can be re-initialized, or a reset can be added like the one of \code{frt\_vde4110}).
+	\item the damping of the resonant mode of the loop depends on the loop gain at \SI{50}{\hertz}. When the vector limiter of Section~\ref{sec:limiter} divides the output by \code{scale}, the loop gain drops by the same factor: with the bench plant the largest closed-loop radius grows from $0.99617$ (scale 1) to $0.99765$ (scale 5) and $0.99888$ (scale 10, the largest allowed), still inside the circle, but with a mode that decays about three times more slowly. With the resonator of the model it was $0.99927$ at scale 10, closer to the circle, because its open-loop poles start outside it;
+	\item the resonator states have no anti-windup: while the limiter is active, or while the modulator is disabled, $x_1$ and $x_2$ keep integrating the error with their own dynamics. With the block these dynamics decay (\SI{3}{\percent} per period, \SI{0.64}{\second}); with the resonator of the model they grew by \SI{3}{\percent} per period. In both cases a long time with the gates off and a non-zero current error should be avoided, or the states should be reset (the block has no reset input: the subsystem can be re-initialized, or a reset can be added like the one of \code{frt\_vde4110}).
 \end{itemize}
-
-\subsection{A variant with the poles on the circle (not implemented)}
-\label{sec:rpi_alt}
-
-The usual remedy \cite{yepes2010} is to discretize the two integrators differently: forward Euler on the first and backward Euler on the second, that is, to use the \emph{updated} $x_1$ in the update of $x_2$:
-\begin{equation}
-	x_1^{+} = x_1 + t\ped{s}\, x_2, \qquad x_2^{+} = x_2 + t\ped{s}\left(-\omega^2 x_1^{+} - 2\delta\omega\, x_2 + k\ped{i}\, e\right),
-	\label{eq:fb}
-\end{equation}
-one changed line in the code (\code{x\_res(1,:)} computed first and used in the second update). The characteristic polynomial becomes $z^2 - (2 - \omega^2 t\ped{s}^2 - 2\delta\omega t\ped{s})\, z + 1 - 2\delta\omega t\ped{s}$, so $|z\ped{res}| = \sqrt{1 - 2\delta\omega t\ped{s}}$: exactly on the unit circle for $\delta = 0$ and inside for any $\delta > 0$, with the resonance at \SI{50.012}{\hertz} and the peak gain $4.31$ of the continuous design (Figures~\ref{fig:bode} and \ref{fig:poles}). Tustin with pre-warping at $\omega$ gives the same result with more arithmetic. The variant is \emph{not} in the code, because the blocks reproduce the model and the gains of the model were tuned with the forward Euler resonator: changing the discretization alone would cut the gain at \SI{50}{\hertz} from $11.4$ to $4.3$ and the depth of the notch from \SI{41}{\decibel} to \SI{33}{\decibel}. If the variant is adopted, $\delta$ should be lowered to about $0.005$ to keep the present gain at the grid frequency ($k\ped{i}/(2\delta\omega) = 10.8$ gives $\delta = 0.0052$), or $\delta = 0$ can be used, now safely, for zero steady-state error.
 
 \subsection{Vector limiter, transformation to $\alpha\beta$ and output delay}
 \label{sec:limiter}
@@ -684,7 +712,7 @@ All five blocks read the same structure \code{p}: the common fields at the top l
 	\code{f\_lpf\_ref} & low pass of the references [Hz] & 161 & \code{g0\_161Hz} of the model \\
 	\multicolumn{4}{@{}l}{\textbf{ictrl}} \\
 	\code{kp}, \code{ki} & resonant PI: proportional gain [--] and resonant gain [1/s] & 0.6, 35 & \code{c.res\_pi.kp\_rpi}, \code{c.res\_pi.ki\_rpi}\newline(LVRT setting of the init; class defaults 0.2, 45) \\
-	\code{delta\_res} & damping of the resonator & 0.015 & \code{c.res\_pi.delta\_res} \\
+	\code{delta\_res} & damping of the resonator (forward-backward Euler, Section~\ref{sec:rpi_disc}) & 0.005 & 0.005 in the init; the class has 0.015 for its forward Euler resonator (Section~\ref{sec:rpi_fe}) \\
 	\code{omega\_res} & resonance pulsation [rad/s] & $2\pi\,50$ & \code{c.omega\_base} \\
 	\code{mag\_lim}, \code{mag\_scale\_max} & vector limiter: length above which the output is scaled, largest factor & 1, 10 & constants of \code{antiwind\_up} \\
 	\code{out\_delay} & 1: $\alpha\beta$ output one step late (Unit Delays of the model) & 1 & -- \\
@@ -711,7 +739,7 @@ All five blocks read the same structure \code{p}: the common fields at the top l
 \section{How the code was checked}
 \label{sec:checks}
 
-\paragraph{Python twin of the model's diagrams.} The script \code{tools/check\_afe\_uvw\_ctrl.py} of the package holds a twin, in Python and without MATLAB, of the Simulink diagrams that were replaced (\code{dmavgflt\_process}, \code{LVRT\_detector}, \code{linear\_double\_integrator\_observer}, \code{avg\_flt}, \code{u\_161Hz\_flt}, the resonant PIs, \code{antiwind\_up}, \code{zero\_sequence\_current\_ctrl}, written block by block from the \code{.slx} and from the library sources) and runs it together with the five functions (in GNU Octave) on the same inputs for \SI{1.2}{\second}: a \SI{50.2}{\hertz} grid with \SI{2}{\percent} 7th and \SI{1.5}{\percent} 5th harmonic, a dip to \SI{0.55}{pu} with \SI{0.25}{pu} negative sequence at 0.75--\SI{0.90}{\second}, steps of the grid current and of the references. The comparison is made block by block (the twin reads the signals of the new code at the block borders, so that each block sees the same inputs): the transformations agree to \num{4e-16}, the observers to \num{7e-14}, the PIs of the reactive loops to \num{4e-14}, the current controller (\code{u\_abg}, \code{i\_abc\_ref}) to \num{4e-13}; the sequence averages differ by \num{2e-4} in steady state and \num{3e-3} at the edges of the dip (a different moving average, Section~\ref{sec:differences}), the FRT references by \num{5e-4} (pre-fault average one sample apart), and the two implementations detect the fault at the same samples (\SI{0.75488}{\second}, \SI{0.90813}{\second}). Figure~\ref{fig:check} shows the chain run.
+\paragraph{Python twin of the model's diagrams.} The script \code{tools/check\_afe\_uvw\_ctrl.py} of the package holds a twin, in Python and without MATLAB, of the Simulink diagrams that were replaced (\code{dmavgflt\_process}, \code{LVRT\_detector}, \code{linear\_double\_integrator\_observer}, \code{avg\_flt}, \code{u\_161Hz\_flt}, the resonant PIs, \code{antiwind\_up}, \code{zero\_sequence\_current\_ctrl}, written block by block from the \code{.slx} and from the library sources) and runs it together with the five functions (in GNU Octave) on the same inputs for \SI{1.2}{\second}: a \SI{50.2}{\hertz} grid with \SI{2}{\percent} 7th and \SI{1.5}{\percent} 5th harmonic, a dip to \SI{0.55}{pu} with \SI{0.25}{pu} negative sequence at 0.75--\SI{0.90}{\second}, steps of the grid current and of the references. The comparison is made block by block (the twin reads the signals of the new code at the block borders, so that each block sees the same inputs): the transformations agree to \num{4e-16}, the observers to \num{7e-14}, the PIs of the reactive loops to \num{4e-14}, the current controller (\code{u\_abg}, \code{i\_abc\_ref}) to \num{2e-13} (the twin uses the forward-backward resonator of the block; its option \code{--model-resonator} switches it to the forward Euler of the model with $\delta = 0.015$, for a comparison with the model as it is); the sequence averages differ by \num{2e-4} in steady state and \num{3e-3} at the edges of the dip (a different moving average, Section~\ref{sec:differences}), the FRT references by \num{5e-4} (pre-fault average one sample apart), and the two implementations detect the fault at the same samples (\SI{0.75488}{\second}, \SI{0.90813}{\second}). Figure~\ref{fig:check} shows the chain run.
 
 \begin{figure}[H]
 	\centering
@@ -720,7 +748,7 @@ All five blocks read the same structure \code{p}: the common fields at the top l
 	\label{fig:check}
 \end{figure}
 
-\paragraph{The test bench in a loop.} \code{test/afe\_uvw\_ctrl\_test\_loop.m} runs the five functions in a loop with a source (grid voltage with harmonics, PLL angle, references) and the RL plant of \eqref{eq:loop} behind a unit delay, \SI{1.6}{\second}; \code{afe\_uvw\_ctrl\_test\_run.m} runs the same scenario in the Simulink bench \code{test\_afe\_uvw\_ctrl.slx} and in the loop and prints 15 checks. In GNU Octave the 14 behaviour checks pass: fault detected \SI{5}{\milli\second} after the start of the dip and released \SI{8}{\milli\second} after its end, power limitation set, FRT reference \SI{-0.80}{pu} reached within \num{3e-3}, grid $\eta$ current on its reference within \num{5e-5} before the dip and within $0.02$ at the end of the dip, stack $\xi$ current on \SI{-0.85}{pu} within \num{6e-3}, zero-sequence current \num{7e-13}, islanding detected \SI{0.14}{\second} after the start of the \SI{6}{\hertz\per\second} ramp by the ROCOF criterion and not by the dip (Figure~\ref{fig:bench}). In MATLAB R2026b all 15 checks pass, the 15th being ``blocks = functions'': the Simulink bench and the loop give the same signals (difference 0).
+\paragraph{The test bench in a loop.} \code{test/afe\_uvw\_ctrl\_test\_loop.m} runs the five functions in a loop with a source (grid voltage with harmonics, PLL angle, references) and the RL plant of \eqref{eq:loop} behind a unit delay, \SI{1.6}{\second}; \code{afe\_uvw\_ctrl\_test\_run.m} runs the same scenario in the Simulink bench \code{test\_afe\_uvw\_ctrl.slx} and in the loop and prints 15 checks. In GNU Octave the 14 behaviour checks pass, with the forward-backward resonator and $\delta = 0.005$ as with the forward Euler one before: fault detected \SI{5}{\milli\second} after the start of the dip and released \SI{8}{\milli\second} after its end, power limitation set, FRT reference \SI{-0.80}{pu} reached within \num{3e-3}, grid $\eta$ current on its reference within \num{5e-5} before the dip and within $0.02$ at the end of the dip, stack $\xi$ current on \SI{-0.85}{pu} within \num{6e-3}, zero-sequence current \num{7e-13}, islanding detected \SI{0.14}{\second} after the start of the \SI{6}{\hertz\per\second} ramp by the ROCOF criterion and not by the dip (Figure~\ref{fig:bench}). In MATLAB R2026b all 15 checks passed with rev.~02 of the library, the 15th being ``blocks = functions'': the Simulink bench and the loop give the same signals (difference 0); the run with the resonator of rev.~03 is pending.
 
 \begin{figure}[H]
 	\centering
@@ -736,6 +764,7 @@ All five blocks read the same structure \code{p}: the common fields at the top l
 \label{sec:differences}
 
 \begin{itemize}[nosep]
+	\item \textbf{Resonator discretization.} The block uses the updated $x_1$ in the update of $x_2$ (forward-backward Euler, Section~\ref{sec:rpi_disc}) since library rev.~03; the class of the model uses forward Euler, whose poles are outside the unit circle for $\delta < \omega t\ped{s}/2$ (Section~\ref{sec:rpi_fe}). The damping is $0.005$ instead of $0.015$, so that the gain at the grid frequency and the current loop stay the same.
 	\item \textbf{Moving average.} \code{dmavgflt\_process} (the MATLAB port of the C \code{mavgflt}) averages the samples up to the previous one and starts from an implicit zero sample; \code{moving\_average\_frac} includes the present sample and is unbiased while the window fills up. Same steady-state value (within the $2\omega$ residual, \num{2e-4}), one sample of lead, no start-up transient.
 	\item \textbf{Pre-fault averages of the FRT} start at \code{t\_avg\_start} (\SI{50}{\milli\second}) instead of 0: the model's average takes the zeros and the start-up transient of the sequence averages into its \SI{0.5}{\second} window, which puts an offset of about \num{1e-2} on the negative-sequence references of a fault in the first second.
 	\item \textbf{\code{frt\_state} in the log} is the state after the update of the step (the model reported the state of the previous step); \code{frt\_active} and \code{pwr\_lim\_enable} have the same timing as the model.
@@ -752,7 +781,7 @@ All five blocks read the same structure \code{p}: the common fields at the top l
 
 \begin{enumerate}[nosep]
 	\item \textbf{Direction of the reactive current support.} With the $\eta$ axis of \eqref{eq:frames} (the usual $q$ axis) and the grid voltage on $+\xi$, a current measured \emph{into} the converter that leads the voltage by \ang{90} (capacitive, the support that VDE-AR-N 4110 asks for in an under-voltage) has a \emph{positive} $\eta$ component. The FRT rule \eqref{eq:frt_ref} gives a \emph{negative} $\eta$ reference in a dip, so the support is capacitive only if the grid current of the model is measured \emph{out of} the converter, towards the grid; with the grid current measured towards the converter (as the sign of the reactive loops suggests, Section~\ref{sec:qctrl}) it would be inductive. The code reproduces the model exactly here (the twin agrees to \num{4e-13}), so this is a check to make once on the model with the real plant: during a dip with \code{i\_react\_ref} = 0, the positive-sequence voltage at the connection point must rise with the support, not fall. If it falls, the sign of $k$ in \eqref{eq:frt_ref} (or of \code{k\_frt\_ref}) is the place to change it.
-	\item \textbf{Forward Euler resonator.} The resonator of the current controller has its poles outside the unit circle for $\delta < \omega t\ped{s}/2$ (Section~\ref{sec:rpi_disc}); the loop is stable with the plant, but the controller alone grows, the resonant mode of the loop depends on the loop gain, and the states have no anti-windup. The variant of Section~\ref{sec:rpi_alt} (one line) puts the poles on or inside the circle; it changes the gain at \SI{50}{\hertz}, so $\delta$ would be re-tuned with it (about $0.005$ for the same gain, or 0 for zero steady-state error). A reset input for the states would help after a long time with the gates off.
+	\item \textbf{Resonator states.} The resonator has no anti-windup and no reset input: while the limiter is active or the gates are off, $x_1$ and $x_2$ keep integrating the error (Section~\ref{sec:rpi_loop}). With the forward-backward step of rev.~03 the states no longer grow on their own, but a reset input (like the one of \code{frt\_vde4110}) would still help after a long time with the gates off. The damping $\delta = 0.005$ keeps the gain of the model's resonator; $\delta = 0$ (zero steady-state error, poles on the circle) and $\delta = 0.015$ (the continuous design, gain 4.3, notch \SI{33}{\decibel}) are the alternatives, both safe with this step.
 	\item \textbf{Islanding detector not wired.} In \code{afe\_rst\_ctrl.slx} the block exists in the library but is not connected: its inputs would be \code{ug\_ab} of \code{grid\_voltage\_sequences}, the PLL angle, the limited pulsation and an enable (the settle time of the model), its output \code{island} a trip of the converter. With the thresholds of Table~\ref{tab:island} it does not trip on the FRT test dip.
 	\item \textbf{Power-limitation release} on $|v\ped{neg}| < 0.7$ is almost no condition: a tighter value (e.g. $0.05$, with the same hysteresis idea as the positive sequence) would release the power limitation only when the unbalance is really gone.
 	\item \textbf{\code{i\_stack\_ref} in the model} is built with a Bus Creator; the block expects a $3 \times 1$ vector (a Mux).
@@ -778,7 +807,7 @@ All five blocks read the same structure \code{p}: the common fields at the top l
 		\code{afe\_uvw\_ctrl\_param\_example.m} & example parameter structure \code{p} with the numbers of the model and the observer gain formula \eqref{eq:obs_gains} \\
 		\code{update\_afe\_uvw\_ctrl.m} & reloads the sources into the blocks of the library (MATLAB) \\
 		\code{test/} & Simulink bench \code{test\_afe\_uvw\_ctrl.slx}, its source, plant and parameters, the loop version and the 15 checks \\
-		\code{tools/make\_afe\_uvw\_ctrl.py}, \code{check\_afe\_uvw\_ctrl.py} & generator of the library and the bench without MATLAB; the check against the Python twin of the model's diagrams \\
+		\begin{tabular}[t]{@{}l@{}}\code{tools/make\_afe\_uvw\_ctrl.py},\\ \code{load\_sources\_into\_slx.py},\\ \code{check\_afe\_uvw\_ctrl.py}\end{tabular} & generator of the library and the bench without MATLAB; loader of the sources into the blocks of the MATLAB-saved library, without MATLAB (code-only changes); the check against the Python twin of the model's diagrams \\
 		\code{README.md} & description of the blocks, parameters, checks and use in the model \\
 		\midrule
 		\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{\dimexpr\textwidth-2\tabcolsep\relax}@{}}{\textbf{model \code{foundations\_of\_power\_electronics/afe\_uvw\_three\_phase/} of \code{pwr-control/modelization-and-control}}} \\
