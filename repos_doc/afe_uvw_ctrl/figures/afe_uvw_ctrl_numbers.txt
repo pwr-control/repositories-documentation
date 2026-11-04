@@ -1,0 +1,42 @@
+afe_uvw_ctrl_figures.py: numbers of the note
+ts = 125 us, f0 = 50 Hz, w = 314.1593 rad/s, w ts = 0.039270
+resonant PI: kp = 0.6, ki = 35.0 1/s, delta = 0.015
+
+--- continuous controller
+gain of the resonator at f0: ki/(2 delta w) = 3.714  -> |C(j w)| = 4.314 (12.7 dB)
+-3 dB width of the resonant peak: 2 delta w = 9.425 rad/s = 1.500 Hz
+poles s = -4.712 +- j314.124 rad/s, decay per grid period exp(-delta 2 pi) = 0.9101
+
+--- forward Euler (as implemented: x1+ = x1 + ts x2, x2+ = x2 + ts(-w^2 x1 - 2 delta w x2 + ki e))
+poles z = 0.999411 +- j0.039265, |z| = 1.000182 (formula 1.000182)
+angle of the poles 0.039268 rad -> resonance at 49.998 Hz
+stable (|z| < 1) only for delta > w ts/2 = 0.01963
+equivalent continuous damping: ln|z|/ts = +1.456 rad/s -> delta_eff = -0.00463
+growth per grid period |z|^160 = 1.0295
+|C_d(e^(j w ts))| at f0 = 11.420 (21.2 dB), resonator alone 10.820
+
+--- forward-backward Euler (x1+ = x1 + ts x2, x2+ = x2 + ts(-w^2 x1+ - 2 delta w x2 + ki e)), not implemented
+poles |z| = 0.999411 (formula sqrt(1 - 2 delta w ts) = 0.999411), resonance at 50.012 Hz, |C_d| at f0 = 4.313
+with delta = 0: |z| = 1.000000 (on the unit circle)
+
+--- closed loop, bench plant: x_l = 0.1000 pu, r = 0.0100 pu, output delay 1 step
+  forward Euler    : max |z| = 0.996563, crossover 300 Hz, phase margin 68.9 deg, |S| at f0 = 0.0088 (-41.1 dB)
+                     poles: 0.99577+0.03966j (|z| 0.99656), 0.99577-0.03966j (|z| 0.99656), 0.63028+0.00000j (|z| 0.63028), 0.37308+0.00000j (|z| 0.37308)
+  forward-backward : max |z| = 0.995764, crossover 300 Hz, phase margin 68.9 deg, |S| at f0 = 0.0233 (-32.7 dB)
+                     poles: 0.99498+0.03957j (|z| 0.99576), 0.99498-0.03957j (|z| 0.99576), 0.63036+0.00000j (|z| 0.63036), 0.37305+0.00000j (|z| 0.37305)
+--- closed loop, model 690 V plant: x_l = 0.0916 pu, r = 0.0023 pu, output delay 1 step
+  forward Euler    : max |z| = 0.996510, crossover 327 Hz, phase margin 66.5 deg, |S| at f0 = 0.0080 (-41.9 dB)
+                     poles: 0.99572+0.03961j (|z| 0.99651), 0.99572-0.03961j (|z| 0.99651), 0.50320+0.06140j (|z| 0.50693), 0.50320-0.06140j (|z| 0.50693)
+  forward-backward : max |z| = 0.995713, crossover 327 Hz, phase margin 66.5 deg, |S| at f0 = 0.0213 (-33.4 dB)
+                     poles: 0.99493+0.03952j (|z| 0.99571), 0.99493-0.03952j (|z| 0.99571), 0.50322+0.06131j (|z| 0.50694), 0.50322-0.06131j (|z| 0.50694)
+
+--- double-integrator observers (discrete gains, poles at exp(p ts); continuous equivalents kx = -(p1+p2), kv = p1 p2)
+  FRT voltage rate [-0.1 -0.4] w: kx = 156.036 1/s, kv = 3909.32 1/s^2 (continuous 157.080, 3947.84)
+  islanding ROCOF [-20 -80] rad/s: kx = 99.576 1/s, kv = 1590.04 1/s^2 (continuous 100.000, 1600.00)
+--- closed loop (bench plant) when the vector limiter divides the output by scale (loop gain / scale), forward Euler
+  scale  1: max |z| = 0.996563
+  scale  2: max |z| = 0.996805
+  scale  5: max |z| = 0.998056
+  scale 10: max |z| = 0.999266
+--- forward-backward Euler: damping that gives the same gain at f0 as the implemented resonator
+  ki/(2 delta_eq w) = 10.820 -> delta_eq = 0.00515

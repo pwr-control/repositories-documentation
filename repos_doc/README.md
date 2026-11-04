@@ -112,6 +112,19 @@ is loaded as `../../AAA_template_latex_settings/settings`.
   model. All figures are TikZ. Same source in
   `library/library/documentation/grid_forming_following_afe/`; that PDF is the Help of the two
   block masks.
+- `afe_uvw_ctrl` — *AFE control in the uvw frame: the five MATLAB Function blocks of
+  `afe_uvw_ctrl`* (Rev. 00, November 2026). The controller of the model `afe_uvw_three_phase` as
+  written in the library package `masked_models/afe_uvw_ctrl` (library PR #35): Clarke and
+  sequence frames with the fractional-window moving average, grid voltage sequences, fault
+  ride-through of VDE-AR-N 4110 (voltage-rate observers, state machine, power limitation,
+  pre-fault averages and reactive current references), the three clamped PIs of the reactive
+  current loops, the per-phase resonant PI current control in detail (continuous design, the
+  forward Euler implementation of the code and its pole radius: poles outside the unit circle for
+  δ < ω ts/2, stable closed loop with the plant, the forward-backward Euler variant), vector
+  limiter, output delay and zero-sequence loop, the new passive islanding detector, the parameter
+  structure and its mapping to the model init, the checks against the original diagrams (Python
+  twin, Octave loop, MATLAB bench), differences and open points. Companion Python script
+  `afe_uvw_ctrl_figures.py` (resonant PI figures and numbers, PDF figures in `figures/`).
 - `three_phase_dab` — *Three-phase dual active bridge (DAB3): 1200 V / 1200 V, 250 kW, 10 kHz,
   sizing, control, simulation model and runs* (Rev. 00, October 2026). The isolated stage of
   `advanced-dcdc-converters/analysis_three_phase_dab` between two batteries: six-step bridges,
