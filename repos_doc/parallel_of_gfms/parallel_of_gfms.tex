@@ -1,0 +1,818 @@
+% =============================================================
+%  Parallel grid-forming modules: power sharing, loss of the main grid, earthing and common mode
+%  Design note of the model pgfm_ctrl_analysis (pwr-control/grid-forming, folder parallel_of_GFMs)
+%  pwr-control documentation - compile with pdflatex (twice) from inside this folder:
+%      pdflatex parallel_of_gfms.tex && pdflatex parallel_of_gfms.tex
+%  Figures: TikZ / circuitikz drawn in this file, and figures/hf_cases.png (simulation of the earthing
+%  cases, written by parallel_of_GFMs/earthing_cases.m of the grid-forming repository).
+%  The model opens this PDF from its annotation "Design note": init_model.m puts this folder on the
+%  MATLAB path when repositories-documentation sits next to grid-forming (C:\github\pwr-control).
+% =============================================================
+\documentclass[11pt,a4paper]{scrartcl}
+\input{../../AAA_template_latex_settings/settings}
+
+\usetikzlibrary{decorations.pathreplacing,fit,shapes.geometric}
+\usepackage[european,straightvoltages]{circuitikz}
+\ctikzset{voltage dir=EF}
+
+\newcommand{\ped}[1]{_{\mathrm{#1}}}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\jj}{\mathrm{j}}
+\newcommand{\dif}{\mathrm{d}}
+\newcommand{\upu}{\,\mathrm{pu}}
+\renewcommand{\tabularxcolumn}[1]{>{\raggedright\arraybackslash}p{#1}}
+\setlength{\emergencystretch}{3em}
+\sisetup{per-mode=symbol}
+\DeclareSIUnit{\VA}{VA}
+
+% ---------------- document metadata (read by the title page) ----------------
+\newcommand{\DocCategory}{Technical Note}
+\newcommand{\DocField}{Power Electronics and Control Systems}
+
+\newcommand{\DocTitle}{%
+	{\fontsize{20}{24}\selectfont\bfseries Parallel grid-forming modules} \\[16pt]
+	{\fontsize{16}{20}\selectfont\bfseries power sharing, loss of the main grid, earthing and common mode}
+}
+
+\newcommand{\DocSubtitle}{%
+	Design note of the model \code{pgfm\_ctrl\_analysis} (\code{grid-forming}, folder \code{parallel\_of\_GFMs}): the model as it runs today, what the literature offers, a first control version to simulate, the common mode of modules on one battery and the earthing of an industrial battery storage system.
+}
+
+\newcommand{\DocAuthor}{Davide Bagnara}
+\newcommand{\DocRevision}{00}
+\newcommand{\DocDate}{November 2026}
+
+\newcommand{\DocAbstract}{%
+	The model \code{pgfm\_ctrl\_analysis} puts three \SI{250}{\kilo\watt} active front ends in parallel on one lithium-ion battery and on a \SI{690}{\volt} grid emulator. Its purpose is the power sharing among grid-forming modules: in normal operation the modules follow the set-points of the plant; when the main grid is lost they keep the island alive and share the load, without any change of control mode. This note describes the model as it runs today, reviews what the group of M.~Liserre (Kiel University) and S.~Bolognani (ETH Z\"urich) offer for this problem, and proposes a first control version that can be simulated: P--f droop with a low-pass filter (a virtual synchronous machine with an inertia constant of \SI{1.25}{s}), Q--V droop, a virtual admittance in front of the current loop, current limitation and a time base distributed by PTP; with the numbers, a small-signal check and a test plan. It then treats the common mode of modules on one battery (common-mode chokes, PWM carriers aligned to a global PTP time, zero-sequence circulating currents), the earthing of an industrial battery energy storage system with the HF parasitic capacitances and earthing resistances now in the model, simulated for an unearthed, a high-resistance and a solidly earthed transformer star point, the residual current monitoring unit (RCMU) and the insulation monitor, and the step to three-level modules.
+}
+
+\newcommand{\RevisionHistory}{%
+	00 & November 2026 & First issue: state of the model, literature, control proposal V1 and test plan, common mode and PTP alignment, earthing with the HF parameters of the model, RCMU and IMD, three-level outlook. & \DocAuthor \\
+}
+
+\newcommand{\MetaLabelA}{Project Repository}
+\newcommand{\MetaValueAUrl}{https://github.com/pwr-control/grid-forming.git}
+\newcommand{\MetaValueALabel}{grid-forming.git (parallel\_of\_GFMs)}
+
+\newcommand{\MetaLabelB}{Framework}
+\newcommand{\MetaValueB}{MATLAB/Simulink/Simscape}
+
+\begin{document}
+
+\input{../../AAA_template_latex_settings/titlepage}
+
+\tableofcontents
+\listoffigures
+\listoftables
+\newpage
+
+\begin{onehalfspace}
+
+% =============================================================
+\section*{Nomenclature}
+\addcontentsline{toc}{section}{Nomenclature}
+\label{sec:nomenclature}
+
+\rowcolors{2}{tableShade}{white}
+\begin{longtable}{@{} l p{0.74\linewidth} @{}}
+	\toprule
+	\textbf{Symbol} & \textbf{Meaning} \\
+	\midrule
+	\endfirsthead
+	\toprule
+	\textbf{Symbol} & \textbf{Meaning} \\
+	\midrule
+	\endhead
+	\bottomrule
+	\endfoot
+	\bottomrule
+	\endlastfoot
+	AFE & active front end: three-phase PWM converter between a DC link and the AC network \\
+	BESS, PCS & battery energy storage system; power conversion system (the converters of the BESS) \\
+	GFM, GFL & grid-forming, grid-following \\
+	VSM & virtual synchronous machine \\
+	CM, ZSV, ZSCC & common mode; zero-sequence voltage; zero-sequence circulating current \\
+	PTP & precision time protocol, IEEE 1588 \\
+	IT, TN, HRG & earthing systems: not earthed (or through a high impedance), solidly earthed, earthed through a high resistance \\
+	IMD & insulation monitoring device (IEC 61557-8) \\
+	RCMU, RCD & residual current monitoring unit; residual current device \\
+	$S\ped{b}$ & base power of a module, \SI{277.8}{\kilo\VA} (\SI{250}{\kilo\watt} at $\cos\varphi = 0.9$) \\
+	$u\ped{bez}$, $i\ped{bez}$, $Z\ped{b}$ & base voltage and current (peak values) and base impedance of a module, \SI{563.4}{V}, \SI{328.7}{A}, \SI{1.714}{\ohm} \\
+	$\omega\ped{b}$ & base angular frequency, $2\pi\cdot\SI{50}{Hz}$ \\
+	$p$, $q$; $P\ped{f}$, $Q\ped{f}$ & active and reactive power of a module; the same after the low-pass filter (pu of $S\ped{b}$) \\
+	$P^*$, $Q^*$ & set-points of a module from the plant controller \\
+	$m\ped{p}$, $n\ped{q}$ & P--f and Q--V droop coefficients \\
+	$\tau\ped{p}$, $\tau\ped{q}$ & time constants of the power filters \\
+	$H$, $D$ & inertia constant and damping of the equivalent virtual synchronous machine \\
+	$R\ped{v}$, $X\ped{v}$ & virtual resistance and reactance \\
+	$L$, $L_0$, $C\ped{F}$ & filter of a module: positive- and zero-sequence inductance of the three-phase inductor, filter capacitance \\
+	$C\ped{pole}$, $C\ped{ac}$ & capacitance to earth of one battery pole, of one phase of the LV side \\
+	$r\ped{gnd}$, $r\ped{star}$ & earthing resistor of one battery pole; resistance from the transformer star point to earth \\
+\end{longtable}
+\addtocounter{table}{-1}
+\rowcolors{1}{white}{white}
+
+% =============================================================
+\section{Scope and summary}
+\label{sec:scope}
+
+The model \code{pgfm\_ctrl\_analysis} of the folder \path{parallel_of_GFMs} of the repository \code{grid-forming} has three AFE modules of \SI{250}{\kilo\watt} in parallel on one lithium-ion battery and on a \SI{690}{V}, \SI{1}{MVA} grid emulator. Its purpose is the study of the \emph{power sharing among grid-forming modules}: in normal operation the modules follow the set-points of the plant controller; if the main grid is lost, they must keep the voltage and the frequency of the island and share its load, ideally without detecting the event and without switching control mode. Two further topics belong to the same machine and are treated here because they decide what the power stage and the PWM must look like:
+
+\begin{itemize}[nosep]
+	\item the \emph{common mode} of modules that share one battery and one AC bus: common-mode chokes and PWM carriers aligned to a global time distributed by PTP;
+	\item the \emph{earthing} of an industrial BESS: where the common-mode voltage of the bridges goes, which parasitic capacitances and earthing resistances to put in the model, how the insulation is monitored (IMD) and how the residual current is measured (RCMU).
+\end{itemize}
+
+The note proposes a first control version (V1) that can be implemented and simulated now, and a test plan to judge it. The main points are:
+
+\begin{mybox}
+	\textbf{Control V1 (Section~\ref{sec:v1}).} Every module is a voltage source behind a virtual impedance: P--f droop with a low-pass filter on the measured power ($m\ped{p} = \SI{2}{\percent}$, $\tau\ped{p} = \SI{50}{ms}$, the same as a virtual synchronous machine with $H = \SI{1.25}{s}$ and $D = 50$), Q--V droop ($n\ped{q} = \SI{5}{\percent}$), a virtual admittance ($R\ped{v} = 0.02$, $X\ped{v} = \SI{0.10}{pu}$) that turns the voltage difference into the reference of the existing current loop, a current limit of \SI{1.2}{pu} with a threshold virtual impedance, and the time base of the modules aligned by PTP. There is no grid-loss detection and no mode change: on the loss of the grid the modules take the load at once and the frequency settles at $-m\ped{p}\,\Delta P$ (\SI{-0.32}{Hz} in the test case). The power loops have a damping ratio of about 0.4 both on the grid and in the island.
+
+	\textbf{Implementation (Section~\ref{sec:routes}).} Recommended: the control as an option of the library block \code{grid\_forming\_dqctrl} (two non-virtual blocks per module) in a light companion model with a breaker and a local load; then the validated control back into \code{pgfm\_ctrl\_analysis} for the common-mode and earthing studies, which need its switching details.
+
+	\textbf{Earthing (Section~\ref{sec:earthing}).} Battery referenced to earth through a high impedance, LV side of the transformer not earthed (IT), insulation monitor, RCMU per PCS, inverter-duty transformer with an earthed screen. The simulation of the model with the new parameters shows why: with the star point not earthed the battery poles move by only \SI{90}{V} peak to peak; with the star point solidly earthed the battery carries the whole common-mode voltage of the bridges, \SI{1160}{V} peak to peak, and the earth current is seven times higher (\SI{4.4}{A} against \SI{0.64}{A} rms).
+\end{mybox}
+
+% =============================================================
+\section{The model today}
+\label{sec:model}
+
+\subsection{Power stage}
+
+Figure~\ref{fig:system} shows the model and Table~\ref{tab:system} its data. Each module is the AFE part of the original \code{afe\_abc\_inv\_psm} subsystem: a two-level bridge, a three-phase inductor and a star of filter capacitors with its star point floating. The three-phase inductor has $L = L_0 = \SI{500}{\micro\henry}$: its positive-sequence inductance is the filter inductance, its zero-sequence inductance makes it the common-mode choke of the module. There is no grid-side inductor in the modules: the capacitors of the three modules are on the same LV bus, and the grid-side inductance of the LCL filter is the one of the grid emulator (transformer \SI{5}{\percent} and source \SI{5}{\percent} on \SI{1}{MVA}). The DC side of the three modules is one battery, the block \code{battery\_1}, with the HF parasitics and the earthing resistors of Section~\ref{sec:earthing}.
+
+\begin{figure}[H]
+	\centering
+	\begin{tikzpicture}[font=\footnotesize, >=Latex,
+		blk/.style={draw, thick, rounded corners=2pt, minimum height=0.95cm, minimum width=2.5cm, align=center, fill=orange!15},
+		gb/.style={draw, thick, rounded corners=2pt, align=center, fill=gray!10},
+		nw/.style={draw, dashed, rounded corners=2pt, align=center, fill=blue!5, font=\scriptsize},
+		new/.style={draw, thick, dashed, rounded corners=2pt, align=center, fill=green!8, font=\scriptsize}]
+		% battery and DC bus
+		\node[gb, minimum width=2.0cm, minimum height=3.4cm] (bat) at (0,0) {\code{battery\_1}\\lithium-ion\\\SI{1183}{V}\\pack of\\\SI{250}{\kilo\watt\hour}};
+		\draw[very thick] (1.75,-2.0) -- (1.75,2.0) node[above, font=\scriptsize] {DC bus};
+		\draw[thick] (bat.east) -- (1.75,0);
+		% modules
+		\foreach \y/\n in {1.45/1, 0/2, -1.45/3} {
+			\node[blk] (m\n) at (3.65,\y) {module \n: bridge,\\$L$, $L_0$, $C\ped{F}$};
+			\draw[thick] (1.75,\y) -- (m\n.west);
+			\draw[thick] (m\n.east) -- (6.0,\y);
+		}
+		% LV bus
+		\draw[very thick] (6.0,-2.0) -- (6.0,2.0) node[above, font=\scriptsize] {LV bus \SI{690}{V}};
+		% proposed breaker and load
+		\node[new, minimum width=1.3cm, minimum height=0.7cm] (brk) at (7.3,0) {breaker\\(to add)};
+		\draw[thick] (6.0,0) -- (brk.west);
+		\node[new, minimum width=1.6cm, minimum height=0.7cm] (load) at (7.3,-1.6) {local load\\(to add)};
+		\draw[thick] (6.0,-1.6) -- (load.west);
+		% transformer
+		\draw[thick] (brk.east) -- (8.45,0);
+		\draw[thick] (8.8,0) circle (0.35);
+		\draw[thick] (9.3,0) circle (0.35);
+		\node[font=\scriptsize, align=center] at (9.05,0.85) {Dyn11, \SI{1}{MVA}\\$u_k = \SI{5}{\percent}$};
+		% grid source
+		\draw[thick] (9.65,0) -- (10.35,0);
+		\node[gb, minimum width=1.3cm, minimum height=0.9cm] (grid) at (11.05,0) {grid\\$L\ped{grid}$, FRT};
+		% earthing elements
+		\node[nw] (hfb) at (0,-3.0) {HF and Ground Network:\\$C\ped{pole}$, $r\ped{gnd}$ per pole};
+		\draw[dashed] (bat.south) -- (hfb.north);
+		\node[nw] (hft) at (8.8,-1.6) {LV star point:\\$r\ped{star} \parallel 3C\ped{ac}$};
+		\draw[dashed] (8.8,-0.35) -- (hft.north);
+		\node[ground] at (0,-3.55) {};
+		\node[ground] at (8.8,-2.15) {};
+		% timing
+		\node[gb, minimum width=2.5cm, minimum height=0.6cm, fill=yellow!15] (ptp) at (3.65,2.7) {global timing (PTP)};
+		\draw[->, dashed] (ptp.south) -- (m1.north);
+		\draw[->, dashed] (ptp.south west) to[out=-120, in=150] (m2.west);
+		\draw[->, dashed] (ptp.south east) to[out=-60, in=30] (m3.east);
+	\end{tikzpicture}
+	\captionsetup{width=0.92\textwidth, font=small}
+	\caption[The model \code{pgfm\_ctrl\_analysis}.]{The model \code{pgfm\_ctrl\_analysis}: three modules on one battery and on the LV bus of the grid emulator. Dashed: the earthing elements of Section~\ref{sec:earthing}; green: the breaker and the local load that the tests of Section~\ref{sec:tests} need.}
+	\label{fig:system}
+\end{figure}
+
+\begin{table}[H]
+	\centering
+	\captionsetup{width=0.9\textwidth, font=small}
+	\caption{Data of the model (\code{init\_model.m}, November 2026).}
+	\label{tab:system}
+	\rowcolors{2}{tableShade}{white}
+	\small
+	\begin{tabularx}{0.95\textwidth}{@{} >{\raggedright\arraybackslash}p{0.40\textwidth} X @{}}
+		\toprule
+		\textbf{Item} & \textbf{Value} \\
+		\midrule
+		modules & 3, \SI{250}{\kilo\watt} each, $S\ped{b} = \SI{277.8}{\kilo\VA}$, \SI{690}{V}, \SI{50}{Hz} \\
+		base values (per module) & $u\ped{bez} = \SI{563.4}{V}$, $i\ped{bez} = \SI{328.7}{A}$ (peaks), $Z\ped{b} = \SI{1.714}{\ohm}$ \\
+		three-phase inductor & $L = L_0 = \SI{500}{\micro\henry}$ (0.092~pu), plus \SI{5}{\micro\henry} leakage \\
+		filter capacitors & $C\ped{F} = \SI{200}{\micro\farad}$ in star, star point floating (0.108~pu, \SI{29.9}{\kilo\var}) \\
+		DC link & \SI{7.2}{\milli\farad} per module, battery at \SI{1183}{V} (SOC 0.85) \\
+		PWM and control & \SI{4}{kHz}, double update ($t\ped{s} = \SI{125}{\micro s}$), dead time \SI{3}{\micro s} \\
+		solver step & $t\ped{c} = \SI{1}{\micro s}$ (fixed step) \\
+		grid emulator & transformer Dyn11 690/\SI{690}{V}, \SI{1}{MVA}, $u_k = \SI{5}{\percent}$; source $L\ped{grid} = \SI{75.8}{\micro\henry}$ (\SI{5}{\percent}) \\
+		battery & one pack of \SI{250}{\kilo\watt} at 1C, i.e.\ about \SI{250}{\kilo\watt\hour} \\
+		scenario & modules at $i_\xi^* = \SI{-0.85}{pu}$ (\SI{734}{\kilo\watt} into the battery), FRT test 25.4 of VDE-AR-N 4110 at \SI{0.75}{s} for \SI{250}{ms}, reactive current step at \SI{1.335}{s}, \SI{1.75}{s} in total \\
+		block budget & 994 non-virtual blocks of the 1000 allowed by the Home license \\
+		\bottomrule
+	\end{tabularx}
+	\rowcolors{1}{white}{white}
+\end{table}
+
+\subsection{Control and timing}
+
+The modules are grid-following today. Each one has a PLL, a current loop with resonant PI controllers ($k\ped{p} = 0.6$, $k\ped{i} = \SI{35}{s^{-1}}$), the fault ride-through logic of VDE-AR-N 4110 and a current reference set by the init ($i_\xi^* = \SI{-0.85}{pu}$, then the reactive-current steps after the fault). A zero-sequence term \code{u\_cm\_comp\_modN} for the parallel operation is enabled by \code{param.afe.ref.en\_parallel\_mode} (0 for module 1, $-1$ for modules 2 and 3).
+
+The block \code{global timing} gives each module its own clock with a gain error (\code{param.afe.behav.time\_gain\_module\_N} = 1.0002, 1.0015, 0.9988, i.e.\ errors of 200 to \SI{1500}{ppm}, deliberately large) and aligns it to the master time through a compensation loop and a transmission delay of \SI{250}{\micro s}: this is the model of the time distribution by PTP. The PWM carriers of the modules run on the aligned time, with an optional phase shift \code{param.afe.behav.pwm\_phase\_shift\_modN} (zero today: carriers aligned).
+
+\subsection{What the model cannot do yet}
+
+\begin{itemize}[nosep]
+	\item The modules cannot form the grid: they follow the PLL angle and a current reference.
+	\item There is no breaker between the LV bus and the grid emulator and no local load, so the loss of the grid cannot be simulated.
+	\item The battery is sized for one module while the three modules draw \SI{734}{\kilo\watt}; the DC-link capacitors start without voltage (inrush of the battery in the first milliseconds).
+	\item Every new function must be paid with blocks: 994 of 1000.
+\end{itemize}
+
+% =============================================================
+\section{What the modules must do}
+\label{sec:requirements}
+
+The requirements below are the ones the first version is judged against; the numbers are proposals.
+
+\begin{enumerate}[label=R\arabic*., nosep]
+	\item \textbf{On the grid}: each module follows its set-points $P^*$, $Q^*$ from the plant controller and, without anything added, gives inertia and a frequency response proportional to the frequency deviation (primary response).
+	\item \textbf{Loss of the main grid}: the upstream breaker opens with a local load on the LV bus. No detection, no change of mode: the modules keep voltage and frequency (frequency within \SI{\pm 1}{Hz}, positive-sequence voltage within \SI{\pm 10}{\percent}) and share the load in proportion to their rating (error below \SI{5}{\percent} of $S\ped{b}$ for $P$, below \SI{10}{\percent} for $Q$).
+	\item \textbf{Robust sharing}: the sharing must survive different impedances between the modules and the bus (cables, tolerances) and the clock errors of the modules.
+	\item \textbf{N$-$1}: the trip of one module in the island must not stop the others.
+	\item \textbf{Current}: the converter current stays below \SI{1.2}{pu} in every event, the module stays grid-forming while it limits.
+	\item \textbf{Later}: frequency and voltage restoration in the island, resynchronization and reconnection to the grid, fault ride-through as a grid-forming unit (GB grid code GC0137 style).
+\end{enumerate}
+
+% =============================================================
+\section{Literature: Liserre, Bolognani and the base references}
+\label{sec:literature}
+
+\subsection{The group of M. Liserre (Kiel University)}
+
+The Chair of Power Electronics of Kiel University has worked on grid-forming converters in parallel and in mixed plants, mostly in the frame of virtual synchronous machines:
+
+\begin{itemize}[nosep]
+	\item the review of Rosso, Wang, Liserre, Lu and Engelken \cite{rosso2021} classifies the grid-forming controls (droop, power synchronization, virtual synchronous machines, matching and oscillator-based controls), their inner loops (cascaded voltage and current loops, single loops, virtual impedance and admittance), their synchronization and their current limitation; it is the map used in this note to place the choice of Section~\ref{sec:choice};
+	\item the robust stability of synchronverters (VSMs) operating in parallel \cite{rosso2019}, i.e.\ the case of this model, and of mixed plants with grid-forming and grid-following converters \cite{rosso2020}: the second one matters as soon as the modules share a bus with grid-following units (PV inverters, or the present modules);
+	\item a battery storage system in grid-forming mode used to damp sub-synchronous oscillations \cite{zhou2022}: the same machine as here, seen from the grid;
+	\item a current limitation strategy for grid-forming converters under symmetrical and asymmetrical faults that keeps the grid-forming behaviour before, during and after the fault, following the draft requirements of the British system operator and tested in power-hardware-in-the-loop \cite{kiel_curlim}: the reference for the fault ride-through of version 2;
+	\item the zero-sequence circulating current of converters in parallel on a common DC link and a common AC side without transformers: Zhu, Liserre, Chen and Wu show that the third-order zero-sequence voltage injected by the space vector modulation drives it and propose a modulation that removes its effect \cite{zhu2017}; a further work analyses its spectrum and suppresses it with multi-resonant controllers \cite{kiel_zscc}. This is exactly the situation of the three modules on one battery (Section~\ref{sec:cm}).
+\end{itemize}
+
+\subsection{S. Bolognani (ETH Z\"urich) and the group of F. D\"orfler}
+
+S.~Bolognani does not work on the inner control of a grid-forming converter but on the layer above it: how the set-points of many converters are computed so that the network is operated well. His results are the distributed control of the reactive power of the converters in a microgrid \cite{bolognani2013}, the distributed feedback control of the reactive power for voltage regulation and loss minimization \cite{bolognani2015}, and the online feedback optimization, in which an optimization algorithm runs as a controller driven by measurements rather than by a model of the network \cite{hauswirth2024}. For this model they are the natural \emph{tertiary} layer: the plant controller that computes $P^*$ and $Q^*$ (or the voltage set-points) of the modules from measurements, on top of the droop of each module.
+
+In the same group, the grid-forming control with the strongest theoretical guarantees for converters in parallel is the dispatchable virtual oscillator control (dVOC) \cite{colombino2019}, which synchronizes the converters and shares the power with a single nonlinear law; the classic results on synchronization and power sharing of droop-controlled converters \cite{simpsonporco2013} and on the secondary frequency and voltage control by distributed averaging \cite{simpsonporco2015} are also from this school.
+
+\subsection{Base references}
+
+The droop control of converters in parallel goes back to Chandorkar, Divan and Adapa \cite{chandorkar1993}; the design of the output impedance for the sharing of parallel UPS inverters and the hierarchical (primary, secondary, tertiary) control of microgrids are due to Guerrero et al.\ \cite{guerrero2005, guerrero2011}; the synchronverter of Zhong and Weiss \cite{zhong2011} and the power-synchronization control of Zhang, Harnefors and Nee \cite{zhang2010} are the two other classic grid-forming laws; D'Arco and Suul \cite{darco2014} show that a droop with a low-pass filter on the power and a virtual synchronous machine are the same controller; Paquette and Divan \cite{paquette2015} limit the current of grid-forming inverters with a virtual impedance; Golsorkhi, Lu and Guerrero \cite{golsorkhi2017} replace the frequency droop with a common time reference (GPS) and an angle droop. The textbook of Teodorescu, Liserre and Rodr\'iguez \cite{teodorescu2011} covers the converter-level part. The grid-forming block of the library and its control are described in \cite{afe_note, gfm_note}; the effect of the PWM carriers of AFEs in parallel on the grid power quality in \cite{modularity_note}.
+
+\subsection{Choice for the first version}
+\label{sec:choice}
+
+The first version uses the \textbf{droop with low-pass filter, equivalent to a virtual synchronous machine}, with a virtual admittance in front of the current loop:
+
+\begin{itemize}[nosep]
+	\item it is the structure most used in industry and in the grid codes for grid-forming units, and the one of the Kiel works on parallel VSMs \cite{rosso2019, rosso2021}; tuning it is tuning two physical numbers, inertia and droop;
+	\item the sharing of active power in steady state is exact and needs no communication (it follows the droop coefficients); the sharing of reactive power is set by the droop and by the virtual impedance, which is chosen larger than the physical differences between the modules;
+	\item it works in the same way on the grid and in the island: the loss of the grid is not an event for the control;
+	\item the virtual admittance turns the voltage-source behaviour into a current reference, so the existing current loops and the current limitation are kept; this matters here because the filter capacitors of the modules are on the same bus, where three voltage loops with integrators would fight each other;
+	\item dVOC \cite{colombino2019} is the comparison for version 2; the online feedback optimization of Bolognani \cite{hauswirth2024} is the tertiary layer above the modules; with the PTP time in the plant the angle droop of \cite{golsorkhi2017} is an option that removes the frequency deviation.
+\end{itemize}
+
+% =============================================================
+\section{Proposal V1: droop grid-forming modules with virtual admittance}
+\label{sec:v1}
+
+\subsection{Structure}
+
+Figure~\ref{fig:v1} shows the control of one module. All quantities are in pu of the module base; the frames use the amplitude-invariant transformation, so that $p$ and $q$ are in pu of $S\ped{b} = \tfrac32 u\ped{bez} i\ped{bez}$. The current loop, the PWM and the measurements are those of the module; the new part replaces the PLL and the current references.
+
+\begin{figure}[H]
+	\centering
+	\begin{tikzpicture}[font=\footnotesize, >=Latex, node distance=0.55cm,
+		blk/.style={draw, thick, rounded corners=2pt, minimum height=1.0cm, align=center, fill=orange!15},
+		old/.style={draw, thick, rounded corners=2pt, minimum height=1.0cm, align=center, fill=gray!10}]
+		\node[blk, minimum width=2.0cm] (pq) at (0,0) {power\\$p$, $q$, LPF};
+		\node[blk, minimum width=2.6cm] (pf) at (3.3,0.9) {P--f droop\\$\omega = 1 + m\ped{p}(P^* - P\ped{f})$};
+		\node[blk, minimum width=2.6cm] (qv) at (3.3,-0.9) {Q--V droop\\$E = 1 + n\ped{q}(Q^* - Q\ped{f})$};
+		\node[blk, minimum width=1.4cm] (int) at (6.4,0.9) {$\theta = \int \omega\ped{b}\,\omega\,\dif t$};
+		\node[blk, minimum width=2.6cm] (va) at (6.6,-0.9) {virtual admittance\\$\dfrac{e - u}{R\ped{v} + \jj X\ped{v}}$};
+		\node[blk, minimum width=1.6cm] (lim) at (9.4,-0.9) {current\\limit};
+		\node[old, minimum width=1.7cm] (cl) at (11.6,-0.9) {current loop\\(existing)};
+		\node[old, minimum width=1.7cm] (pwm) at (11.6,0.9) {SVPWM\\carrier on PTP};
+		\draw[->] (pq.east) ++(0,0.25) -- ++(0.35,0) |- node[pos=0.75, above] {$P\ped{f}$} (pf.west);
+		\draw[->] (pq.east) ++(0,-0.25) -- ++(0.35,0) |- node[pos=0.75, below] {$Q\ped{f}$} (qv.west);
+		\draw[->] (pf.east) -- node[above] {$\omega$} (int.west);
+		\draw[->] (qv.east) -- node[above] {$E$} (va.west);
+		\draw[->] (va.east) -- node[above] {$i^*$} (lim.west);
+		\draw[->] (lim.east) -- node[above] {$i^*_{lim}$} (cl.west);
+		\draw[->] (cl.north) -- node[right] {$m$} (pwm.south);
+		\draw[->] (int.east) -- ++(0.5,0) node[right, font=\scriptsize, align=left] {$\theta$ to all\\frames};
+		\draw[<-] (pq.west) -- ++(-0.7,0) node[left, align=right] {$u$, $i\ped{s}$};
+		\draw[<-] (va.south) -- ++(0,-0.6) node[below] {$u$ in the frame $\theta$};
+		\draw[<-] (pf.north) -- ++(0,0.45) node[above] {$P^*$};
+		\draw[<-] (qv.south) -- ++(0,-0.45) node[below] {$Q^*$};
+	\end{tikzpicture}
+	\captionsetup{width=0.92\textwidth, font=small}
+	\caption[Control V1 of one module.]{Control V1 of one module. Orange: new; grey: existing parts of the module. $u$ is the voltage of the filter capacitor (the LV bus), $i\ped{s}$ the converter current.}
+	\label{fig:v1}
+\end{figure}
+
+\subsection{Power measurement}
+
+With $u$ and $i\ped{s}$ in the frame of the module (angle $\theta$):
+\begin{equation}
+	p = u_d i_d + u_q i_q, \qquad q = u_q i_d - u_d i_q, \qquad
+	\tau\ped{p}\,\dot P\ped{f} = p - P\ped{f}, \qquad \tau\ped{q}\,\dot Q\ped{f} = q - Q\ped{f}.
+	\label{eq:power}
+\end{equation}
+The converter current is used, not the current into the bus: the filter capacitor is then a shunt element of the bus, the same for all modules, and its \SI{0.108}{pu} of reactive power does not enter $q$. The filters at $\tau\ped{p} = \tau\ped{q} = \SI{50}{ms}$ attenuate the \SI{100}{Hz} ripple of an unbalanced load by a factor 31.
+
+\subsection{Active power: P--f droop with low-pass filter, a virtual synchronous machine}
+
+The frequency of the module and its angle are
+\begin{equation}
+	\omega = 1 + m\ped{p}\,(P^* - P\ped{f}), \qquad \dot\theta = \omega\ped{b}\,\omega .
+	\label{eq:pf}
+\end{equation}
+Eliminating $P\ped{f}$ with (\ref{eq:power}) gives, for a constant $P^*$,
+\begin{equation}
+	\frac{\tau\ped{p}}{m\ped{p}}\,\dot\omega = P^* - p - \frac{1}{m\ped{p}}\,(\omega - 1)
+	\quad\Longleftrightarrow\quad
+	2H\,\dot\omega = P^* - p - D\,(\omega - 1), \qquad 2H = \frac{\tau\ped{p}}{m\ped{p}},\quad D = \frac{1}{m\ped{p}},
+	\label{eq:vsm}
+\end{equation}
+the swing equation of a synchronous machine \cite{darco2014}. With $m\ped{p} = 0.02$ (\SI{1}{Hz} for \SI{1}{pu} of power) and $\tau\ped{p} = \SI{50}{ms}$: $H = \SI{1.25}{s}$, $D = 50$. In steady state all modules run at the same frequency, so $P^*_k - P_k = (\omega - 1)/m\ped{p}$ is the same for all: with equal $m\ped{p}$ and $P^*$ the modules share the active power exactly, whatever their impedance.
+
+\subsection{Reactive power: Q--V droop}
+
+The amplitude of the internal voltage is
+\begin{equation}
+	E = 1 + n\ped{q}\,(Q^* - Q\ped{f}), \qquad n\ped{q} = 0.05 .
+	\label{eq:qv}
+\end{equation}
+Unlike the frequency, the voltage is not the same at every module: with the internal voltage behind the reactance $X_k$ (virtual plus filter) the reactive power of module $k$ is about $Q_k \simeq (1 + n\ped{q} Q^* - U)/(X_k + n\ped{q})$, $U$ the bus voltage. With $X_k = X\ped{v} + X\ped{L} = 0.10 + 0.093 = \SI{0.19}{pu}$ and $n\ped{q} = 0.05$, a difference of \SI{0.005}{pu} in $X_k$ (\SI{5}{\percent} of the filter inductance) moves the share of reactive power by \SI{2}{\percent}: this is what the virtual reactance is for.
+
+\subsection{Virtual admittance and current reference}
+
+The internal voltage $e = (E, 0)$ in the frame $\theta$ drives a virtual inductor $L\ped{v}$ with resistance $R\ped{v}$ towards the measured voltage $u$; the current of that inductor is the reference of the current loop:
+\begin{equation}
+	\frac{X\ped{v}}{\omega\ped{b}}\,\frac{\dif i^*}{\dif t} = e - u - R\ped{v}\, i^* - \jj\,\omega X\ped{v}\, i^*
+	\qquad\xrightarrow{\text{steady state}}\qquad i^* = \frac{e - u}{R\ped{v} + \jj X\ped{v}} .
+	\label{eq:va}
+\end{equation}
+With $X\ped{v} = \SI{0.10}{pu}$ ($L\ped{v} = \SI{0.55}{mH}$) and $R\ped{v} = \SI{0.02}{pu}$ (\SI{34}{\milli\ohm}): $X\ped{v}$ dominates the physical differences between the modules and decouples $P$ from $Q$ ($X/R = 5$); $R\ped{v}$ damps the dynamics of the virtual inductor, whose poles in the rotating frame are at $-\omega\ped{b} R\ped{v}/X\ped{v} \pm \jj\omega\ped{b} = -63 \pm \jj 314\,\si{s^{-1}}$ (damping 0.2). The current loop is much faster (crossover of a few hundred hertz) and tracks $i^*$; the resonant terms at \SI{100}{Hz} of the existing loop, or of the library block, let the module behave as a voltage source also for the negative sequence of an unbalanced island load.
+
+\subsection{Current limitation}
+
+Two stages: up to \SI{1.0}{pu} nothing; between 1.0 and \SI{1.2}{pu} a threshold virtual impedance \cite{paquette2015} adds $\Delta X\ped{v} = k_X(|i^*| - 1)$ with $k_X = 1$ and $\Delta R\ped{v} = \Delta X\ped{v}/5$, so that the module stays a voltage source behind a larger impedance; above \SI{1.2}{pu} the reference is clipped on a circle and the state of the virtual inductor is set to the clipped value (anti-windup). While the module limits, the measured power is lower than the one it would deliver and the droop raises its frequency: in version 1 this is accepted (it is what makes an overloaded module shed load to the others); the fault ride-through with a frozen or bounded frequency is version 2 \cite{kiel_curlim}.
+
+\subsection{Start, synchronization and loss of the grid}
+
+At start the pulses are blocked; the angle and the amplitude of the internal voltage are initialized from the measured bus voltage ($\theta_0 = \operatorname{atan2}(u_\beta, u_\alpha)$, $E_0 = |u|$), the virtual inductor starts at zero current and the set-points ramp to their values. On the loss of the grid nothing changes in the control: the modules, which were voltage sources, take the power that the grid supplied; the frequency moves with the inertia $2H$ and settles at the droop value. The plant controller (version 2) restores the frequency and the voltage, synchronizes the island to the grid when it comes back and closes the breaker.
+
+\subsection{Small-signal check of the power loops}
+\label{sec:smallsignal}
+
+For one module on the grid, or two modules against each other in the island, the swing equation (\ref{eq:vsm}) with the synchronizing coefficient $K = \partial p/\partial\delta \simeq 1/X$ gives
+\begin{equation}
+	s^2 + \frac{D}{2H}\,s + \frac{K\omega\ped{b}}{2H} = 0, \qquad
+	\omega\ped{n} = \sqrt{\frac{K\omega\ped{b}}{2H}}, \qquad \zeta = \frac{D}{4H\omega\ped{n}} .
+	\label{eq:swing}
+\end{equation}
+On the grid all modules move together against the grid, so each of them sees $X = X\ped{v} + X\ped{L} + 3X\ped{grid} = 0.10 + 0.093 + 0.083 = \SI{0.276}{pu}$ ($X\ped{grid}$: transformer and source, \SI{10}{\percent} on \SI{1}{MVA}, \SI{0.028}{pu} on $S\ped{b}$). In the island the modules move against each other through $X = X\ped{v} + X\ped{L} = \SI{0.193}{pu}$; the common motion of the modules against a load that does not depend on the frequency is a first-order mode with time constant $2H/D = \tau\ped{p}$. Table~\ref{tab:smallsignal} gives the result; $H = \SI{2.5}{s}$ ($\tau\ped{p} = \SI{0.1}{s}$) is the variant with more inertia and less damping.
+
+\begin{table}[H]
+	\centering
+	\captionsetup{width=0.9\textwidth, font=small}
+	\caption{Electromechanical modes of the power loops ($m\ped{p} = 0.02$, $D = 50$).}
+	\label{tab:smallsignal}
+	\rowcolors{2}{tableShade}{white}
+	\small
+	\begin{tabular}{@{} l c c c c c @{}}
+		\toprule
+		\textbf{Case} & $K$ [pu/rad] & $\omega\ped{n}$ [rad/s] & $f\ped{n}$ [Hz] & $\zeta$ & settling (\SI{2}{\percent}) [s] \\
+		\midrule
+		on the grid, $H = \SI{1.25}{s}$ & 3.62 & 21.3 & 3.40 & 0.47 & 0.40 \\
+		island, module against module, $H = \SI{1.25}{s}$ & 5.19 & 25.5 & 4.07 & 0.39 & 0.40 \\
+		on the grid, $H = \SI{2.5}{s}$ & 3.62 & 15.1 & 2.40 & 0.33 & 0.80 \\
+		island, module against module, $H = \SI{2.5}{s}$ & 5.19 & 18.1 & 2.87 & 0.28 & 0.80 \\
+		\bottomrule
+	\end{tabular}
+	\rowcolors{1}{white}{white}
+\end{table}
+
+\paragraph{Loss of the grid, numbers.} Test T2 of Section~\ref{sec:tests}: local load \SI{600}{\kilo\watt} and \SI{200}{\kilo\var}, modules at $P^* = \SI{0.4}{pu}$ (\SI{111}{\kilo\watt} each), the grid supplies \SI{267}{\kilo\watt}. After the opening each module takes \SI{0.32}{pu} more: the frequency settles at $\Delta f = -m\ped{p}\,\Delta P\, f\ped{0} = \SI{-0.32}{Hz}$ with the time constant $\tau\ped{p}$, i.e.\ an initial rate of change of \SI{-6.4}{Hz/s} ($H = \SI{1.25}{s}$) or \SI{-3.2}{Hz/s} ($H = \SI{2.5}{s}$), without overshoot; each module ends at \SI{0.72}{pu} of active power and \SI{0.24}{pu} of reactive power, of which \SI{0.11}{pu} come from its own filter capacitor. The current stays near \SI{0.75}{pu}, far from the limit.
+
+\subsection{Clock errors, PTP and power sharing}
+\label{sec:clock}
+
+The droop (\ref{eq:pf}) is computed on the time of the module. If its clock runs fast by $\varepsilon$, the frequency that the module believes to impose is wrong by $\varepsilon$, and in steady state, where all modules have the same real frequency,
+\begin{equation}
+	P_k = P^*_k - \frac{\omega - 1 - \varepsilon_k}{m\ped{p}}
+	\quad\Rightarrow\quad
+	P_j - P_k = \frac{\varepsilon_j - \varepsilon_k}{m\ped{p}} .
+	\label{eq:clock}
+\end{equation}
+With the gains of the model, modules 2 and 3 are \SI{2700}{ppm} apart: without the time alignment they would share with an error of \SI{13.5}{\percent} of $S\ped{b}$; a \SI{50}{ppm} crystal gives \SI{0.25}{\percent} per module. The alignment of the clocks by PTP (the \code{global timing} of the model) removes this error and is the condition for the angle droop of version 2. The same time base aligns the PWM carriers (Section~\ref{sec:cm}).
+
+\subsection{Parameters of V1}
+
+\begin{table}[H]
+	\centering
+	\captionsetup{width=0.9\textwidth, font=small}
+	\caption{Parameters of the control V1 (pu of the module base).}
+	\label{tab:v1param}
+	\rowcolors{2}{tableShade}{white}
+	\small
+	\begin{tabularx}{0.95\textwidth}{@{} l l X @{}}
+		\toprule
+		\textbf{Parameter} & \textbf{Value} & \textbf{Note} \\
+		\midrule
+		P--f droop $m\ped{p}$ & 0.02 & \SI{1}{Hz} per pu; $D = 50$ \\
+		power filter $\tau\ped{p}$ & \SI{50}{ms} & $H = \SI{1.25}{s}$; variant \SI{0.1}{s}, $H = \SI{2.5}{s}$ \\
+		Q--V droop $n\ped{q}$, filter $\tau\ped{q}$ & 0.05, \SI{50}{ms} & \\
+		virtual impedance $R\ped{v}$, $X\ped{v}$ & 0.02, 0.10 & \SI{34}{\milli\ohm}, \SI{0.55}{mH} \\
+		current limit & 1.0 / \SI{1.2}{pu} & threshold virtual impedance $k_X = 1$, $R/X = 0.2$; clip at \SI{1.2}{pu} with anti-windup \\
+		current loop & existing & module: resonant PI $k\ped{p} = 0.6$, $k\ped{i} = \SI{35}{s^{-1}}$; library block: PI and resonant term at \SI{100}{Hz} \\
+		set-points & $P^*$, $Q^*$ & from the plant controller; ramp \SI{1}{pu/s} \\
+		time base & PTP & clocks and carriers aligned (\code{global timing}) \\
+		\bottomrule
+	\end{tabularx}
+	\rowcolors{1}{white}{white}
+\end{table}
+
+\subsection{How to put V1 in the model}
+\label{sec:routes}
+
+\paragraph{Route A (recommended): library block and a light model.} The control V1 becomes an option of the MATLAB Function of the library block \code{grid\_forming\_dqctrl} \cite{afe_note} (\code{p.ctrl.droop = 1}: power measurement, droop, virtual admittance and limitation in place of the free-running phase generator and of the voltage loop; the input \code{sync}, unused in this mode, can carry $P^*$ and $Q^*$, so the ports do not change). A companion model in \path{parallel_of_GFMs} has three such blocks (two non-virtual blocks each), \code{battery\_1} with its earthing network, the grid emulator with the earthing of the star point, a breaker and a local load: a few hundred blocks, far from the license limit, fast to simulate. It is the place for the tuning and for the tests of Section~\ref{sec:tests}.
+
+\paragraph{Route B: the present model.} In \code{pgfm\_ctrl\_analysis} the PLL and the reference chain of each module (about 60 non-virtual blocks) are replaced by one MATLAB Function with the control V1, in front of the existing current loops; the blocks saved pay for the breaker and the load. It keeps the switching details, the PTP model and the common-mode paths, but it changes the control of the modules that the model was built around, and the license limit stays tight.
+
+The two routes are complementary: A to design and validate the control, B afterwards to study common mode, earthing and PTP with the validated control.
+
+\subsection{Test plan}
+\label{sec:tests}
+
+\begin{table}[H]
+	\centering
+	\captionsetup{width=0.95\textwidth, font=small}
+	\caption{Tests of the control V1 and expected results.}
+	\label{tab:tests}
+	\rowcolors{2}{tableShade}{white}
+	\footnotesize
+	\begin{tabularx}{\textwidth}{@{} l >{\raggedright\arraybackslash}p{0.36\textwidth} X @{}}
+		\toprule
+		\textbf{Test} & \textbf{Event} & \textbf{What is checked, expected result} \\
+		\midrule
+		T0 & clock errors of the model, alignment off and on & sharing error (\ref{eq:clock}): up to \SI{13.5}{\percent} off, below \SI{1}{\percent} on \\
+		T1 & on the grid: $P^*$ of module 1 from 0 to \SI{0.8}{pu}, then all modules & tracking and damping: $\zeta \simeq 0.47$, settling \SI{0.4}{s} \\
+		T2 & loss of the grid with \SI{600}{\kilo\watt} + \SI{200}{\kilo\var} on the bus, modules at $P^* = \SI{0.4}{pu}$ & frequency \SI{-0.32}{Hz}, rate of change \SI{-6.4}{Hz/s}, voltage dip, sharing after the event, peak current \\
+		T3 & island: load step of +\SI{150}{\kilo\watt} & \SI{-0.18}{Hz}, sharing, voltage \\
+		T4 & island: module 3 with +\SI{20}{\percent} filter inductance (or a longer cable) & reactive sharing error below \SI{10}{\percent} \\
+		T5 & island at \SI{450}{\kilo\watt}: trip of module 3 & the two remaining modules go from 0.54 to \SI{0.81}{pu}, no loss of synchronism \\
+		T6 & (V2) FRT test 25.4 on the grid as grid-forming units & current below \SI{1.2}{pu}, recovery, synchronism \\
+		\bottomrule
+	\end{tabularx}
+	\rowcolors{1}{white}{white}
+\end{table}
+
+The figures of merit are the same for every test: sharing error $\max_k |P_k - \bar P|/S\ped{b}$ and the same for $Q$; frequency nadir and initial rate of change of frequency; minimum positive-sequence voltage; peak converter current; settling time; and, in route B, the zero-sequence circulating current between the modules.
+
+\subsection{Version 2 and later}
+
+Secondary control (frequency and voltage restoration in the island by the plant controller, or by distributed averaging \cite{simpsonporco2015}); resynchronization and reconnection; fault ride-through as grid-forming units with the current limitation of \cite{kiel_curlim}; angle droop on the PTP time \cite{golsorkhi2017} with the frequency droop as fallback if the time is lost; dVOC as comparison \cite{colombino2019}; the tertiary layer by online feedback optimization \cite{hauswirth2024}.
+
+% =============================================================
+\section{Common mode of modules on one battery}
+\label{sec:cm}
+
+\subsection{Where the common-mode voltage comes from}
+
+The common-mode voltage of a two-level bridge, measured from the midpoint of its DC link, is the average of the three leg voltages, $v\ped{cm} = (v_{a0} + v_{b0} + v_{c0})/3 \in \{\pm u\ped{dc}/2, \pm u\ped{dc}/6\}$: at every commutation it jumps by $u\ped{dc}/3$, \SI{394}{V} at \SI{1183}{V}. Its low-frequency part is the zero-sequence voltage that the modulator adds to the references: the min--max injection of the space vector modulation is a triangle at three times the fundamental with a peak of a quarter of the phase amplitude, i.e.\ about \SI{114}{V} at \SI{150}{Hz} at full modulation. The simulation of Section~\ref{sec:hfsim} gives \SI{113}{V} at \SI{150}{Hz} (in the IT case \SI{10}{V} on the battery and \SI{103}{V} on the LV star point).
+
+Each module pushes its common-mode voltage through its common-mode inductance. For the three-phase inductor of the model (Appendix~\ref{sec:files}), the zero-sequence inductance $L_0$ is per phase; the total common-mode current $i\ped{cm} = i_a + i_b + i_c$ of a module sees $L_0/3 = \SI{168}{\micro\henry}$ (leakage included).
+
+\subsection{Circulating current between modules}
+
+On one battery and one AC bus without transformers the modules form loops in which only the difference of their common-mode voltages acts (Figure~\ref{fig:cmloop}): the zero-sequence circulating current
+\begin{equation}
+	\frac{2L_0}{3}\,\frac{\dif i\ped{zs}}{\dif t} = v\ped{cm,1} - v\ped{cm,2}
+	\label{eq:zscc}
+\end{equation}
+does not reach the grid and is not seen by a current loop in the $dq$ frame, but it loads the semiconductors and the chokes. Two sources matter:
+
+\begin{itemize}[nosep]
+	\item \textbf{different references.} The \SI{150}{Hz} zero-sequence voltage depends on the reference of each module \cite{zhu2017}: \SI{10}{\percent} of difference in the modulation (11~V at \SI{150}{Hz}) drives \SI{36}{A} through the \SI{337}{\micro\henry} of the loop, i.e.\ \SI{12}{A} per phase. With equal sharing (control V1) the references are close and this term is small; in transients, or with modules at different set-points as in the present scenario, it is not;
+	\item \textbf{misaligned carriers.} With the carriers shifted, the common-mode pulses of the modules no longer coincide: half a carrier period of shift gives a ripple of about \SI{70}{A} peak to peak at the switching frequency. Interleaved carriers reduce the ripple seen by the grid \cite{modularity_note} but maximize this current: in parallel on one DC link, aligned carriers are the default.
+\end{itemize}
+
+\begin{figure}[H]
+	\centering
+	\begin{circuitikz}[european, font=\footnotesize, scale=0.95, transform shape]
+		% module 1 and 2: CM sources and chokes
+		\draw (0,0) to[V, l=$v\ped{cm,1}$] (0,2.2) to[L, l=$L_0/3$] (0,4.4);
+		\draw (3,0) to[V, l_=$v\ped{cm,2}$] (3,2.2) to[L, l_=$L_0/3$] (3,4.4);
+		\draw (0,4.4) -- (7.2,4.4);
+		\draw (0,0) -- (7.2,0);
+		\node[above] at (1.5,4.4) {LV bus (common-mode node)};
+		\node[below] at (1.5,0) {DC link (one battery)};
+		% earth paths
+		\draw (5.2,4.4) to[C, l_=$3C\ped{ac}$] (5.2,2.2);
+		\draw (7.2,4.4) to[R, l=$r\ped{star}$] (7.2,2.2);
+		\draw (5.2,0) to[C, l=$2C\ped{pole}$] (5.2,2.2);
+		\draw (7.2,0) to[R, l_=$r\ped{gnd}/2$] (7.2,2.2);
+		\draw (5.2,2.2) -- (7.2,2.2);
+		\draw (7.2,2.2) -- (8.0,2.2) node[ground] {};
+		\node[font=\scriptsize] at (6.2,2.55) {earth};
+		% loop arrows
+		\draw[->, thick, red!70!black] (0.6,1.4) arc[start angle=-120, end angle=200, radius=0.75];
+		\node[red!70!black] at (1.55,2.2) {$i\ped{zs}$};
+		\draw[->, thick, blue!70!black, dashed] (4.3,3.7) -- (4.3,0.7);
+		\node[blue!70!black, align=center, font=\scriptsize] at (4.25,-0.65) {to earth: $i\ped{e}$};
+	\end{circuitikz}
+	\captionsetup{width=0.9\textwidth, font=small}
+	\caption[Common-mode paths of modules on one battery.]{Common-mode paths of modules on one battery (lumped, one source per module referred to the DC midpoint). Red: circulating current between the modules; blue: current to earth through the parasitic capacitances (Section~\ref{sec:earthing}).}
+	\label{fig:cmloop}
+\end{figure}
+
+\subsection{PWM carriers aligned to the PTP time}
+
+The alignment needs a common time in every module. IEEE 1588 (PTP) on a local network with hardware time stamps and PTP-aware switches keeps the clocks within some tens to a few hundred nanoseconds. With \SI{100}{ns} of residual shift each common-mode edge leaves $\SI{394}{V}\times\SI{100}{ns} \simeq \SI{39}{\micro\volt\second}$ on \SI{337}{\micro\henry}, about \SI{0.1}{A}: negligible. Without a common time, even good crystals drift apart: \SI{1500}{ppm} (module 2 of the model) loses half a carrier period in \SI{83}{ms}, \SI{50}{ppm} in \SI{2.5}{s}. The same time base gives the clocks of the droop (Section~\ref{sec:clock}) and the time stamps of the measurements.
+
+\subsection{Measures in the model and next steps}
+
+\begin{itemize}[nosep]
+	\item keep the carriers aligned (\code{pwm\_phase\_shift\_modN} = 0) and the alignment loop of \code{global timing} on; run once with the alignment off to see the drift and the circulating current;
+	\item the same modulator and the same zero-sequence injection in all modules; the term \code{u\_cm\_comp\_modN} must be checked against (\ref{eq:zscc}): different values between the modules create a \SI{150}{Hz} circulating current;
+	\item log $i\ped{cm,k} = i_a + i_b + i_c$ of every module (a sum block per module, no new physical block);
+	\item version 2: a loop per module on $i\ped{cm,k}$ acting on its zero-sequence voltage, PI plus resonant terms at 150 and \SI{450}{Hz} \cite{kiel_zscc}, or the modulation of \cite{zhu2017}.
+\end{itemize}
+
+% =============================================================
+\section{Earthing of an industrial BESS and HF parasitics}
+\label{sec:earthing}
+
+\subsection{Earthing schemes}
+
+The common-mode voltage of the bridges has to close somewhere: through the parasitic capacitances to earth of the DC side (battery, cables) and of the AC side (transformer winding, cables, AC nodes of the modules). Where it appears depends on which side is held to earth:
+
+\begin{itemize}[nosep]
+	\item \textbf{LV star point solidly earthed (TN)}, battery floating: the AC side is fixed to earth, so the battery carries the whole common-mode voltage of the bridges with respect to earth. Every cell, its insulation towards the racks and the cooling plates, and the cables see steps of $u\ped{dc}/3$ at the switching frequency; the earth current through the capacitance of the battery is the largest of all cases. This was the scheme of the model before November 2026.
+	\item \textbf{LV side not earthed (IT), battery referenced to earth through a high impedance}: the common-mode voltage divides on the capacitances of the two sides; the battery, much larger than the AC side, stays almost still and the LV winding carries the common mode. It is the scheme of the industrial BESS with a power conversion system and an LV/MV transformer: the LV winding and everything galvanically connected to it (bridges, DC links, battery) form one IT system, with an insulation monitor (first fault signalled, not tripped) and residual current monitoring.
+	\item \textbf{high-resistance earthing (HRG) of the LV star}: a resistor limits the first-fault current (here \SI{1.7}{A}) and makes it detectable; below the corner frequency $1/(2\pi r\ped{star} C)$ (\SI{2.1}{kHz} here) the star point is held to earth, so the \SI{150}{Hz} common mode goes back onto the battery, and the resistor carries a permanent common-mode current.
+\end{itemize}
+
+The transformer between the LV system and the MV network should be an inverter-duty unit with an earthed electrostatic screen between the windings: the common-mode current of the LV system then closes locally and is not coupled into the MV network, whose neutral treatment is the one of the network operator.
+
+\subsection{Parasitic capacitances and earthing resistances in the model}
+
+Table~\ref{tab:gnd} gives the values now in \code{init\_model.m} (\code{param.gnd}); Figure~\ref{fig:cmloop} shows where they are. The battery side is the network drawn in \code{battery\_1/HF and Ground Network}: from each pole a capacitor with its series resistance and an earthing resistor to earth. The AC side has the three phase capacitances lumped at the star point of the LV winding of the emulator transformer (\code{grid/grid\_emulator/3ph\_Dyg\_ssc}): the block \code{C\_lv\_earth} ($3C\ped{ac}$ with $r = r\ped{ac,hf}/3$) in parallel with \code{R\_star}. At the frequencies of interest the star point and the phases have the same common-mode voltage, and the lumped form costs two blocks less.
+
+\begin{table}[H]
+	\centering
+	\captionsetup{width=0.9\textwidth, font=small}
+	\caption{HF parasitics and earthing in \code{param.gnd}.}
+	\label{tab:gnd}
+	\rowcolors{2}{tableShade}{white}
+	\footnotesize
+	\begin{tabularx}{\textwidth}{@{} l l X @{}}
+		\toprule
+		\textbf{Field} & \textbf{Value} & \textbf{Origin} \\
+		\midrule
+		\code{c\_batt\_pole} & \SI{150}{nF} & cells to racks and cooling plates (about \SI{1}{nF} per prismatic cell of \SI{280}{\ampere\hour} through its insulation film), DC cables and busbars: about \SI{0.3}{\micro\farad} for a \SI{250}{\kilo\watt\hour} string, half per pole; it scales with the strings (about \SI{0.6}{\micro\farad} per pole for \SI{1}{MWh}) \\
+		\code{r\_batt\_hf} & \SI{10}{\ohm} & series resistance of that path: earth conductors, skin effect, losses of the common-mode cores; it damps the common-mode resonance \\
+		\code{r\_gnd\_pole} & \SI{100}{\kilo\ohm} & symmetric high-resistance reference of the poles: first-fault current $u\ped{dc}/r = \SI{12}{mA}$, \SI{7}{W} of losses; with an IMD, \SI{1}{\mega\ohm} or more (the IMD sees $r/2$) \\
+		\code{c\_ac\_phase} & \SI{10}{nF} & LV winding to core and screen, LV cables, AC nodes of the IGBT modules to the heatsinks, per phase \\
+		\code{r\_ac\_hf} & \SI{10}{\ohm} & series resistance of that path, per phase \\
+		\code{r\_star} & \SI{1}{\giga\ohm} & IT (not earthed); \SI{230}{\ohm} for high-resistance earthing (\SI{1.7}{A}); \SI{0.1}{\ohm} for TN \\
+		\bottomrule
+	\end{tabularx}
+	\rowcolors{1}{white}{white}
+\end{table}
+
+With these values the capacitive divider gives the battery $C\ped{ac,tot}/(C\ped{ac,tot} + C\ped{dc,tot}) = 30/330 = \SI{9.1}{\percent}$ of the common-mode voltage in the IT case. The common-mode loop (the chokes of the three modules in parallel, about \SI{56}{\micro\henry}, the zero-sequence leakage of the transformer and the \SI{27}{nF} of the two capacitances in series) resonates near \SI{100}{kHz}; with $t\ped{c} = \SI{1}{\micro s}$ the model resolves it with about ten steps per period, so the amplitude of that ringing is indicative only, while the \SI{150}{Hz} and the switching-frequency components are reliable.
+
+\subsection{Simulation of the three schemes}
+\label{sec:hfsim}
+
+The script \path{parallel_of_GFMs/earthing_cases.m} runs the model to \SI{0.3}{s} for the three values of $r\ped{star}$, with the Simscape log of the earth paths, and evaluates the last three grid periods (Table~\ref{tab:hfres}, Figure~\ref{fig:hfcases}); the operating point is the one of the scenario, \SI{734}{\kilo\watt} into the battery at \SI{1183}{V}.
+
+\begin{table}[H]
+	\centering
+	\captionsetup{width=0.92\textwidth, font=small}
+	\caption[Earthing schemes: simulation results.]{Earthing schemes: voltages to earth and current to earth, last three grid periods of a run to \SI{0.3}{s} (\SI{734}{\kilo\watt} into the battery at \SI{1183}{V}). \SI{150}{Hz}: amplitude of that component; bands: rms value of the spectrum of the window in the band.}
+	\label{tab:hfres}
+	\rowcolors{2}{tableShade}{white}
+	\small
+	\begin{tabular}{@{} l r r r @{}}
+		\toprule
+		 & \textbf{IT} & \textbf{HRG} & \textbf{TN} \\
+		 $r\ped{star}$ & \SI{1}{\giga\ohm} & \SI{230}{\ohm} & \SI{0.1}{\ohm} \\
+		\midrule
+		DC+ to earth, peak to peak [V] & 91 & 410 & 1158 \\
+		battery (DC midpoint) to earth, \SI{150}{Hz} [V] & 10 & 112 & 113 \\
+		LV star point to earth, peak to peak [V] & 830 & 607 & 3 \\
+		LV star point to earth, \SI{150}{Hz} [V] & 102 & 7 & 0 \\
+		current to earth, rms [A] & 0.64 & 0.71 & 4.41 \\
+		current to earth, peak [A] & 2.6 & 2.7 & 15.7 \\
+		\quad band 0--\SI{2}{kHz}, rms [mA] & 3 & 24 & 24 \\
+		\quad band 2--\SI{20}{kHz}, rms [A] & 0.20 & 0.46 & 3.90 \\
+		\quad band 20--\SI{500}{kHz}, rms [A] & 0.60 & 0.54 & 2.06 \\
+		current in $r\ped{star}$, rms [A] & 0 & 0.46 & 4.41 \\
+		losses in $r\ped{star}$ [W] & 0 & 49 & 2 \\
+		\bottomrule
+	\end{tabular}
+	\rowcolors{1}{white}{white}
+\end{table}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{figures/hf_cases.png}
+	\captionsetup{width=0.92\textwidth, font=small}
+	\caption[Earthing schemes: voltages to earth and current to earth.]{The three earthing schemes, last grid period of the run: voltages to earth of DC+, DC$-$ and of the LV star point (top), current to earth of the DC side (bottom). Script \code{earthing\_cases.m}.}
+	\label{fig:hfcases}
+\end{figure}
+
+\begin{itemize}[nosep]
+	\item \textbf{IT.} The battery poles move by \SI{91}{V} peak to peak, mostly at the switching frequency and in the ringing of the common-mode loop; at \SI{150}{Hz} the battery has \SI{10}{V}, i.e.\ the \SI{9.1}{\percent} of the capacitive divider, and the LV star point carries the rest. The current to earth, \SI{0.64}{A} rms, is almost all above \SI{2}{kHz}.
+	\item \textbf{HRG.} Below the corner frequency the star point is held to earth: the \SI{150}{Hz} common mode moves entirely onto the battery (\SI{112}{V}, poles \SI{410}{V} peak to peak), while the HF still divides on the capacitances. The resistor carries \SI{0.46}{A} rms of common-mode current (\SI{49}{W}): it counts in its rating, and the first-fault detection must tell it from a fault current.
+	\item \textbf{TN.} The battery carries the whole common-mode voltage of the bridges: the poles swing by \SI{1158}{V} peak to peak, with steps of $u\ped{dc}/3 = \SI{394}{V}$ at every commutation that stress the insulation between the cells and the racks and cooling plates (against \SI{36}{V} steps in the IT case). The current to earth is \SI{4.4}{A} rms (\SI{15.7}{A} peak), seven times the IT case, through the battery insulation and the earth conductors.
+\end{itemize}
+The same current flows on the DC side and on the AC side, since it goes from one to the other through earth. The values above \SI{20}{kHz} contain the ringing of the common-mode loop, resolved with about ten solver steps per period: they are indicative.
+
+\subsection{Insulation monitoring (IMD)}
+
+In an IT system the first insulation fault does not trip anything: it must be signalled and removed before a second fault on another pole or phase turns it into a short circuit. The insulation monitor (IEC 61557-8 \cite{iec61557_8}) is connected between the system and earth, superimposes a measuring signal and computes the insulation resistance. For a BESS it must be of the type for \emph{IT AC systems with galvanically connected DC circuits}, since the LV winding, the bridges and the battery are one system, and it must tolerate the leakage capacitance of the system (here \SI{0.33}{\micro\farad}; several microfarads for a large plant) and the common-mode voltage of the converters. One IMD per galvanically connected system: two IMDs on the same system disturb each other.
+
+The symmetric earthing resistors of the battery and the IMD do the same job in two ways: the resistors fix the potential of the poles and let a simple voltage measurement detect the first fault (a fault on DC+ brings DC+ to earth potential and DC$-$ to $-u\ped{dc}$); the IMD measures the insulation directly. With both, the IMD sees $r\ped{gnd}/2$ as a permanent insulation fault, so the resistors must be much larger than the IMD threshold, or left out. In the model $r\ped{gnd} = \SI{100}{\kilo\ohm}$ gives the poles a defined potential; the real value is a choice of the protection concept.
+
+\subsection{Residual current monitoring unit (RCMU)}
+\label{sec:rcmu}
+
+\paragraph{What it is.} An RCMU measures the \emph{residual current}: the sum of the currents of all live conductors of a circuit, which is zero unless part of the current returns through earth. The conductors pass together through one magnetic core (a core-balance or summation current transformer); the core sees only their sum,
+\begin{equation}
+	i_\Delta = \sum_k i_k = -\,i\ped{earth},
+	\label{eq:residual}
+\end{equation}
+three phases on the AC side, DC+ and DC$-$ on the DC side. Unlike an RCD, which opens its own contacts, the RCMU is a measuring function inside the converter: its signal goes to the control and protection of the converter, which opens the converter contactor. With power converters it must be of \emph{type B}: it measures smooth DC and AC residual currents up to the kilohertz range (a flux-gate sensor), because an insulation fault behind a rectifying bridge gives a DC residual current that saturates the core of an ordinary (type A) device.
+
+\paragraph{Why a BESS needs it.} The IMD finds slow degradations of the insulation; the RCMU finds the sudden ones, including a person touching a live part of the DC side, and it measures what the IMD cannot: the capacitive leakage current that the common-mode voltage drives through the parasitic capacitances. For the transformerless PV inverters the rule is in IEC 62109-2 and VDE V 0126-1-1 \cite{iec62109_2, vde0126}, and it is often taken over for battery converters: disconnection when the continuous residual current exceeds \SI{300}{mA} (converters up to \SI{30}{\kilo\VA}) or \SI{10}{mA} per \si{\kilo\VA} (larger converters), and on sudden steps of 30, 60 and \SI{150}{mA} within 0.3, 0.15 and \SI{0.04}{s}. The step thresholds catch a fault current added on top of the capacitive leakage, whatever its size.
+
+\paragraph{Where.} One summation transformer on the AC side of each PCS (the three phases, the star point of the IT system is not a conductor of the circuit), and one on the DC cables of each battery string (DC+ and DC$-$); Figure~\ref{fig:rcmu}. The AC one sees every earth current of the PCS; the DC one tells which string leaks.
+
+\paragraph{What the model says.} The currents to earth of Table~\ref{tab:hfres} are the capacitive residual current that an RCMU of this plant sees without any fault; the AC and the DC summation transformers see the same current. Below \SI{2}{kHz} (type-B devices are specified up to about \SI{1}{kHz}) it is \SI{3}{mA} in the IT scheme and \SI{24}{mA} with the star point earthed, far from the continuous threshold (\SI{2.8}{A} for a module of \SI{278}{\kilo\VA}). Most of it is above the switching frequency: \SI{0.20}{A} in the 2--\SI{20}{kHz} band in the IT scheme against \SI{3.9}{A} in the TN scheme, which matters for devices with an extended bandwidth and for the EMC of the plant. In the earthed schemes the low-frequency part grows with the capacitance of the battery (ten times for some MWh), in the IT scheme it stays limited by the small capacitance of the AC side. A fault can be simulated by a resistor with a switch from one pole to earth: the step of $i_\Delta$ is the quantity to compare with the thresholds.
+
+\begin{figure}[H]
+	\centering
+	\begin{tikzpicture}[font=\footnotesize, >=Latex,
+		gb/.style={draw, thick, rounded corners=2pt, align=center, fill=gray!10},
+		meas/.style={draw, thick, rounded corners=2pt, align=center, fill=yellow!15, font=\scriptsize}]
+		% earth bar
+		\draw[very thick] (-0.4,-3.0) -- (12.6,-3.0) node[right] {PE};
+		% battery
+		\node[gb, minimum width=1.5cm, minimum height=2.6cm] (bat) at (0.4,0) {battery\\string};
+		\draw[thick] (1.15,0.9) -- (5.0,0.9) node[pos=0.0, above right, font=\scriptsize] {DC+};
+		\draw[thick] (1.15,-0.9) -- (5.0,-0.9) node[pos=0.0, below right, font=\scriptsize] {DC$-$};
+		% DC summation transformer
+		\draw[thick, fill=yellow!40, fill opacity=0.5] (3.4,0) ellipse (0.22 and 1.25);
+		\node[meas] at (3.4,1.75) {RCMU DC\\type B};
+		% PCS
+		\node[gb, minimum width=2.2cm, minimum height=2.6cm] (pcs) at (6.1,0) {PCS module\\bridge, $L$, $L_0$,\\$C\ped{F}$};
+		% AC lines
+		\foreach \y in {0.6,0,-0.6} { \draw[thick] (7.2,\y) -- (10.4,\y); }
+		\draw[thick, fill=yellow!40, fill opacity=0.5] (8.6,0) ellipse (0.22 and 0.95);
+		\node[meas] at (8.6,1.45) {RCMU AC\\type B};
+		% transformer
+		\draw[thick] (10.75,0) circle (0.45);
+		\draw[thick] (11.4,0) circle (0.45);
+		\draw[thick, dashed] (11.07,-0.75) -- (11.07,0.75);
+		\node[font=\scriptsize, align=center] at (11.1,1.25) {LV/MV, earthed\\screen};
+		\draw[thick] (11.85,0) -- (12.6,0) node[right] {MV};
+		% screen to earth
+		\draw (11.07,-0.75) -- (11.07,-3.0);
+		% LV star point with IMD
+		\draw (10.75,-0.45) -- (10.75,-1.3);
+		\node[meas, minimum width=0.9cm] (imd) at (10.75,-1.75) {IMD};
+		\draw (imd.south) -- (10.75,-3.0);
+		% parasitic capacitances (dashed) and earthing resistor of the poles, drawn on DC- (the same on DC+)
+		\draw (1.6,-0.9) to[R, l_={\scriptsize $r\ped{gnd}$}] (1.6,-3.0);
+		\draw[dashed] (2.3,-0.9) to[C, l={\scriptsize $C\ped{pole}$}] (2.3,-3.0);
+		\node[font=\scriptsize, align=center] at (1.95,-3.45) {(the same on DC+)};
+		\draw[dashed] (6.1,-1.3) to[C, l={\scriptsize $C\ped{ac}$}] (6.1,-3.0);
+		\draw[dashed] (9.6,-0.6) to[C, l={\scriptsize $C\ped{ac}$}] (9.6,-3.0);
+		% insulation fault between the summation transformer and the PCS
+		\draw[red!70!black, thick] (4.3,-0.9) to[R, l={\scriptsize $R\ped{fault}$}, color=red!70!black] (4.3,-3.0);
+		\draw[->, red!70!black, thick] (4.6,-2.6) -- (5.4,-2.6) node[right, font=\scriptsize] {fault current};
+	\end{tikzpicture}
+	\captionsetup{width=0.92\textwidth, font=small}
+	\caption[RCMU and IMD in a BESS with an IT LV system.]{RCMU and IMD in a BESS with an IT LV system (one PCS and one string shown). The summation transformers see the sum of the currents of their conductors, i.e.\ the current that returns through earth: the capacitive leakage through $C\ped{pole}$ and $C\ped{ac}$ (dashed) and the current of an insulation fault (red). The IMD sits between the LV system and earth; the screen of the transformer keeps the common-mode current away from the MV network.}
+	\label{fig:rcmu}
+\end{figure}
+
+% =============================================================
+\section{Three-level modules (future)}
+\label{sec:3l}
+
+A three-level module (NPC or T-type) changes the common mode and the earthing in the right direction and adds one constraint:
+
+\begin{itemize}[nosep]
+	\item the common-mode steps are $u\ped{dc}/6$ instead of $u\ped{dc}/3$: half the $\dif v/\dif t$ seen by the parasitic capacitances, half the HF earth current for the same switching speed, smaller common-mode chokes;
+	\item each module has a neutral point in its split DC link; one high-resistance earthing at a neutral point gives the reference of the IT system without the two pole resistors;
+	\item the neutral-point balance is done with the zero-sequence voltage or with the redundant small vectors: in modules on one battery this changes the zero-sequence voltage of each module and drives the circulating current of Section~\ref{sec:cm}. The balancing of the modules must be coordinated (same strategy, aligned carriers) or the circulating current controlled;
+	\item the control V1 does not change; the library already has a three-level T-type power stage as a Simscape component (\path{+afe_ttype_ssc/afe_three_level_ttype_lcl.ssc}), so the step is the power stage, the modulator and the neutral-point loop.
+\end{itemize}
+
+% =============================================================
+\section{Conclusions and next steps}
+\label{sec:conclusions}
+
+The model now has the parasitic capacitances and the earthing resistances of an industrial BESS, with the LV side not earthed and the battery referenced to earth through high resistances; the three earthing schemes can be compared with one parameter, and the simulation confirms that the battery stays quiet only when the LV star point is not held to earth. For the power sharing the proposal is a droop control equivalent to a virtual synchronous machine, with a virtual admittance in front of the existing current loops: it shares the active power exactly, works the same on the grid and in the island, and needs the PTP time already modelled to remove the effect of the clock errors on the sharing. The next steps are:
+
+\begin{enumerate}[nosep]
+	\item the control V1 in the library block and the companion model (route A), tests T0 to T5;
+	\item breaker and local load in \code{pgfm\_ctrl\_analysis} and the control V1 in its modules (route B), with the common-mode currents of the modules logged;
+	\item version 2: secondary control, resynchronization, fault ride-through as grid-forming units, circulating-current loop;
+	\item a battery sized for the three modules (and its parasitic capacitance), the initial voltage of the DC links;
+	\item three-level modules.
+\end{enumerate}
+
+% =============================================================
+\appendix
+\section{Files}
+\label{sec:files}
+
+\begin{table}[H]
+	\centering
+	\captionsetup{width=0.9\textwidth, font=small}
+	\caption{Files referred to in this note.}
+	\label{tab:files}
+	\rowcolors{2}{tableShade}{white}
+	\small
+	\begin{tabularx}{0.97\textwidth}{@{} >{\raggedright\arraybackslash}p{0.42\textwidth} X @{}}
+		\toprule
+		\textbf{File} & \textbf{Content} \\
+		\midrule
+		\multicolumn{2}{@{}p{\dimexpr0.97\textwidth-2\tabcolsep\relax}@{}}{\textbf{\code{grid-forming}, folder \path{parallel_of_GFMs/}}} \\
+		\code{init\_model.m} & initialization, one \code{param} struct; \code{param.gnd} (Table~\ref{tab:gnd}); puts the folder of this note on the path \\
+		\code{pgfm\_ctrl\_analysis.slx} & the model; \code{battery\_1/HF and Ground Network}, \code{grid/grid\_emulator/3ph\_Dyg\_ssc} (\code{R\_star}, \code{C\_lv\_earth}); the annotation \emph{Design note} at the top left opens this PDF \\
+		\code{earthing\_cases.m} & the three earthing schemes of Section~\ref{sec:hfsim}: table and figure \\
+		\midrule
+		\multicolumn{2}{@{}p{\dimexpr0.97\textwidth-2\tabcolsep\relax}@{}}{\textbf{\code{library}}} \\
+		\path{masked_models/grid_forming/} & block \code{grid\_forming\_dqctrl} and its control \code{private/afe\_dq\_ctrl\_pwm.m} (route A) \\
+		\path{foundation/pwr_electronics/+threephase_inductor/} & three-phase inductor: $L_0$ is the zero-sequence inductance per phase \\
+		\path{foundation/pwr_electronics/+afe_ttype_ssc/} & three-level T-type power stage (Section~\ref{sec:3l}) \\
+		\midrule
+		\multicolumn{2}{@{}p{\dimexpr0.97\textwidth-2\tabcolsep\relax}@{}}{\textbf{\code{repositories-documentation}, folder \path{repos_doc/parallel_of_gfms/}}} \\
+		\code{parallel\_of\_gfms.tex}, \code{.pdf} & this note \\
+		\code{figures/hf\_cases.png} & Figure~\ref{fig:hfcases}, written by \code{earthing\_cases.m} \\
+		\bottomrule
+	\end{tabularx}
+	\rowcolors{1}{white}{white}
+\end{table}
+
+% =============================================================
+\begin{thebibliography}{99}
+	\small
+	\bibitem{rosso2021} R.~Rosso, X.~Wang, M.~Liserre, X.~Lu, and S.~Engelken, ``Grid-forming converters: control approaches, grid-synchronization, and future trends---a review,'' \emph{IEEE Open J. Ind. Appl.}, vol.~2, pp.~93--109, 2021, doi:10.1109/OJIA.2021.3074028.
+	\bibitem{rosso2019} R.~Rosso, S.~Engelken, and M.~Liserre, ``Robust stability analysis of synchronverters operating in parallel,'' \emph{IEEE Trans. Power Electron.}, 2019, doi:10.1109/TPEL.2019.2897707.
+	\bibitem{rosso2020} R.~Rosso, S.~Engelken, and M.~Liserre, ``Robust stability investigation of the interactions among grid-forming and grid-following converters,'' \emph{IEEE J. Emerg. Sel. Topics Power Electron.}, vol.~8, no.~2, pp.~991--1003, 2020, doi:10.1109/JESTPE.2019.2951091.
+	\bibitem{zhou2022} W.~Zhou, A.~Pugliese, M.~Langwasser, and M.~Liserre, ``Sub-synchronous damping by battery storage system in grid forming control mode,'' in \emph{Proc. IEEE ECCE}, 2022, pp.~1--8, doi:10.1109/ECCE50734.2022.9947758.
+	\bibitem{kiel_curlim} ``Current limitation strategy for grid-forming converters under symmetrical and asymmetrical grid faults,'' Kiel University, Chair of Power Electronics, record in the university repository MACAU, \url{https://macau.uni-kiel.de/receive/macau_mods_00001568}.
+	\bibitem{zhu2017} R.~Zhu, M.~Liserre, Z.~Chen, and X.~Wu, ``Zero-sequence voltage modulation strategy for multiparallel converters circulating current suppression,'' \emph{IEEE Trans. Ind. Electron.}, vol.~64, no.~3, pp.~1841--1852, Mar. 2017, doi:10.1109/TIE.2016.2623259.
+	\bibitem{kiel_zscc} ``Analysis and suppression of zero-sequence circulating current in multi-parallel converters,'' Kiel University, record in the university repository MACAU, \url{https://macau.uni-kiel.de/receive/macau_mods_00001642}.
+	\bibitem{bolognani2013} S.~Bolognani and S.~Zampieri, ``A distributed control strategy for reactive power compensation in smart microgrids,'' \emph{IEEE Trans. Autom. Control}, vol.~58, no.~11, pp.~2818--2833, Nov. 2013, doi:10.1109/TAC.2013.2270317.
+	\bibitem{bolognani2015} S.~Bolognani, R.~Carli, G.~Cavraro, and S.~Zampieri, ``Distributed reactive power feedback control for voltage regulation and loss minimization,'' \emph{IEEE Trans. Autom. Control}, vol.~60, no.~4, pp.~966--981, Apr. 2015, doi:10.1109/TAC.2014.2363931.
+	\bibitem{hauswirth2024} A.~Hauswirth, Z.~He, S.~Bolognani, G.~Hug, and F.~D\"orfler, ``Optimization algorithms as robust feedback controllers,'' \emph{Annual Reviews in Control}, vol.~57, art.~100941, 2024, doi:10.1016/j.arcontrol.2024.100941.
+	\bibitem{colombino2019} M.~Colombino, D.~Gro\ss, J.-S.~Brouillon, and F.~D\"orfler, ``Global phase and magnitude synchronization of coupled oscillators with application to the control of grid-forming power inverters,'' \emph{IEEE Trans. Autom. Control}, vol.~64, no.~11, pp.~4496--4511, Nov. 2019.
+	\bibitem{simpsonporco2013} J.~W. Simpson-Porco, F.~D\"orfler, and F.~Bullo, ``Synchronization and power sharing for droop-controlled inverters in islanded microgrids,'' \emph{Automatica}, vol.~49, no.~9, pp.~2603--2611, 2013, doi:10.1016/j.automatica.2013.05.018.
+	\bibitem{simpsonporco2015} J.~W. Simpson-Porco, Q.~Shafiee, F.~D\"orfler, J.~C. Vasquez, J.~M. Guerrero, and F.~Bullo, ``Secondary frequency and voltage control of islanded microgrids via distributed averaging,'' \emph{IEEE Trans. Ind. Electron.}, vol.~62, no.~11, pp.~7025--7038, Nov. 2015, doi:10.1109/TIE.2015.2436879.
+	\bibitem{chandorkar1993} M.~C. Chandorkar, D.~M. Divan, and R.~Adapa, ``Control of parallel connected inverters in standalone AC supply systems,'' \emph{IEEE Trans. Ind. Appl.}, vol.~29, no.~1, pp.~136--143, Jan./Feb. 1993.
+	\bibitem{guerrero2005} J.~M. Guerrero, L.~Garc\'ia de Vicu\~na, J.~Matas, M.~Castilla, and J.~Miret, ``Output impedance design of parallel-connected UPS inverters with wireless load-sharing control,'' \emph{IEEE Trans. Ind. Electron.}, vol.~52, no.~4, pp.~1126--1135, Aug. 2005.
+	\bibitem{guerrero2011} J.~M. Guerrero, J.~C. Vasquez, J.~Matas, L.~Garc\'ia de Vicu\~na, and M.~Castilla, ``Hierarchical control of droop-controlled AC and DC microgrids---a general approach toward standardization,'' \emph{IEEE Trans. Ind. Electron.}, vol.~58, no.~1, pp.~158--172, Jan. 2011.
+	\bibitem{zhong2011} Q.-C. Zhong and G.~Weiss, ``Synchronverters: inverters that mimic synchronous generators,'' \emph{IEEE Trans. Ind. Electron.}, vol.~58, no.~4, pp.~1259--1267, Apr. 2011.
+	\bibitem{zhang2010} L.~Zhang, L.~Harnefors, and H.-P. Nee, ``Power-synchronization control of grid-connected voltage-source converters,'' \emph{IEEE Trans. Power Syst.}, vol.~25, no.~2, pp.~809--820, May 2010.
+	\bibitem{darco2014} S.~D'Arco and J.~A. Suul, ``Equivalence of virtual synchronous machines and frequency-droops for converter-based microgrids,'' \emph{IEEE Trans. Smart Grid}, vol.~5, no.~1, pp.~394--395, Jan. 2014, doi:10.1109/TSG.2013.2288000.
+	\bibitem{paquette2015} A.~D. Paquette and D.~M. Divan, ``Virtual impedance current limiting for inverters in microgrids with synchronous generators,'' \emph{IEEE Trans. Ind. Appl.}, vol.~51, no.~2, pp.~1630--1638, Mar./Apr. 2015.
+	\bibitem{golsorkhi2017} M.~S. Golsorkhi, D.~D.-C. Lu, and J.~M. Guerrero, ``A GPS-based decentralized control method for islanded microgrids,'' \emph{IEEE Trans. Power Electron.}, vol.~32, no.~2, pp.~1615--1625, Feb. 2017, doi:10.1109/TPEL.2016.2551265.
+	\bibitem{ye2002} Z.~Ye, D.~Boroyevich, J.-Y. Choi, and F.~C. Lee, ``Control of circulating current in two parallel three-phase boost rectifiers,'' \emph{IEEE Trans. Power Electron.}, vol.~17, no.~5, pp.~609--615, Sept. 2002, doi:10.1109/TPEL.2002.802170.
+	\bibitem{teodorescu2011} R.~Teodorescu, M.~Liserre, and P.~Rodr\'iguez, \emph{Grid Converters for Photovoltaic and Wind Power Systems}. Wiley-IEEE Press, 2011.
+	\bibitem{afe_note} D.~Bagnara, \emph{Grid-forming and grid-following AFE blocks: two-level bridge with LCL filter, description and user guide}, pwr-control technical note, Rev.~00, October 2026, \path{repos_doc/grid_forming_following_afe}.
+	\bibitem{gfm_note} D.~Bagnara, \emph{Grid-Forming Control in the Synchronous dq Frame: structure, continuous-time design and discrete implementation}, pwr-control technical note, Rev.~00, October 2026, \path{research/power_electronics/grid_forming_control}.
+	\bibitem{modularity_note} D.~Bagnara, \emph{Modularity in Power Electronics: impact on grid power quality}, pwr-control report, October 2023, \path{repos_doc/modularity}.
+	\bibitem{iec61557_8} IEC 61557-8, \emph{Electrical safety in low voltage distribution systems up to 1000~V a.c. and 1500~V d.c.\ -- Equipment for testing, measuring or monitoring of protective measures -- Part 8: Insulation monitoring devices for IT systems}.
+	\bibitem{iec62109_2} IEC 62109-2, \emph{Safety of power converters for use in photovoltaic power systems -- Part 2: Particular requirements for inverters}.
+	\bibitem{vde0126} VDE V 0126-1-1, \emph{Automatic disconnection device between a generator and the public low-voltage grid}.
+	\bibitem{ieee1588} IEEE 1588, \emph{Standard for a Precision Clock Synchronization Protocol for Networked Measurement and Control Systems}.
+\end{thebibliography}
+
+\end{onehalfspace}
+\end{document}

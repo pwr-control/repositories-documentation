@@ -128,6 +128,20 @@ is loaded as `../../AAA_template_latex_settings/settings`.
   points. Rev. 01: the forward-backward resonator proposed in rev. 00 is now the one of the block.
   Companion Python script `afe_uvw_ctrl_figures.py` (resonant PI figures and numbers, PDF
   figures in `figures/`).
+- `parallel_of_gfms` — *Parallel grid-forming modules: power sharing, loss of the main grid,
+  earthing and common mode* (Rev. 00, November 2026). Design note of the model `pgfm_ctrl_analysis`
+  of `grid-forming/parallel_of_GFMs` (three 250 kW AFE modules on one battery and on a 690 V grid
+  emulator): the model as it runs today; what the group of M. Liserre (Kiel) and S. Bolognani (ETH
+  Zürich) offer for power sharing among grid-forming units; the control proposal V1 (P–f droop with
+  low-pass filter, i.e. a virtual synchronous machine with H = 1.25 s, Q–V droop, virtual admittance
+  in front of the current loop, current limitation, PTP time base) with the small-signal check, the
+  effect of the clock errors on the sharing, the two implementation routes and the test plan; the
+  common mode of modules on one battery (common-mode chokes, carriers aligned to the PTP time,
+  zero-sequence circulating current); the earthing of an industrial BESS with the HF parasitics and
+  earthing resistances of the model (`param.gnd`), simulated for IT, high-resistance and solid
+  earthing of the LV star point (`earthing_cases.m`); insulation monitor and RCMU with a schematic;
+  three-level outlook. The model opens the PDF from its annotation "Design note": `init_model.m`
+  puts this folder on the MATLAB path when this repository sits next to `grid-forming`.
 - `three_phase_dab` — *Three-phase dual active bridge (DAB3): 1200 V / 1200 V, 250 kW, 10 kHz,
   sizing, control, simulation model and runs* (Rev. 00, October 2026). The isolated stage of
   `advanced-dcdc-converters/analysis_three_phase_dab` between two batteries: six-step bridges,
