@@ -129,14 +129,16 @@ is loaded as `../../AAA_template_latex_settings/settings`.
   Companion Python script `afe_uvw_ctrl_figures.py` (resonant PI figures and numbers, PDF
   figures in `figures/`).
 - `parallel_of_gfms` — *Parallel grid-forming modules: power sharing, loss of the main grid,
-  earthing and common mode* (Rev. 00, November 2026). Design note of the model `pgfm_ctrl_analysis`
+  earthing and common mode* (Rev. 01, November 2026). Design note of the model `pgfm_ctrl_analysis`
   of `grid-forming/parallel_of_GFMs` (three 250 kW AFE modules on one battery and on a 690 V grid
   emulator): the model as it runs today; what the group of M. Liserre (Kiel) and S. Bolognani (ETH
-  Zürich) offer for power sharing among grid-forming units; the control proposal V1 (P–f droop with
-  low-pass filter, i.e. a virtual synchronous machine with H = 1.25 s, Q–V droop, virtual admittance
-  in front of the current loop, current limitation, PTP time base) with the small-signal check, the
-  effect of the clock errors on the sharing, the two implementation routes and the test plan; the
-  common mode of modules on one battery (common-mode chokes, carriers aligned to the PTP time,
+  Zürich) offer for power sharing among grid-forming units; the control V1 (P–f droop with
+  low-pass filter and lead term, i.e. a virtual synchronous machine with H = 1.25 s, Q–V droop,
+  virtual impedance in front of a voltage loop on the filter capacitor and of the current loop,
+  current limitation, PTP time base) with the small-signal analysis of the discrete-time loop, the
+  effect of the clock errors on the sharing, its implementation as the droop mode of the library
+  block `grid_forming_dqctrl` and the results of the tests on the companion model `pgfm_droop`
+  (`parallel_of_GFMs/power_sharing`); the common mode of modules on one battery (common-mode chokes, carriers aligned to the PTP time,
   zero-sequence circulating current); the earthing of an industrial BESS with the HF parasitics and
   earthing resistances of the model (`param.gnd`), simulated for IT, high-resistance and solid
   earthing of the LV star point (`earthing_cases.m`); insulation monitor and RCMU with a schematic;
