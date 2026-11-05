@@ -35,19 +35,20 @@
 }
 
 \newcommand{\DocSubtitle}{%
-	Design note of the model \code{pgfm\_ctrl\_analysis} (\code{grid-forming}, folder \code{parallel\_of\_GFMs}): the model as it runs today, what the literature offers, a first control version to simulate, the common mode of modules on one battery and the earthing of an industrial battery storage system.
+	Design note of the model \code{pgfm\_ctrl\_analysis} (\code{grid-forming}, folder \code{parallel\_of\_GFMs}): the model as it runs today, what the literature offers, the first control version, implemented in the library block and tested on a companion model, the common mode of modules on one battery and the earthing of an industrial battery storage system.
 }
 
 \newcommand{\DocAuthor}{Davide Bagnara}
-\newcommand{\DocRevision}{00}
+\newcommand{\DocRevision}{01}
 \newcommand{\DocDate}{November 2026}
 
 \newcommand{\DocAbstract}{%
-	The model \code{pgfm\_ctrl\_analysis} puts three \SI{250}{\kilo\watt} active front ends in parallel on one lithium-ion battery and on a \SI{690}{\volt} grid emulator. Its purpose is the power sharing among grid-forming modules: in normal operation the modules follow the set-points of the plant; when the main grid is lost they keep the island alive and share the load, without any change of control mode. This note describes the model as it runs today, reviews what the group of M.~Liserre (Kiel University) and S.~Bolognani (ETH Z\"urich) offer for this problem, and proposes a first control version that can be simulated: P--f droop with a low-pass filter (a virtual synchronous machine with an inertia constant of \SI{1.25}{s}), Q--V droop, a virtual admittance in front of the current loop, current limitation and a time base distributed by PTP; with the numbers, a small-signal check and a test plan. It then treats the common mode of modules on one battery (common-mode chokes, PWM carriers aligned to a global PTP time, zero-sequence circulating currents), the earthing of an industrial battery energy storage system with the HF parasitic capacitances and earthing resistances now in the model, simulated for an unearthed, a high-resistance and a solidly earthed transformer star point, the residual current monitoring unit (RCMU) and the insulation monitor, and the step to three-level modules.
+	The model \code{pgfm\_ctrl\_analysis} puts three \SI{250}{\kilo\watt} active front ends in parallel on one lithium-ion battery and on a \SI{690}{\volt} grid emulator. Its purpose is the power sharing among grid-forming modules: in normal operation the modules follow the set-points of the plant; when the main grid is lost they keep the island alive and share the load, without any change of control mode. This note describes the model as it runs today, reviews what the group of M.~Liserre (Kiel University) and S.~Bolognani (ETH Z\"urich) offer for this problem, and gives the first control version: P--f droop with a low-pass filter and a lead term (a virtual synchronous machine with an inertia constant of \SI{1.25}{s}), Q--V droop, a virtual impedance in front of a voltage loop on the filter capacitor and of the existing current loop, current limitation and a time base distributed by PTP. Revision 01 replaces the virtual admittance of the first issue, which cannot hold an island of modules with LCL filters, analyses the small-signal stability of the whole discrete-time loop on stiff and weak grids and in the island, implements the control as the droop mode of the library block \code{grid\_forming\_dqctrl} and tests it on a light companion model: loss of the grid, load step, trip of a module, black start, clock errors and differences between the modules. It then treats the common mode of modules on one battery (common-mode chokes, PWM carriers aligned to a global PTP time, zero-sequence circulating currents), the earthing of an industrial battery energy storage system with the HF parasitic capacitances and earthing resistances now in the model, simulated for an unearthed, a high-resistance and a solidly earthed transformer star point, the residual current monitoring unit (RCMU) and the insulation monitor, and the step to three-level modules.
 }
 
 \newcommand{\RevisionHistory}{%
 	00 & November 2026 & First issue: state of the model, literature, control proposal V1 and test plan, common mode and PTP alignment, earthing with the HF parameters of the model, RCMU and IMD, three-level outlook. & \DocAuthor \\
+	01 & November 2026 & Control V1 reworked: virtual impedance in front of a voltage loop on the filter capacitor instead of the virtual admittance; small-signal analysis of the discrete-time loop; V1 as the droop mode of the library block \code{grid\_forming\_dqctrl}; companion model \code{pgfm\_droop} and results of the tests T0 to T5. & \DocAuthor \\
 }
 
 \newcommand{\MetaLabelA}{Project Repository}
@@ -103,12 +104,21 @@
 	$p$, $q$; $P\ped{f}$, $Q\ped{f}$ & active and reactive power of a module; the same after the low-pass filter (pu of $S\ped{b}$) \\
 	$P^*$, $Q^*$ & set-points of a module from the plant controller \\
 	$m\ped{p}$, $n\ped{q}$ & P--f and Q--V droop coefficients \\
-	$m\ped{d}$ & gain of the lead term on the measured power (optional damping of the power loops) \\
+	$m\ped{d}$ & gain of the lead term on the unfiltered power (damping of the swing modes) \\
+	$E$, $U^*$ & amplitude of the internal voltage of a module; voltage set-point \\
 	$X\ped{c,\mathit{k}}$, $\gamma_k$ & reactance of the connection of module $k$ to the common bus; gain error of its voltage measurement \\
 	$\tau\ped{p}$, $\tau\ped{q}$ & time constants of the power filters \\
 	$H$, $D$ & inertia constant and damping of the equivalent virtual synchronous machine \\
 	$R\ped{v}$, $X\ped{v}$ & virtual resistance and reactance \\
+	$r\ped{t}$, $\tau\ped{hp}$ & transient virtual resistance on the high-pass part of the output current; its time constant \\
+	$u\ped{c}$, $i\ped{s}$ & voltage of the filter capacitor; converter current \\
+	$u\ped{g}$, $i\ped{o}$ & voltage and current at the terminals of a module, after the grid-side inductor \\
+	$u^*$, $i^*$ & references of the capacitor voltage and of the converter current \\
+	$k\ped{pu}$, $k\ped{iu}$; $k\ped{pi}$, $k\ped{ii}$ & gains of the voltage PI; gains of the current PI \\
+	$b$ & susceptance of the filter capacitor at \SI{50}{Hz} in pu, $\omega\ped{b} C\ped{F} Z\ped{b}$ \\
+	$i\ped{max}$, $i\ped{thr}$ & current limit; threshold of the virtual-impedance current limitation \\
 	$L$, $L_0$, $C\ped{F}$ & filter of a module: positive- and zero-sequence inductance of the three-phase inductor, filter capacitance \\
+	$L_1$, $L_2$, $X_2$ & LCL filter of the library block: converter-side and grid-side inductors; reactance of $L_2$ \\
 	$C\ped{pole}$, $C\ped{ac}$ & capacitance to earth of one battery pole, of one phase of the LV side \\
 	$r\ped{gnd}$, $r\ped{star}$ & earthing resistor of one battery pole; resistance from the transformer star point to earth \\
 \end{longtable}
@@ -129,9 +139,9 @@ The model \code{pgfm\_ctrl\_analysis} of the folder \path{parallel_of_GFMs} of t
 The note proposes a first control version (V1) that can be implemented and simulated now, and a test plan to judge it. The main points are:
 
 \begin{mybox}
-	\textbf{Control V1 (Section~\ref{sec:v1}).} Every module is a voltage source behind a virtual impedance: P--f droop with a low-pass filter on the measured power ($m\ped{p} = \SI{2}{\percent}$, $\tau\ped{p} = \SI{50}{ms}$, the same as a virtual synchronous machine with $H = \SI{1.25}{s}$ and $D = 50$), Q--V droop ($n\ped{q} = \SI{5}{\percent}$), a virtual admittance ($R\ped{v} = 0.02$, $X\ped{v} = \SI{0.10}{pu}$) that turns the voltage difference into the reference of the existing current loop, a current limit of \SI{1.2}{pu} with a threshold virtual impedance, and the time base of the modules aligned by PTP. There is no grid-loss detection and no mode change: on the loss of the grid the modules take the load at once and the frequency settles at $-m\ped{p}\,\Delta P$ (\SI{-0.32}{Hz} in the test case). The power loops have a damping ratio of 0.38 on the grid and 0.28 between the modules in the island; a lead term on the measured power raises both to 0.5 if the simulation asks for it. The reactive sharing is limited by the accuracy of the voltage measurements more than by the impedances.
+	\textbf{Control V1 (Section~\ref{sec:v1}).} Every module is a voltage source behind a virtual impedance: P--f droop with a low-pass filter on the measured power and a lead term ($m\ped{p} = \SI{2}{\percent}$, $\tau\ped{p} = \SI{50}{ms}$, the same as a virtual synchronous machine with $H = \SI{1.25}{s}$ and $D = 50$), Q--V droop ($n\ped{q} = \SI{5}{\percent}$), a virtual impedance ($R\ped{v} = 0.05$, $X\ped{v} = \SI{0.10}{pu}$, and a transient resistance) that gives the reference of a voltage loop on the filter capacitor, in front of the existing current loop, a current limit of \SI{1.2}{pu} with a threshold virtual impedance, and the time base of the modules aligned by PTP. Rev.~01 replaces the virtual admittance of Rev.~00, which cannot hold an island of modules with LCL filters. There is no grid-loss detection and no mode change: on the loss of the grid the modules take the load at once and the frequency settles on the droop line (\SI{-0.24}{Hz} in the test case). The small-signal analysis of the whole discrete-time loop gives a damping ratio of 0.45 to 0.47 to the swing modes and of at least 0.39 to the electromagnetic modes, from a stiff grid to a weak grid and in the island. The reactive sharing is limited by the accuracy of the voltage measurements more than by the impedances, the active sharing by the clock errors if the time base is not aligned.
 
-	\textbf{Implementation (Section~\ref{sec:routes}).} Recommended: the control as an option of the library block \code{grid\_forming\_dqctrl} (two non-virtual blocks per module) in a light companion model with a breaker and a local load; then the validated control back into \code{pgfm\_ctrl\_analysis} for the common-mode and earthing studies, which need its switching details.
+	\textbf{Implementation and tests (Sections~\ref{sec:routes} and~\ref{sec:tests}).} Done (route A): the control V1 is the droop mode of the library block \code{grid\_forming\_dqctrl}, and the companion model \code{pgfm\_droop} (three modules, local load, grid breaker) passes the tests: loss of the grid, load step and trip of a module in the island without loss of synchronism, sharing of $P$ and $Q$ within \SI{0.0001}{pu}, black start, peak converter current at most \SI{1.04}{pu}. Next (route B): the validated control into \code{pgfm\_ctrl\_analysis} for the common-mode and earthing studies, which need its switching details.
 
 	\textbf{Earthing (Section~\ref{sec:earthing}).} Battery referenced to earth through a high impedance, LV side of the transformer not earthed (IT), insulation monitor, RCMU per PCS, inverter-duty transformer with an earthed screen. The simulation of the model with the new parameters shows why: with the star point not earthed the battery poles move by only \SI{90}{V} peak to peak; with the star point solidly earthed the battery carries the whole common-mode voltage of the bridges, \SI{1160}{V} peak to peak, and the earth current is seven times higher (\SI{4.4}{A} against \SI{0.64}{A} rms).
 \end{mybox}
@@ -229,8 +239,8 @@ The block \code{global timing} gives each module its own clock with a gain error
 \subsection{What the model cannot do yet}
 
 \begin{itemize}[nosep]
-	\item The modules cannot form the grid: they follow the PLL angle and a current reference.
-	\item There is no breaker between the LV bus and the grid emulator and no local load, so the loss of the grid cannot be simulated.
+	\item The modules cannot form the grid: they follow the PLL angle and a current reference (the control V1 is in the library block, not yet in this model).
+	\item There is no breaker between the LV bus and the grid emulator and no local load, so the loss of the grid cannot be simulated (the companion model of Section~\ref{sec:routes} has both).
 	\item The battery is sized for one module while the three modules draw \SI{734}{\kilo\watt}; the DC-link capacitors start without voltage (inrush of the battery in the first milliseconds).
 	\item Every new function must be paid with blocks: 994 of 1000.
 \end{itemize}
@@ -274,157 +284,170 @@ In the same group, the grid-forming control with the strongest theoretical guara
 
 \subsection{Base references}
 
-The droop control of converters in parallel goes back to Chandorkar, Divan and Adapa \cite{chandorkar1993}; the design of the output impedance for the sharing of parallel UPS inverters and the hierarchical (primary, secondary, tertiary) control of microgrids are due to Guerrero et al.\ \cite{guerrero2005, guerrero2011}; the synchronverter of Zhong and Weiss \cite{zhong2011} and the power-synchronization control of Zhang, Harnefors and Nee \cite{zhang2010} are the two other classic grid-forming laws; D'Arco and Suul \cite{darco2014} show that a droop with a low-pass filter on the power and a virtual synchronous machine are the same controller; Paquette and Divan \cite{paquette2015} limit the current of grid-forming inverters with a virtual impedance; Golsorkhi, Lu and Guerrero \cite{golsorkhi2017} replace the frequency droop with a common time reference (GPS) and an angle droop. The textbook of Teodorescu, Liserre and Rodr\'iguez \cite{teodorescu2011} covers the converter-level part. The grid-forming block of the library and its control are described in \cite{afe_note, gfm_note}; the effect of the PWM carriers of AFEs in parallel on the grid power quality in \cite{modularity_note}.
+The droop control of converters in parallel goes back to Chandorkar, Divan and Adapa \cite{chandorkar1993}; the design of the output impedance for the sharing of parallel UPS inverters and the hierarchical (primary, secondary, tertiary) control of microgrids are due to Guerrero et al.\ \cite{guerrero2005, guerrero2011}; the synchronverter of Zhong and Weiss \cite{zhong2011} and the power-synchronization control of Zhang, Harnefors and Nee \cite{zhang2010} are the two other classic grid-forming laws; D'Arco and Suul \cite{darco2014} show that a droop with a low-pass filter on the power and a virtual synchronous machine are the same controller; Pogaku, Prodanovi\'c and Green \cite{pogaku2007} model and test the cascade of droops, virtual impedance, voltage loop on the filter capacitor and current loop in an inverter-based microgrid, and D'Arco, Suul and Fosso \cite{darco2015} build a virtual synchronous machine on the same cascade; Paquette and Divan \cite{paquette2015} limit the current of grid-forming inverters with a virtual impedance; Golsorkhi, Lu and Guerrero \cite{golsorkhi2017} replace the frequency droop with a common time reference (GPS) and an angle droop. The textbook of Teodorescu, Liserre and Rodr\'iguez \cite{teodorescu2011} covers the converter-level part. The grid-forming block of the library and its control are described in \cite{afe_note, gfm_note}; the effect of the PWM carriers of AFEs in parallel on the grid power quality in \cite{modularity_note}.
 
 \subsection{Choice for the first version}
 \label{sec:choice}
 
-The first version uses the \textbf{droop with low-pass filter, equivalent to a virtual synchronous machine}, with a virtual admittance in front of the current loop:
+The first version uses the \textbf{droop with low-pass filter, equivalent to a virtual synchronous machine}, with a virtual impedance in front of a voltage loop on the filter capacitor and of the existing current loop:
 
 \begin{itemize}[nosep]
 	\item it is the structure most used in industry and in the grid codes for grid-forming units, and the one of the Kiel works on parallel VSMs \cite{rosso2019, rosso2021}; tuning it is tuning two physical numbers, inertia and droop;
 	\item the sharing of active power in steady state is exact and needs no communication (it follows the droop coefficients); the sharing of reactive power is set by the droop and by the virtual impedance, which is chosen larger than the physical differences between the modules;
 	\item it works in the same way on the grid and in the island: the loss of the grid is not an event for the control;
-	\item the virtual admittance turns the voltage-source behaviour into a current reference, so the existing current loops and the current limitation are kept; this matters here because the filter capacitors of the modules are on the same bus, where three voltage loops with integrators would fight each other;
+	\item the cascade keeps the existing current loop and its limitation; each module regulates the voltage of its own filter capacitor, and the virtual impedance with the grid-side inductor separates the modules on the bus, so that their voltage loops do not fight. Rev.~00 had chosen a virtual admittance in front of the current loop for fear of that fight; with LCL filters it leaves the voltage of an island to the resonance of the capacitors with the virtual inductors (Section~\ref{sec:whycascade});
 	\item dVOC \cite{colombino2019} is the comparison for version 2; the online feedback optimization of Bolognani \cite{hauswirth2024} is the tertiary layer above the modules; with the PTP time in the plant the angle droop of \cite{golsorkhi2017} is an option that removes the frequency deviation.
 \end{itemize}
 
 % =============================================================
-\section{Proposal V1: droop grid-forming modules with virtual admittance}
+\section{Control V1: droop grid-forming modules with virtual impedance}
 \label{sec:v1}
+
+Rev.~00 of this note proposed a virtual admittance in front of the existing current loop. The analysis of the discrete-time loop of the block and the averaged simulation of three modules showed that this structure cannot hold an island formed by modules with LCL filters (Section~\ref{sec:whycascade}). Rev.~01 replaces it with the cascade of \cite{pogaku2007, darco2015}: the droops give the internal voltage, a virtual impedance gives the reference of the filter-capacitor voltage, a voltage loop on the capacitor gives the reference of the existing current loop. This control is now the droop mode of the library block \code{grid\_forming\_dqctrl} (\code{p.ctrl.droop = 1}) and has been tested on the companion model \code{pgfm\_droop} (Sections~\ref{sec:routes} and~\ref{sec:tests}).
 
 \subsection{Structure}
 
-Figure~\ref{fig:v1} shows the control of one module. All quantities are in pu of the module base; the frames use the amplitude-invariant transformation, so that $p$ and $q$ are in pu of $S\ped{b} = \tfrac32 u\ped{bez} i\ped{bez}$. The current loop, the PWM and the measurements are those of the module; the new part replaces the PLL and the current references.
+Figure~\ref{fig:v1} shows the control of one module. All quantities are in pu of the module base; the frames use the amplitude-invariant transformation, so that $p$ and $q$ are in pu of $S\ped{b} = \tfrac32 u\ped{bez} i\ped{bez}$. $u\ped{c}$ is the voltage of the filter capacitor, $i\ped{s}$ the converter current, $u\ped{g}$ and $i\ped{o}$ the voltage and the current at the terminals of the module, after the grid-side inductor $L_2$. The measurements, the first-harmonic tracker, the current loop and the PWM are those of the block; the droop mode replaces its phase generator and its voltage loop.
 
 \begin{figure}[H]
 	\centering
-	\begin{tikzpicture}[font=\footnotesize, >=Latex, node distance=0.55cm,
-		blk/.style={draw, thick, rounded corners=2pt, minimum height=1.0cm, align=center, fill=orange!15},
-		old/.style={draw, thick, rounded corners=2pt, minimum height=1.0cm, align=center, fill=gray!10}]
-		\node[blk, text width=1.1cm] (pq) at (0,0) {power\\$p$, $q$\\LPF};
-		\node[blk, text width=3.0cm] (pf) at (3.25,0.95) {P--f droop\\$\omega = 1 + m\ped{p}(P^* - P\ped{f})$};
-		\node[blk, text width=3.0cm] (qv) at (3.25,-0.95) {Q--V droop\\$E = 1 + n\ped{q}(Q^* - Q\ped{f})$};
-		\node[blk, text width=2.4cm] (int) at (7.0,0.95) {angle\\$\theta = \int \omega\ped{b}\,\omega\,\dif t$};
-		\node[blk, text width=2.7cm] (va) at (7.0,-0.95) {virtual admittance\\$i^* = \dfrac{e - u}{R\ped{v} + \jj X\ped{v}}$};
-		\node[blk, text width=1.3cm] (lim) at (9.75,-0.95) {current\\limit};
-		\node[old, text width=1.9cm] (cl) at (12.25,-0.95) {current loop\\(existing)};
-		\node[old, text width=2.2cm] (pwm) at (12.25,0.95) {SVPWM,\\carrier on PTP};
-		\draw[->] ([yshift=0.3cm]pq.east) -- ++(0.4,0) |- node[pos=0.75, above] {$P\ped{f}$} (pf.west);
-		\draw[->] ([yshift=-0.3cm]pq.east) -- ++(0.4,0) |- node[pos=0.75, below] {$Q\ped{f}$} (qv.west);
+	\begin{tikzpicture}[font=\footnotesize, >=Latex,
+		blk/.style={draw, thick, rounded corners=2pt, minimum height=1.05cm, align=center, fill=orange!15},
+		old/.style={draw, thick, rounded corners=2pt, minimum height=1.05cm, align=center, fill=gray!10}]
+		\node[blk, text width=1.0cm] (pq) at (0,0) {power\\$p$, $q$\\LPF};
+		\node[blk, text width=2.9cm] (pf) at (2.95,1.0) {P--f droop\\$\omega = 1 + m\ped{p}(P^* - P\ped{f})$\\$-\,m\ped{d}(p - P\ped{f})$};
+		\node[blk, text width=2.9cm] (qv) at (2.95,-1.0) {Q--V droop\\$E = U^* + n\ped{q}(Q^* - Q\ped{f})$};
+		\node[blk, text width=2.2cm] (int) at (6.35,1.0) {angle\\$\theta = \int \omega\ped{b}\,\omega\,\dif t$};
+		\node[blk, text width=2.9cm] (vi) at (6.55,-1.0) {virtual impedance\\$u^* = E - Z\ped{v} i\ped{o} - r\ped{t}\, i\ped{o,hp}$};
+		\node[blk, text width=2.1cm] (vl) at (9.85,-1.0) {voltage PI on $u\ped{c}$\\$+\,i\ped{o} + \jj b\, u\ped{c}$\\limit $i\ped{max}$};
+		\node[old, text width=1.75cm] (cl) at (12.65,-1.0) {current loop\\$+\,u\ped{c}$\\(block)};
+		\node[old, text width=1.9cm] (pwm) at (12.65,1.0) {SVPWM,\\carrier on PTP};
+		\draw[->] ([yshift=0.3cm]pq.east) -- ++(0.3,0) |- node[pos=0.75, above] {$P\ped{f}$} (pf.west);
+		\draw[->] ([yshift=-0.3cm]pq.east) -- ++(0.3,0) |- node[pos=0.75, below] {$Q\ped{f}$} (qv.west);
 		\draw[->] (pf.east) -- node[above] {$\omega$} (int.west);
-		\draw[->] (qv.east) -- node[above] {$E$} (va.west);
-		\draw[->] (va.east) -- node[above] {$i^*$} (lim.west);
-		\draw[->] (lim.east) -- node[above] {$i^*\ped{lim}$} (cl.west);
+		\draw[->] (qv.east) -- node[above] {$E$} (vi.west);
+		\draw[->] (vi.east) -- node[above] {$u^*$} (vl.west);
+		\draw[->] (vl.east) -- node[above] {$i^*$} (cl.west);
 		\draw[->] (cl.north) -- node[right] {$m$} (pwm.south);
-		\draw[->] (int.east) -- ++(0.45,0) node[right, font=\scriptsize, align=left] {$\theta$ to all\\frames};
-		\draw[<-] (pq.south) -- ++(0,-0.5) node[below] {$u$, $i\ped{s}$};
-		\draw[<-] (va.south) -- ++(0,-0.5) node[below] {$u$ in the frame $\theta$};
-		\draw[<-] (pf.north) -- ++(0,0.45) node[above] {$P^*$};
-		\draw[<-] (qv.south) -- ++(0,-0.45) node[below] {$Q^*$};
+		\draw[->] (int.north) -- ++(0,0.45) node[above, font=\scriptsize] {$\theta$ to all frames};
+		\draw[<-] (pq.south) -- ++(0,-0.5) node[below] {$u\ped{g}$, $i\ped{o}$};
+		\draw[<-] (vi.south) -- ++(0,-0.45) node[below] {$i\ped{o}$};
+		\draw[<-] (vl.south) -- ++(0,-0.45) node[below] {$u\ped{c}$, $i\ped{o}$};
+		\draw[<-] (cl.south) -- ++(0,-0.45) node[below] {$i\ped{s}$, $u\ped{c}$};
+		\draw[<-] (pf.north) -- ++(0,0.4) node[above] {$P^*$};
+		\draw[<-] (qv.south) -- ++(0,-0.45) node[below] {$Q^*$, $U^*$};
 	\end{tikzpicture}
 	\captionsetup{width=0.92\textwidth, font=small}
-	\caption[Control V1 of one module.]{Control V1 of one module. Orange: new; grey: existing parts of the module. $u$ is the voltage of the filter capacitor (the LV bus), $i\ped{s}$ the converter current.}
+	\caption[Control V1 of one module.]{Control V1 of one module (Rev.~01). Orange: droop mode of the block; grey: parts of the block that the droop mode keeps. $Z\ped{v} = R\ped{v} + \jj X\ped{v}$, $i\ped{o,hp} = i\ped{o} - i\ped{o,lp}$ the high-pass part of the output current, $b$ the susceptance of the filter capacitor.}
 	\label{fig:v1}
 \end{figure}
 
 \subsection{Power measurement}
 
-With $u$ and $i\ped{s}$ in the frame of the module (angle $\theta$):
+With $u\ped{g}$ and $i\ped{o}$ in the frame of the module (angle $\theta$), sampled at the previous control step as everything in the block:
 \begin{equation}
-	p = u_d i_d + u_q i_q, \qquad q = u_q i_d - u_d i_q, \qquad
+	p = u_{gd} i_{od} + u_{gq} i_{oq}, \qquad q = u_{gq} i_{od} - u_{gd} i_{oq}, \qquad
 	\tau\ped{p}\,\dot P\ped{f} = p - P\ped{f}, \qquad \tau\ped{q}\,\dot Q\ped{f} = q - Q\ped{f}.
 	\label{eq:power}
 \end{equation}
-The converter current is used, not the current into the bus: the filter capacitor is then a shunt element of the bus, the same for all modules, and its \SI{0.108}{pu} of reactive power does not enter $q$. The filters at $\tau\ped{p} = \tau\ped{q} = \SI{50}{ms}$ attenuate the \SI{100}{Hz} ripple of an unbalanced load by a factor 31.
+These are the powers that the module delivers to the bus: the \SI{0.108}{pu} of reactive power of its own filter capacitor stay inside the module and do not enter the droop. The filters at $\tau\ped{p} = \tau\ped{q} = \SI{50}{ms}$ attenuate the \SI{100}{Hz} ripple of an unbalanced load by a factor 31.
 
-\subsection{Active power: P--f droop with low-pass filter, a virtual synchronous machine}
+\subsection{Active power: P--f droop with low-pass filter and lead term, a virtual synchronous machine}
 
 The frequency of the module and its angle are
 \begin{equation}
-	\omega = 1 + m\ped{p}\,(P^* - P\ped{f}), \qquad \dot\theta = \omega\ped{b}\,\omega .
+	\omega = 1 + \Delta\omega^* + m\ped{p}\,(P^* - P\ped{f}) - m\ped{d}\,(p - P\ped{f}), \qquad \dot\theta = \omega\ped{b}\,\omega ,
 	\label{eq:pf}
 \end{equation}
-Eliminating $P\ped{f}$ with (\ref{eq:power}) gives, for a constant $P^*$,
+with $P^*$ and the frequency offset $\Delta\omega^*$ from the plant controller. Without the lead term, eliminating $P\ped{f}$ with (\ref{eq:power}) gives, for constant set-points,
 \begin{equation}
 	\frac{\tau\ped{p}}{m\ped{p}}\,\dot\omega = P^* - p - \frac{1}{m\ped{p}}\,(\omega - 1)
 	\quad\Longleftrightarrow\quad
 	2H\,\dot\omega = P^* - p - D\,(\omega - 1),
 	\label{eq:vsm}
 \end{equation}
-the swing equation of a synchronous machine with $2H = \tau\ped{p}/m\ped{p}$ and $D = 1/m\ped{p}$ \cite{darco2014}. With $m\ped{p} = 0.02$ (\SI{1}{Hz} for \SI{1}{pu} of power) and $\tau\ped{p} = \SI{50}{ms}$: $H = \SI{1.25}{s}$, $D = 50$. In steady state all modules run at the same frequency, so $P^*_k - P_k = (\omega - 1)/m\ped{p}$ is the same for all: with equal $m\ped{p}$ and $P^*$ the modules share the active power exactly, whatever their impedance.
+the swing equation of a synchronous machine with $2H = \tau\ped{p}/m\ped{p}$ and $D = 1/m\ped{p}$ \cite{darco2014}. With $m\ped{p} = 0.02$ (\SI{1}{Hz} for \SI{1}{pu} of power) and $\tau\ped{p} = \SI{50}{ms}$: $H = \SI{1.25}{s}$, $D = 50$. The lead term on the unfiltered power ($m\ped{d} = 0.01$) damps the swing modes without changing the droop, the steady state or the inertia seen by slow disturbances: without it the swing modes have a damping ratio of 0.15 (Table~\ref{tab:smallsignal}). In steady state all modules run at the same frequency, so $P^*_k - P_k = (\omega - 1)/m\ped{p}$ is the same for all: with equal $m\ped{p}$ and $P^*$ the modules share the active power exactly, whatever their impedance.
 
 \subsection{Reactive power: Q--V droop}
 
 The amplitude of the internal voltage is
 \begin{equation}
-	E = 1 + n\ped{q}\,(Q^* - Q\ped{f}), \qquad n\ped{q} = 0.05 .
+	E = U^* + n\ped{q}\,(Q^* - Q\ped{f}), \qquad n\ped{q} = 0.05 ,
 	\label{eq:qv}
 \end{equation}
-Unlike the frequency, the voltage is not the same at every module. The filter inductor is inside the current loop and does not count: module $k$ is its internal voltage behind the virtual reactance $X\ped{v}$ and the reactance $X\ped{c,\mathit{k}}$ of its connection to the common bus (cable, busbar), and its reactive power is about
+$U^*$ the voltage set-point (\SI{1}{pu} plus an offset from the plant controller). Unlike the frequency, the voltage is not the same at every module. The converter-side inductor $L_1$ is inside the loops and does not count; module $k$ is its internal voltage behind the virtual impedance, its grid-side inductor ($X_2 = \SI{0.015}{pu}$) and the reactance $X\ped{c,\mathit{k}}$ of its connection to the common bus (cable, busbar), and its reactive power is about
 \begin{equation}
-	Q_k \simeq \frac{1 + n\ped{q} Q^* - (1 + \gamma_k)\,U}{X\ped{v} + X\ped{c,\mathit{k}} + n\ped{q}} ,
+	Q_k \simeq \frac{U^* + n\ped{q} Q^*_k - (1 + \gamma_k)\,U - R\ped{v} P_k}{X\ped{v} + X_2 + X\ped{c,\mathit{k}} + n\ped{q}} ,
 	\label{eq:qshare}
 \end{equation}
-$U$ the bus voltage and $\gamma_k$ the gain error of the voltage measurement of the module. With $X\ped{v} = \SI{0.10}{pu}$ and $n\ped{q} = 0.05$, a difference of \SI{0.005}{pu} in $X\ped{c,\mathit{k}}$ (\SI{8.6}{\milli\ohm}, about \SI{100}{m} of LV cable) moves the share of reactive power of the module by \SI{3}{\percent} of its value, while a gain error of \SI{0.5}{\percent} moves its reactive power by \SI{0.033}{pu} of $S\ped{b}$: in the island the accuracy of the voltage measurement, not the impedances, sets the reactive sharing. The virtual reactance is what keeps both effects small.
+$U$ the bus voltage and $\gamma_k$ the gain error of the voltage measurement of the module. With $X\ped{v} = \SI{0.10}{pu}$ and $n\ped{q} = 0.05$ the denominator is \SI{0.165}{pu}: a connection \SI{0.01}{pu} longer (\SI{55}{\micro\henry}) takes \SI{6}{\percent} of the reactive power of the module, a gain error of \SI{1}{\percent} moves its reactive power by $\gamma U/0.165 = \SI{0.056}{pu}$ of $S\ped{b}$: in the island the accuracy of the voltage measurement, not the impedances, sets the reactive sharing (test T4). The term $R\ped{v} P_k$ couples the active power into the reactive one: a module that delivers $\Delta P$ more than the others takes $\Delta Q \simeq -R\ped{v}\Delta P/0.165 = -0.3\,\Delta P$ (test T1); with equal set-points it has no effect.
 
-\subsection{Virtual admittance and current reference}
+\subsection{Virtual impedance, voltage loop and current loop}
 
-The internal voltage $e = (E, 0)$ in the frame $\theta$ drives a virtual inductor $L\ped{v}$ with resistance $R\ped{v}$ towards the measured voltage $u$; the current of that inductor is the reference of the current loop:
+The reference of the capacitor voltage is the internal voltage $e = (E, 0)$ in the frame $\theta$ minus the drop on a virtual impedance:
 \begin{equation}
-	\frac{X\ped{v}}{\omega\ped{b}}\,\frac{\dif i^*}{\dif t} = e - u - R\ped{v}\, i^* - \jj\,\omega X\ped{v}\, i^*
-	\qquad\xrightarrow{\text{steady state}}\qquad i^* = \frac{e - u}{R\ped{v} + \jj X\ped{v}} .
-	\label{eq:va}
+	u^* = E - (R\ped{v} + \jj X\ped{v})\, i\ped{o} - r\ped{t}\,(i\ped{o} - i\ped{o,lp}), \qquad \tau\ped{hp}\,\dot i\ped{o,lp} = i\ped{o} - i\ped{o,lp} .
+	\label{eq:vi}
 \end{equation}
-With $X\ped{v} = \SI{0.10}{pu}$ ($L\ped{v} = \SI{0.55}{mH}$) and $R\ped{v} = \SI{0.02}{pu}$ (\SI{34}{\milli\ohm}): $X\ped{v}$ dominates the physical differences between the modules and decouples $P$ from $Q$ ($X/R = 5$); $R\ped{v}$ damps the dynamics of the virtual inductor, whose poles in the rotating frame are at $-\omega\ped{b} R\ped{v}/X\ped{v} \pm \jj\omega\ped{b} = -63 \pm \jj 314\,\si{s^{-1}}$ (damping 0.2). The current loop is much faster (crossover of a few hundred hertz) and tracks $i^*$; the resonant terms at \SI{100}{Hz} of the existing loop, or of the library block, let the module behave as a voltage source also for the negative sequence of an unbalanced island load.
+$X\ped{v} = \SI{0.10}{pu}$ (\SI{0.55}{mH}) dominates the physical differences between the modules and decouples $P$ from $Q$; $R\ped{v} = \SI{0.05}{pu}$ (\SI{86}{\milli\ohm}) and the transient resistance $r\ped{t} = \SI{0.15}{pu}$ on the high-pass part of $i\ped{o}$ ($\tau\ped{hp} = \SI{5}{ms}$, no effect in steady state) damp the electromagnetic modes. The impedance is quasi-static, the product $\jj X\ped{v} i\ped{o}$ in the frame without the derivative of $i\ped{o}$, so that no measured current is differentiated.
+
+A vector PI in the frame regulates the capacitor voltage, with the feedforward of the output current and of the capacitor current at the fundamental:
+\begin{equation}
+	i^* = k\ped{pu}\,(u^* - u\ped{c}) + k\ped{iu}\!\int (u^* - u\ped{c})\,\dif t + i\ped{o} + \jj\, b\, u\ped{c}, \qquad |i^*| \le i\ped{max},
+	\label{eq:vloop}
+\end{equation}
+$b = \omega\ped{b} C\ped{F} Z\ped{b} = \SI{0.108}{pu}$, $k\ped{pu} = 0.8$, $k\ped{iu} = \SI{80}{s^{-1}}$; the limiter clips on a circle and holds the integrators while it clips. The current loop of the block follows $i^*$ and receives $u\ped{c}$ as feedforward of the modulation index, so that its PI only corrects the drop on $L_1$:
+\begin{equation}
+	m = k\ped{pi}\,(i^* - i\ped{s}) + k\ped{ii}\!\int (i^* - i\ped{s})\,\dif t + \frac{u\ped{c}}{k\ped{m}}, \qquad k\ped{m} = \frac{u\ped{dc}}{\sqrt3\, u\ped{bez}},
+	\label{eq:cl}
+\end{equation}
+with the gains of the block ($k\ped{pi} = 0.75$, $k\ped{ii} = \SI{35}{s^{-1}}$) and $u\ped{dc}$ the acquired DC-link voltage.
+
+\subsection{Why a cascade and not the virtual admittance of Rev.~00}
+\label{sec:whycascade}
+
+\paragraph{Virtual admittance with LCL modules.} In Rev.~00 the internal voltage drove a virtual inductor towards the measured voltage and its current was the reference of the current loop: each module was a current source behind a virtual admittance. With LCL filters the filter capacitors of the modules are on the bus, and in the island nothing else sets its voltage: the bus is a resonant circuit of the capacitors and the virtual inductors, damped by $R\ped{v}$ alone, and the delays of the voltage measurement and of the current loop make it unstable. In the averaged model of the three modules (ideal current loop with a lag of \SI{0.4}{ms}, voltage measurement filtered at \SI{2}{ms}) the structure holds the operation on the grid, but after the loss of the grid the bus voltage oscillates between 0.5 and \SI{3.9}{pu} within \SI{0.4}{s} and the currents run into the limit; with faster measurements (\SI{0.1}{ms}) it is unstable already on the grid. A grid-forming module with an LCL filter must regulate the voltage of its own capacitor.
+
+\paragraph{Feedforward of the output current.} Without the feedforward of $i\ped{o}$ in (\ref{eq:vloop}) the voltage PI alone must supply the whole output current, its integrator becomes the slowest element of the chain and the swing mode is unstable on every grid ($\zeta = -0.28$ at \SI{2.4}{Hz}, Table~\ref{tab:smallsignal}): on a stiff grid the module slips. With the feedforward the PI only corrects the errors, the capacitor voltage follows $u^*$ within a few milliseconds and the module is the voltage source that the droop assumes. The voltage PI of the block ($k\ped{pu} = 0.5$, $k\ped{iu} = \SI{18}{s^{-1}}$) is stable with the feedforward but leaves the swing modes at $\zeta = 0.23$; $k\ped{pu} = 0.8$, $k\ped{iu} = \SI{80}{s^{-1}}$ give 0.45.
 
 \subsection{Current limitation}
 
-Two stages: up to \SI{1.0}{pu} nothing; between 1.0 and \SI{1.2}{pu} a threshold virtual impedance \cite{paquette2015} adds $\Delta X\ped{v} = k_X(|i^*| - 1)$ with $k_X = 1$ and $\Delta R\ped{v} = \Delta X\ped{v}/5$, so that the module stays a voltage source behind a larger impedance; above \SI{1.2}{pu} the reference is clipped on a circle and the state of the virtual inductor is set to the clipped value (anti-windup). While the module limits, the measured power is lower than the one it would deliver and the droop raises its frequency: in version 1 this is accepted (it is what makes an overloaded module shed load to the others); the fault ride-through with a frozen or bounded frequency is version 2 \cite{kiel_curlim}.
+Two stages. Above $|i\ped{o}| = i\ped{thr} = \SI{1.0}{pu}$ a threshold virtual impedance \cite{paquette2015} adds $\Delta X\ped{v} = k_X(|i\ped{o}| - i\ped{thr})$ with $k_X = 1$ and $\Delta R\ped{v} = \Delta X\ped{v}/5$, so that the module stays a voltage source behind a larger impedance; the reference of the current loop is clipped on a circle of radius $i\ped{max} = \SI{1.2}{pu}$ with the integrators of the voltage PI held (anti-windup). While the module limits, the measured power is lower than the one it would deliver and the droop raises its frequency: in version 1 this is accepted (it is what makes an overloaded module shed load to the others); the fault ride-through with a frozen or bounded frequency is version 2 \cite{kiel_curlim}.
 
-\subsection{Start, synchronization and loss of the grid}
+\subsection{Start, synchronization, black start and loss of the grid}
 
-At start the pulses are blocked; the angle and the amplitude of the internal voltage are initialized from the measured bus voltage ($\theta_0 = \operatorname{atan2}(u_\beta, u_\alpha)$, $E_0 = |u|$), the virtual inductor starts at zero current and the set-points ramp to their values. On the loss of the grid nothing changes in the control: the modules, which were voltage sources, take the power that the grid supplied; the frequency moves with the inertia $2H$ and settles at the droop value. The plant controller (version 2) restores the frequency and the voltage, synchronizes the island to the grid when it comes back and closes the breaker.
+Until $t\ped{sync}$ (\SI{0.05}{s} in the example parameters of the block, \SI{0.1}{s} in the companion model) the module follows the terminal voltage: its angle is that of the first-harmonic tracker of $u\ped{g}$, its current reference is zero and the power filters and the low-pass filter of $i\ped{o}$ follow their inputs. At $t\ped{sync}$ the droop starts from that angle and that operating point, without a step (on the grid the bus already supplies the filter capacitor, about \SI{0.1}{pu} of current: with the filters held at zero it would pass whole through $r\ped{t}$ and kick the active power by \SI{0.2}{pu}), and the set-points $P^*$, $Q^*$ ramp from zero in $t\ped{ramp} = \SI{0.1}{s}$. If the bus is dead at $t\ped{sync}$ (tracker output below \SI{0.5}{pu}) the module makes a black start: its angle runs free from $\theta_0$ and $E$ ramps from zero in $t\ped{ramp}$; modules that black-start together synchronize through the droop, whatever their initial angles. On the loss of the grid nothing changes in the control: the modules, which were voltage sources, take the power that the grid supplied; the frequency moves with the inertia $2H$ and settles at the droop value. The plant controller (version 2) restores the frequency and the voltage, synchronizes the island to the grid when it comes back and closes the breaker.
 
-\subsection{Small-signal check of the power loops}
+\subsection{Small-signal analysis}
 \label{sec:smallsignal}
 
-For one module on the grid, or two modules against each other in the island, the swing equation (\ref{eq:vsm}) with the synchronizing coefficient $K = \partial p/\partial\delta \simeq 1/X$ gives
-\begin{equation}
-	s^2 + \frac{D}{2H}\,s + \frac{K\omega\ped{b}}{2H} = 0, \qquad
-	\omega\ped{n} = \sqrt{\frac{K\omega\ped{b}}{2H}}, \qquad \zeta = \frac{D}{4H\omega\ped{n}} .
-	\label{eq:swing}
-\end{equation}
-The filter inductor does not enter $X$: the current loop hides it, and the module is its internal voltage behind $X\ped{v}$ at the bus. On the grid all modules move together against the grid, so each of them sees $X = X\ped{v} + 3X\ped{grid} = 0.10 + 0.083 = \SI{0.183}{pu}$ ($X\ped{grid}$: transformer and source, \SI{10}{\percent} on \SI{1}{MVA}, \SI{0.028}{pu} on $S\ped{b}$). In the island the modules move against each other through $X = X\ped{v} = \SI{0.10}{pu}$; the common motion of the modules against a load that does not depend on the frequency is a first-order mode with time constant $2H/D = \tau\ped{p}$. Table~\ref{tab:smallsignal} gives the result; $H = \SI{2.5}{s}$ ($\tau\ped{p} = \SI{0.1}{s}$) is the variant with more inertia and less damping.
+Rev.~00 checked the power loops with the swing equation (\ref{eq:vsm}) of a module seen as an ideal voltage source behind $X\ped{v}$. Rev.~01 linearizes the whole discrete-time loop of the block: three modules with their LCL filters, the bus with the local load ($R$ in parallel with $L$ and its series resistance), the grid behind $R + L$, and the control of each module as in the block at $t\ped{s} = \SI{125}{\micro\second}$, with the one-step delay of the samples, the filters, the droops, the virtual impedance, the two PIs with their feedforwards and the modulation. The map $z_{k+1} = F(z_k)$ is written in a frame rotating at \SI{50}{Hz}; its equilibrium is found by Newton's method, its Jacobian by central differences, and each eigenvalue $\lambda$ gives $s = \ln\lambda / t\ped{s}$. Table~\ref{tab:smallsignal} gives the least-damped mode in two bands: the swing modes of the droops (below \SI{20}{Hz}) and the electromagnetic modes of the voltage loops with the filters and the network (20 to \SI{500}{Hz}), for a stiff grid ($X\ped{grid} = \SI{0.01}{pu}$), the grid of the model (\SI{10}{\percent} on \SI{1}{MVA}, \SI{0.028}{pu}), a weak grid ($X\ped{grid} = \SI{0.11}{pu}$, short-circuit ratio 3 for the three modules) and the island; the load is \SI{600}{\kilo\watt} + \SI{200}{\kilo\var}, $P^* = \SI{0.4}{pu}$.
 
 \begin{table}[H]
 	\centering
-	\captionsetup{width=0.9\textwidth, font=small}
-	\caption{Electromechanical modes of the power loops ($m\ped{p} = 0.02$, $D = 50$; settling time to \SI{2}{\percent}).}
+	\captionsetup{width=0.95\textwidth, font=small}
+	\caption{Least-damped modes of the discrete-time loop of three modules: damping ratio $\zeta$ and frequency, swing modes (below \SI{20}{Hz}) and electromagnetic modes (20 to \SI{500}{Hz}).}
 	\label{tab:smallsignal}
 	\rowcolors{2}{tableShade}{white}
-	\small
-	\begin{tabular}{@{} l c c c c c @{}}
+	\footnotesize
+	\begin{tabular}{@{} l l c c c c @{}}
 		\toprule
-		\textbf{Case} & $K$ [pu/rad] & $\omega\ped{n}$ [rad/s] & $f\ped{n}$ [Hz] & $\zeta$ & settling [s] \\
+		\textbf{Design} & \textbf{Modes} & \textbf{stiff grid} & \textbf{grid of the model} & \textbf{weak grid, SCR 3} & \textbf{island} \\
 		\midrule
-		on the grid, $H = \SI{1.25}{s}$ & 5.46 & 26.2 & 4.17 & 0.38 & 0.40 \\
-		island, module against module, $H = \SI{1.25}{s}$ & 10.0 & 35.4 & 5.64 & 0.28 & 0.40 \\
-		on the grid, $H = \SI{2.5}{s}$ & 5.46 & 18.5 & 2.95 & 0.27 & 0.80 \\
-		island, module against module, $H = \SI{2.5}{s}$ & 10.0 & 25.1 & 3.99 & 0.20 & 0.80 \\
+		V1, \SI{690}{V} module & swing & 0.45, \SI{5.6}{Hz} & 0.46, \SI{5.6}{Hz} & 0.47, \SI{5.5}{Hz} & 0.47, \SI{5.3}{Hz} \\
+		 & electromagnetic & 0.61, \SI{75}{Hz} & 0.56, \SI{68}{Hz} & 0.39, \SI{56}{Hz} & 0.64, \SI{80}{Hz} \\
+		V1, \SI{400}{V} example of the block & swing & 0.43, \SI{5.4}{Hz} & 0.44, \SI{5.3}{Hz} & 0.45, \SI{5.2}{Hz} & 0.46, \SI{5.1}{Hz} \\
+		 & electromagnetic & 0.41, \SI{61}{Hz} & 0.39, \SI{59}{Hz} & 0.30, \SI{55}{Hz} & 0.43, \SI{62}{Hz} \\
+		without $r\ped{t}$ & electromagnetic & 0.07, \SI{86}{Hz} & 0.07, \SI{86}{Hz} & 0.07, \SI{86}{Hz} & 0.07, \SI{86}{Hz} \\
+		without $m\ped{d}$ & swing & 0.14, \SI{4.9}{Hz} & 0.14, \SI{4.8}{Hz} & 0.15, \SI{4.8}{Hz} & 0.16, \SI{4.7}{Hz} \\
+		voltage PI of the block (0.5, \SI{18}{s^{-1}}) & swing & 0.23, \SI{5.1}{Hz} & 0.23, \SI{5.1}{Hz} & 0.24, \SI{5.0}{Hz} & 0.25, \SI{4.9}{Hz} \\
+		without feedforward of $i\ped{o}$ & swing & $-0.29$, \SI{2.4}{Hz} & $-0.28$, \SI{2.4}{Hz} & $-0.27$, \SI{2.4}{Hz} & $-0.25$, \SI{2.3}{Hz} \\
 		\bottomrule
 	\end{tabular}
 	\rowcolors{1}{white}{white}
 \end{table}
 
-The mode between the modules in the island is the least damped ($\zeta = 0.28$, 0.20 with the larger inertia): there the only reactance between the modules is the virtual one. Test T3 checks it. If the simulation confirms the weak damping, a lead term on the measured power in the frequency law,
-\begin{equation}
-	\omega = 1 + m\ped{p}\,(P^* - P\ped{f}) - m\ped{d}\,(p - P\ped{f}) ,
-	\label{eq:pflead}
-\end{equation}
-adds $\omega\ped{b} m\ped{d} K$ to $2\zeta\omega\ped{n}$ without changing the droop, the steady state or the frequency of the mode: $m\ped{d} = 0.005$ gives $\zeta = 0.50$ to 0.55 in the four cases of Table~\ref{tab:smallsignal}.
-
-\paragraph{Loss of the grid, numbers.} Test T2 of Section~\ref{sec:tests}: local load \SI{600}{\kilo\watt} and \SI{200}{\kilo\var}, modules at $P^* = \SI{0.4}{pu}$ (\SI{111}{\kilo\watt} each), the grid supplies \SI{267}{\kilo\watt}. After the opening each module takes \SI{0.32}{pu} more: the frequency settles at $\Delta f = -m\ped{p}\,\Delta P\, f\ped{0} = \SI{-0.32}{Hz}$ with the time constant $\tau\ped{p}$, i.e.\ an initial rate of change of \SI{-6.4}{Hz/s} ($H = \SI{1.25}{s}$) or \SI{-3.2}{Hz/s} ($H = \SI{2.5}{s}$), without overshoot; each module ends at \SI{0.72}{pu} of active power and \SI{0.24}{pu} of reactive power, of which \SI{0.11}{pu} come from its own filter capacitor. The current stays near \SI{0.75}{pu}, far from the limit.
+With the parameters of Table~\ref{tab:v1param} the least-damped mode has $\zeta = 0.39$ (weak grid, \SI{56}{Hz}) for the \SI{690}{V} module and 0.30 for the \SI{400}{V} example of the block (\SI{330}{\micro\henry}, \SI{360}{\micro\farad}, \SI{80}{\micro\henry}), whose parameter file carries the same values. A light island load (\SI{0.3}{pu}) or $P^* = \SI{1}{pu}$ change the damping by less than 0.02. The electromagnetic modes between 55 and \SI{86}{Hz} are those of the voltage loops with the filter and the network; the transient resistance $r\ped{t}$ takes them from 0.07 to 0.4--0.6. The swing modes at about \SI{5.5}{Hz} owe their damping to the lead term and to the speed of the voltage loop. The expected values of Rev.~00 for the tests ($\zeta = 0.38$ on the grid and 0.28 in the island, from the swing equation alone) are replaced by these.
 
 \subsection{Clock errors, PTP and power sharing}
 \label{sec:clock}
@@ -436,75 +459,97 @@ The droop (\ref{eq:pf}) is computed on the time of the module. If its clock runs
 	P_j - P_k = \frac{\varepsilon_j - \varepsilon_k}{m\ped{p}} .
 	\label{eq:clock}
 \end{equation}
-With the gains of the model, modules 2 and 3 are \SI{2700}{ppm} apart: without the time alignment they would share with an error of \SI{13.5}{\percent} of $S\ped{b}$; a \SI{50}{ppm} crystal gives \SI{0.25}{\percent} per module. The alignment of the clocks by PTP (the \code{global timing} of the model) removes this error and is the condition for the angle droop of version 2. The same time base aligns the PWM carriers (Section~\ref{sec:cm}).
+With the gains of the model, modules 2 and 3 are \SI{2700}{ppm} apart: without the time alignment they share with an error of \SI{13.5}{\percent} of $S\ped{b}$ (test T0: \SI{0.1345}{pu}); a \SI{50}{ppm} crystal gives \SI{0.25}{\percent} per module. The alignment of the clocks by PTP (the \code{global timing} of the model, the alignment loop of the block) removes this error (T0: \SI{0.0003}{pu}) and is the condition for the angle droop of version 2. The same time base aligns the PWM carriers (Section~\ref{sec:cm}).
 
 \subsection{Parameters of V1}
 
 \begin{table}[H]
 	\centering
-	\captionsetup{width=0.9\textwidth, font=small}
-	\caption{Parameters of the control V1 (pu of the module base).}
+	\captionsetup{width=0.95\textwidth, font=small}
+	\caption{Parameters of the control V1 (pu of the module base) and fields of \code{p.ctrl} of the block.}
 	\label{tab:v1param}
 	\rowcolors{2}{tableShade}{white}
-	\small
-	\begin{tabularx}{0.95\textwidth}{@{} l l X @{}}
+	\footnotesize
+	\begin{tabularx}{\textwidth}{@{} >{\raggedright\arraybackslash}p{0.27\textwidth} >{\raggedright\arraybackslash}p{0.17\textwidth} >{\raggedright\arraybackslash}p{0.21\textwidth} X @{}}
 		\toprule
-		\textbf{Parameter} & \textbf{Value} & \textbf{Note} \\
+		\textbf{Parameter} & \textbf{Value} & \textbf{Field} & \textbf{Note} \\
 		\midrule
-		P--f droop $m\ped{p}$ & 0.02 & \SI{1}{Hz} per pu; $D = 50$ \\
-		power filter $\tau\ped{p}$ & \SI{50}{ms} & $H = \SI{1.25}{s}$; variant \SI{0.1}{s}, $H = \SI{2.5}{s}$ \\
-		lead term $m\ped{d}$ & 0 & 0.005 if T3 shows a weak damping (\ref{eq:pflead}) \\
-		Q--V droop $n\ped{q}$, filter $\tau\ped{q}$ & 0.05, \SI{50}{ms} & \\
-		virtual impedance $R\ped{v}$, $X\ped{v}$ & 0.02, 0.10 & \SI{34}{\milli\ohm}, \SI{0.55}{mH} \\
-		current limit & 1.0 / \SI{1.2}{pu} & threshold virtual impedance $k_X = 1$, $R/X = 0.2$; clip at \SI{1.2}{pu} with anti-windup \\
-		current loop & existing & module: resonant PI $k\ped{p} = 0.6$, $k\ped{i} = \SI{35}{s^{-1}}$; library block: PI and resonant term at \SI{100}{Hz} \\
-		set-points & $P^*$, $Q^*$ & from the plant controller; ramp \SI{1}{pu/s} \\
-		time base & PTP & clocks and carriers aligned (\code{global timing}) \\
+		P--f droop $m\ped{p}$ & 0.02 & \code{droop\_mp} & \SI{1}{Hz} per pu; $D = 50$ \\
+		power filters $\tau\ped{p}$, $\tau\ped{q}$ & \SI{50}{ms} & \code{droop\_tau\_p}, \code{\_q} & $H = \SI{1.25}{s}$ \\
+		lead term $m\ped{d}$ & 0.01 & \code{droop\_md} & damping of the swing modes \\
+		Q--V droop $n\ped{q}$ & 0.05 & \code{droop\_nq} & \\
+		virtual impedance $R\ped{v}$, $X\ped{v}$ & 0.05, 0.10 & \code{droop\_rv}, \code{\_xv} & \SI{86}{\milli\ohm}, \SI{0.55}{mH} \\
+		transient resistance $r\ped{t}$, $\tau\ped{hp}$ & 0.15, \SI{5}{ms} & \code{droop\_rt}, \code{\_tau\_hp} & damping of the electromagnetic modes, no effect in steady state \\
+		threshold virtual impedance & $i\ped{thr} = 1.0$, $k_X = 1$, $X/R = 5$ & \code{droop\_i\_thr}, \code{\_kx}, \code{\_x\_r} & \cite{paquette2015} \\
+		current limit $i\ped{max}$ & 1.2 & \code{droop\_i\_max} & clip of $i^*$, integrators held \\
+		voltage PI $k\ped{pu}$, $k\ped{iu}$ & 0.8, \SI{80}{s^{-1}} & \code{droop\_kp\_u}, \code{\_ki\_u} & feedforward of $i\ped{o}$ and $\jj b u\ped{c}$ \\
+		current loop $k\ped{pi}$, $k\ped{ii}$ & 0.75, \SI{35}{s^{-1}} & \code{kp\_i}, \code{ki\_i} & of the block, feedforward of $u\ped{c}$ \\
+		start $t\ped{sync}$, $t\ped{ramp}$ & 0.05 (0.1), \SI{0.1}{s} & \code{droop\_t\_sync}, \code{\_t\_ramp} & 0.1 in the companion model \\
+		set-points $P^*$, $Q^*$, $U^*$ & 0.4, 0, 1 & \code{droop\_p\_ref}, \code{\_q\_ref}, \code{ug\_ref} & offsets from the input \code{sync}: $[-;\,\Delta P^*;\,\Delta Q^*;\,\Delta U^*;\,\Delta\omega^*]$ \\
+		time base & PTP & \code{k\_time}, \code{kp\_align}, \code{ki\_align} & clocks and carriers aligned \\
 		\bottomrule
 	\end{tabularx}
 	\rowcolors{1}{white}{white}
 \end{table}
 
-\subsection{How to put V1 in the model}
+\subsection{How V1 is put in the models}
 \label{sec:routes}
 
-\paragraph{Route A (recommended): library block and a light model.} The control V1 becomes an option of the MATLAB Function of the library block \code{grid\_forming\_dqctrl} \cite{afe_note} (\code{p.ctrl.droop = 1}: power measurement, droop, virtual admittance and limitation in place of the free-running phase generator and of the voltage loop; the input \code{sync}, unused in this mode, can carry $P^*$ and $Q^*$, so the ports do not change). A companion model in \path{parallel_of_GFMs} has three such blocks (two non-virtual blocks each), \code{battery\_1} with its earthing network, the grid emulator with the earthing of the star point, a breaker and a local load: a few hundred blocks, far from the license limit, fast to simulate. It is the place for the tuning and for the tests of Section~\ref{sec:tests}.
+\paragraph{Route A (done in Rev.~01): library block and a light model.} The control V1 is the droop mode of the MATLAB Function of the library block \code{grid\_forming\_dqctrl} \cite{afe_note} (\code{p.ctrl.droop = 1}, fields \code{droop\_*}; \code{ctrl\_log} from 43 to 55 signals, 44 to 55 for the droop; the input \code{sync} carries the set-point offsets; the ports do not change and the existing models are not affected). The block with the delta capacitors, \code{grid\_forming\_dqctrl\_delta}, links the same code. The companion model \code{pgfm\_droop.slx} in \path{parallel_of_GFMs/power_sharing} has three such blocks with the switching bridge, each on an ideal DC source, a switch in the output of each module (trip, with an RC snubber across each pole that takes the current of $L_2$ when it opens, as the arc of a contactor does until the current zero) and an optional cable, the \SI{690}{V} bus with the local load and a switched load step, and the grid (\SI{10}{\percent} on \SI{1}{MVA}) behind a breaker: 277 blocks, Simscape Foundation only, built by \code{build\_pgfm\_droop.m}, parameters and cases in \code{init\_pgfm\_droop.m}, tests in \code{pgfm\_droop\_tests.m}. It simulates about \SI{0.7}{s} per minute on a desktop PC. The battery with its earthing network and the grid emulator are not in it: common mode and earthing stay with route B.
 
 \paragraph{Route B: the present model.} In \code{pgfm\_ctrl\_analysis} the PLL and the reference chain of each module (about 60 non-virtual blocks) are replaced by one MATLAB Function with the control V1, in front of the existing current loops; the blocks saved pay for the breaker and the load. It keeps the switching details, the PTP model and the common-mode paths, but it changes the control of the modules that the model was built around, and the license limit stays tight.
 
 The two routes are complementary: A to design and validate the control, B afterwards to study common mode, earthing and PTP with the validated control.
 
-\subsection{Test plan}
+\subsection{Tests on the companion model}
 \label{sec:tests}
+
+Module of \SI{250}{\kilo\watt} at \SI{690}{V} ($S\ped{b} = \SI{277.8}{\kilo\VA}$), $L_1 = \SI{500}{\micro\henry}$, $C\ped{F} = \SI{200}{\micro\farad}$, $L_2 = \SI{80}{\micro\henry}$, $u\ped{dc} = \SI{1070}{V}$, PWM at \SI{4}{kHz} with double update, solver step \SI{1}{\micro\second}; local load \SI{600}{\kilo\watt} + \SI{200}{\kilo\var} at \SI{690}{V} (constant impedance), $P^* = \SI{0.4}{pu}$, $Q^* = 0$. On the grid the breaker closes at \SI{1}{ms} and the modules synchronize until \SI{0.1}{s}. Table~\ref{tab:tests} gives the events and the results; the frequency is that of the phase generators, the voltage $|u|$ the magnitude of the bus voltage averaged over \SI{1}{ms}, the rate of change of frequency the largest derivative of the frequency averaged over \SI{10}{ms}, from 10 to \SI{200}{ms} after the event, the settling time the time to enter a band of \SI{\pm 0.01}{pu} around the final $P\ped{f}$.
 
 \begin{table}[H]
 	\centering
-	\captionsetup{width=0.95\textwidth, font=small}
-	\caption{Tests of the control V1 and expected results.}
+	\captionsetup{width=0.97\textwidth, font=small}
+	\caption{Tests of the control V1 on \code{pgfm\_droop} (powers in pu of $S\ped{b}$, per module).}
 	\label{tab:tests}
 	\rowcolors{2}{tableShade}{white}
 	\footnotesize
-	\begin{tabularx}{\textwidth}{@{} l >{\raggedright\arraybackslash}p{0.36\textwidth} X @{}}
+	\begin{tabularx}{\textwidth}{@{} l >{\raggedright\arraybackslash}p{0.30\textwidth} X @{}}
 		\toprule
-		\textbf{Test} & \textbf{Event} & \textbf{What is checked, expected result} \\
+		\textbf{Test} & \textbf{Event} & \textbf{Result} \\
 		\midrule
-		T0 & clock errors of the model, alignment off and on & sharing error (\ref{eq:clock}): up to \SI{13.5}{\percent} off, below \SI{1}{\percent} on \\
-		T1 & on the grid: $P^*$ of module 1 from 0 to \SI{0.8}{pu}, then all modules & tracking and damping: $\zeta \simeq 0.38$, settling \SI{0.4}{s} \\
-		T2 & loss of the grid with \SI{600}{\kilo\watt} + \SI{200}{\kilo\var} on the bus, modules at $P^* = \SI{0.4}{pu}$ & frequency \SI{-0.32}{Hz}, rate of change \SI{-6.4}{Hz/s}, voltage dip, sharing after the event, peak current \\
-		T3 & island: load step of +\SI{150}{\kilo\watt} & \SI{-0.18}{Hz}, sharing, voltage; damping of the mode between the modules ($\zeta \simeq 0.28$) \\
-		T4 & island: module 3 with +\SI{20}{\percent} filter inductance, then with a cable of \SI{0.01}{pu}, then with a gain error of \SI{1}{\percent} on its voltage measurement & reactive sharing error below \SI{10}{\percent} of $S\ped{b}$; expected: no effect, below \SI{1}{\percent}, about \SI{4.5}{\percent} (\ref{eq:qshare}) \\
-		T5 & island at \SI{450}{\kilo\watt}: trip of module 3 & the two remaining modules go from 0.54 to \SI{0.81}{pu}, no loss of synchronism \\
-		T6 & (V2) FRT test 25.4 on the grid as grid-forming units & current below \SI{1.2}{pu}, recovery, synchronism \\
+		T0 & island (black start); clocks of the modules \num{1.0002}, \num{1.0015}, \num{0.9988}; time alignment off, then on & off: $P$ = 0.639, 0.704, \SI{0.569}{pu}, spread \SI{0.1345}{pu} as (\ref{eq:clock}); on: spread \SI{0.0003}{pu} \\
+		T1 & on the grid: $P^*$ of module 1 from 0.4 to \SI{0.8}{pu} at \SI{0.6}{s} & $P\ped{f}$ of module 1 settles in \SI{0.17}{s}, overshoot \SI{5}{\percent}; its frequency steps by $m\ped{p}\,\Delta P^* = \SI{0.4}{Hz}$ and comes back to \SI{50}{Hz}; $P = P^*$ within \SI{0.0001}{pu}; $Q$ of module 1 \SI{-0.14}{pu} (\ref{eq:qshare}: $-0.12$, the rest is the angle across $X\ped{v}$); peak current \SI{1.04}{pu} \\
+		T2 & loss of the grid at \SI{1.0}{s}, \SI{600}{\kilo\watt} + \SI{200}{\kilo\var} on the bus & \num{50.000} to \SI{49.762}{Hz} (nadir 49.758), \SI{4.6}{Hz/s}; $|u|$ 0.978 to \SI{0.926}{pu}, minimum \SI{0.82}{pu}; $P$ 0.40 to \SI{0.638}{pu} and $Q$ to \SI{0.204}{pu} each, settled in \SI{0.15}{s}, overshoot \SI{0.1}{\percent}; peak current \SI{0.72}{pu} \\
+		T3 & island: load step of +\SI{150}{\kilo\watt} at \SI{1.5}{s} (after T2) & to \SI{49.623}{Hz} (nadir 49.617), \SI{2.7}{Hz/s}; $|u|$ to \SI{0.917}{pu}, minimum \SI{0.85}{pu}; $P$ to \SI{0.777}{pu} and $Q$ \SI{0.201}{pu} each, settled in \SI{0.13}{s}; spread of $P$ and $Q$ below \SI{0.0001}{pu}; peak current \SI{0.86}{pu} \\
+		T4 & island (black start): module 3 with $L_1$ + \SI{20}{\percent}; with a cable of \SI{0.01}{pu}; with $U^*$ \SI{1}{\percent} low (a gain error of \SI{1}{\percent}) & spread of $Q$: \SI{0.002}{pu} (no effect); \SI{0.011}{pu} (\ref{eq:qshare}: 0.012); \SI{0.058}{pu} (\ref{eq:qshare}: 0.056; Rev.~00 expected 0.045). $P$ shared within \SI{0.0001}{pu} in the three cases \\
+		T5 & \SI{450}{\kilo\watt} + \SI{150}{\kilo\var}: loss of the grid at \SI{1.0}{s}, trip of module 3 at \SI{1.5}{s} & loss of the grid: \SI{49.903}{Hz}, $P$ 0.40 to \SI{0.497}{pu}; trip: modules 1 and 2 to $P = \SI{0.704}{pu}$, $Q = \SI{0.224}{pu}$ at \SI{49.696}{Hz} (nadir 49.689, \SI{3.3}{Hz/s}), minimum voltage \SI{0.84}{pu}, settled in \SI{0.15}{s}, peak current \SI{0.79}{pu}; module 3 runs on at no load \\
+		black start & no grid, \SI{600}{\kilo\watt} + \SI{200}{\kilo\var}, start at \SI{0.1}{s} & bus voltage at \SI{90}{\percent} in \SI{0.09}{s}, overshoot \SI{1.4}{\percent}; \SI{49.762}{Hz}, $P$ = \SI{0.638}{pu}, $Q$ = \SI{0.204}{pu} each, peak current \SI{0.71}{pu} \\
 		\bottomrule
 	\end{tabularx}
 	\rowcolors{1}{white}{white}
 \end{table}
 
-The figures of merit are the same for every test: sharing error $\max_k |P_k - \bar P|/S\ped{b}$ and the same for $Q$; frequency nadir and initial rate of change of frequency; minimum positive-sequence voltage; peak converter current; settling time; and, in route B, the zero-sequence circulating current between the modules.
+All cases pass the checks of \code{pgfm\_droop\_tests.m}: equal sharing in the island (spread below \SI{0.01}{pu} of $P$ and \SI{0.02}{pu} of $Q$, except where the test introduces a difference), $P = P^*$ on the grid, frequency on the droop line, damped power (peak to peak of $P\ped{f}$ below \SI{0.02}{pu} at the end) and converter current below $i\ped{max}$. The frequency after the loss of the grid is \SI{-0.24}{Hz} and not \SI{-0.32}{Hz} as estimated in Rev.~00: the load is a constant impedance and the island settles at \SI{0.926}{pu}, so the load takes \SI{14}{\percent} less power; for the same reason the two modules left in T5 take \SI{0.704}{pu} and not the \SI{0.81}{pu} of a constant-power load. That voltage, \SI{7}{\percent} below the nominal one with the modules at \SI{0.64}{pu}, is the drop of the Q--V droop and of the virtual impedance; restoring it, with the frequency, is the task of the secondary control of version 2. In the island the filtered powers follow the load with the lag of their filters (settled in about $3\tau\ped{p} = \SI{0.15}{s}$, overshoot at most \SI{1}{\percent}): the modules are voltage sources and take the load at once, and events that hit the three equal modules alike do not excite the swing modes between them. T1 excites the swing mode of module 1 against the grid: \SI{5}{\percent} of overshoot of $P\ped{f}$. Figures~\ref{fig:t3} and~\ref{fig:t5} show tests T2--T3 and T5.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.78\textwidth]{figures/pgfm_droop_T3.png}
+	\captionsetup{width=0.92\textwidth, font=small}
+	\caption[Tests T2 and T3 on the companion model.]{Tests T2 and T3 on \code{pgfm\_droop}: start on the grid, loss of the grid at \SI{1.0}{s}, load step of +\SI{150}{\kilo\watt} at \SI{1.5}{s}. From the top: frequency of the phase generators, filtered active and reactive power, bus voltage and converter current (magnitudes, \SI{1}{ms} averages); the three modules overlap.}
+	\label{fig:t3}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.78\textwidth]{figures/pgfm_droop_T5.png}
+	\captionsetup{width=0.92\textwidth, font=small}
+	\caption[Test T5 on the companion model.]{Test T5 on \code{pgfm\_droop}: \SI{450}{\kilo\watt} + \SI{150}{\kilo\var}, loss of the grid at \SI{1.0}{s}, trip of module 3 at \SI{1.5}{s}; after the trip module 3 runs alone at no load (\SI{50.4}{Hz}).}
+	\label{fig:t5}
+\end{figure}
 
 \subsection{Version 2 and later}
 
-Secondary control (frequency and voltage restoration in the island by the plant controller, or by distributed averaging \cite{simpsonporco2015}); resynchronization and reconnection; fault ride-through as grid-forming units with the current limitation of \cite{kiel_curlim}; angle droop on the PTP time \cite{golsorkhi2017} with the frequency droop as fallback if the time is lost; dVOC as comparison \cite{colombino2019}; the tertiary layer by online feedback optimization \cite{hauswirth2024}.
+Secondary control (frequency and voltage restoration in the island by the plant controller, or by distributed averaging \cite{simpsonporco2015}); resynchronization and reconnection; fault ride-through as grid-forming units with the current limitation of \cite{kiel_curlim} (test T6: FRT test 25.4 on the grid, current below \SI{1.2}{pu}, recovery, synchronism); angle droop on the PTP time \cite{golsorkhi2017} with the frequency droop as fallback if the time is lost; dVOC as comparison \cite{colombino2019}; the tertiary layer by online feedback optimization \cite{hauswirth2024}.
 
 % =============================================================
 \section{Common mode of modules on one battery}
@@ -749,12 +794,11 @@ A three-level module (NPC or T-type) changes the common mode and the earthing in
 \section{Conclusions and next steps}
 \label{sec:conclusions}
 
-The model now has the parasitic capacitances and the earthing resistances of an industrial BESS, with the LV side not earthed and the battery referenced to earth through high resistances; the three earthing schemes can be compared with one parameter, and the simulation confirms that the battery stays quiet only when the LV star point is not held to earth. For the power sharing the proposal is a droop control equivalent to a virtual synchronous machine, with a virtual admittance in front of the existing current loops: it shares the active power exactly, works the same on the grid and in the island, and needs the PTP time already modelled to remove the effect of the clock errors on the sharing. The next steps are:
+The model now has the parasitic capacitances and the earthing resistances of an industrial BESS, with the LV side not earthed and the battery referenced to earth through high resistances; the three earthing schemes can be compared with one parameter, and the simulation confirms that the battery stays quiet only when the LV star point is not held to earth. For the power sharing the control V1 is a droop control equivalent to a virtual synchronous machine, with a virtual impedance in front of a voltage loop on the filter capacitor and of the existing current loop: it shares the active power exactly, works the same on the grid and in the island, and needs the PTP time already modelled to remove the effect of the clock errors on the sharing. It is the droop mode of the library block \code{grid\_forming\_dqctrl}; on the companion model \code{pgfm\_droop} it passes the tests T0 to T5 and the black start, with the frequencies, voltages and sharing errors that the analysis predicts. The next steps are:
 
 \begin{enumerate}[nosep]
-	\item the control V1 in the library block and the companion model (route A), tests T0 to T5;
 	\item breaker and local load in \code{pgfm\_ctrl\_analysis} and the control V1 in its modules (route B), with the common-mode currents of the modules logged;
-	\item version 2: secondary control, resynchronization, fault ride-through as grid-forming units, circulating-current loop;
+	\item version 2: secondary control of frequency and voltage, a slow correction of the reactive sharing by the plant controller, resynchronization, fault ride-through as grid-forming units (test T6), circulating-current loop;
 	\item a battery sized for the three modules (and its parasitic capacitance), the initial voltage of the DC links;
 	\item three-level modules.
 \end{enumerate}
@@ -779,15 +823,19 @@ The model now has the parasitic capacitances and the earthing resistances of an 
 		\code{init\_model.m} & initialization, one \code{param} struct; \code{param.gnd} (Table~\ref{tab:gnd}); puts the folder of this note on the path \\
 		\code{pgfm\_ctrl\_analysis.slx} & the model; \code{battery\_1/HF and Ground Network}, \code{grid/grid\_emulator/3ph\_Dyg\_ssc} (\code{R\_star}, \code{C\_lv\_earth}); the annotation \emph{Design note} at the top left opens this PDF \\
 		\code{earthing\_cases.m} & the three earthing schemes of Section~\ref{sec:hfsim}: table and figure \\
+		\path{power_sharing/init_pgfm_droop.m} & parameters and cases of the companion model (Section~\ref{sec:tests}) \\
+		\path{power_sharing/build_pgfm_droop.m} & builds \code{pgfm\_droop.slx}, the companion model of route A: change the script, not the model \\
+		\path{power_sharing/pgfm_droop_tests.m} & runs the cases, checks them and writes \path{results/<case>.txt}, \code{.png} \\
 		\midrule
 		\multicolumn{2}{@{}p{\dimexpr0.97\textwidth-2\tabcolsep\relax}@{}}{\textbf{\code{library}}} \\
-		\path{masked_models/grid_forming/} & block \code{grid\_forming\_dqctrl} and its control \code{private/afe\_dq\_ctrl\_pwm.m} (route A) \\
+		\path{masked_models/grid_forming/} & block \code{grid\_forming\_dqctrl} and its control \code{private/afe\_dq\_ctrl\_pwm.m} with the droop mode (\code{p.ctrl.droop = 1}); \code{grid\_forming\_param\_example.m} with the fields \code{droop\_*}; \code{test/grid\_forming\_droop\_test\_run.m} \\
 		\path{foundation/pwr_electronics/+threephase_inductor/} & three-phase inductor: $L_0$ is the zero-sequence inductance per phase \\
 		\path{foundation/pwr_electronics/+afe_ttype_ssc/} & three-level T-type power stage (Section~\ref{sec:3l}) \\
 		\midrule
 		\multicolumn{2}{@{}p{\dimexpr0.97\textwidth-2\tabcolsep\relax}@{}}{\textbf{\code{repositories-documentation}, folder \path{repos_doc/parallel_of_gfms/}}} \\
 		\code{parallel\_of\_gfms.tex}, \code{.pdf} & this note \\
 		\code{figures/hf\_cases.png} & Figure~\ref{fig:hfcases}, written by \code{earthing\_cases.m} \\
+		\code{figures/pgfm\_droop\_T3.png}, \code{\_T5.png} & Figures~\ref{fig:t3} and~\ref{fig:t5}, written by \code{pgfm\_droop\_tests.m} \\
 		\bottomrule
 	\end{tabularx}
 	\rowcolors{1}{white}{white}
@@ -815,6 +863,8 @@ The model now has the parasitic capacitances and the earthing resistances of an 
 	\bibitem{zhong2011} Q.-C. Zhong and G.~Weiss, ``Synchronverters: inverters that mimic synchronous generators,'' \emph{IEEE Trans. Ind. Electron.}, vol.~58, no.~4, pp.~1259--1267, Apr. 2011.
 	\bibitem{zhang2010} L.~Zhang, L.~Harnefors, and H.-P. Nee, ``Power-synchronization control of grid-connected voltage-source converters,'' \emph{IEEE Trans. Power Syst.}, vol.~25, no.~2, pp.~809--820, May 2010.
 	\bibitem{darco2014} S.~D'Arco and J.~A. Suul, ``Equivalence of virtual synchronous machines and frequency-droops for converter-based microgrids,'' \emph{IEEE Trans. Smart Grid}, vol.~5, no.~1, pp.~394--395, Jan. 2014, doi:10.1109/TSG.2013.2288000.
+	\bibitem{pogaku2007} N.~Pogaku, M.~Prodanovi\'c, and T.~C. Green, ``Modeling, analysis and testing of autonomous operation of an inverter-based microgrid,'' \emph{IEEE Trans. Power Electron.}, vol.~22, no.~2, pp.~613--625, Mar. 2007, doi:10.1109/TPEL.2006.890003.
+	\bibitem{darco2015} S.~D'Arco, J.~A. Suul, and O.~B. Fosso, ``A virtual synchronous machine implementation for distributed control of power converters in SmartGrids,'' \emph{Electr. Power Syst. Res.}, vol.~122, pp.~180--197, May 2015, doi:10.1016/j.epsr.2015.01.001.
 	\bibitem{paquette2015} A.~D. Paquette and D.~M. Divan, ``Virtual impedance current limiting for inverters in microgrids with synchronous generators,'' \emph{IEEE Trans. Ind. Appl.}, vol.~51, no.~2, pp.~1630--1638, Mar./Apr. 2015.
 	\bibitem{golsorkhi2017} M.~S. Golsorkhi, D.~D.-C. Lu, and J.~M. Guerrero, ``A GPS-based decentralized control method for islanded microgrids,'' \emph{IEEE Trans. Power Electron.}, vol.~32, no.~2, pp.~1615--1625, Feb. 2017, doi:10.1109/TPEL.2016.2551265.
 	\bibitem{ye2002} Z.~Ye, D.~Boroyevich, J.-Y. Choi, and F.~C. Lee, ``Control of circulating current in two parallel three-phase boost rectifiers,'' \emph{IEEE Trans. Power Electron.}, vol.~17, no.~5, pp.~609--615, Sept. 2002, doi:10.1109/TPEL.2002.802170.
