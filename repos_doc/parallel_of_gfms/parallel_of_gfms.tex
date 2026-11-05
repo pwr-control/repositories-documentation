@@ -535,7 +535,7 @@ All cases pass the checks of \code{pgfm\_droop\_tests.m}: equal sharing in the i
 	\centering
 	\includegraphics[width=0.78\textwidth]{figures/pgfm_droop_T3.png}
 	\captionsetup{width=0.92\textwidth, font=small}
-	\caption[Tests T2 and T3 on the companion model.]{Tests T2 and T3 on \code{pgfm\_droop}: start on the grid, loss of the grid at \SI{1.0}{s}, load step of +\SI{150}{\kilo\watt} at \SI{1.5}{s}. From the top: frequency of the phase generators, filtered active and reactive power, bus voltage and converter current (magnitudes, \SI{1}{ms} averages); the three modules overlap.}
+	\caption[Tests T2 and T3 on the companion model.]{Tests T2 and T3 on \code{pgfm\_droop}: start on the grid, loss of the grid at \SI{1.0}{s}, load step of +\SI{150}{\kilo\watt} at \SI{1.5}{s}. From the top: frequency of the phase generators, filtered active and reactive power, bus voltage and converter current (magnitudes, \SI{1}{ms} averages); the three modules overlap. Until \SI{0.1}{s} the modules follow the grid with zero converter current and $Q\ped{f}$ is the reactive power of their filter capacitors (\SI{0.10}{pu}); then $P^*$ ramps to \SI{0.4}{pu} in \SI{0.1}{s} and the frequency rises to \SI{50.16}{Hz} while the angles advance.}
 	\label{fig:t3}
 \end{figure}
 
@@ -543,7 +543,7 @@ All cases pass the checks of \code{pgfm\_droop\_tests.m}: equal sharing in the i
 	\centering
 	\includegraphics[width=0.78\textwidth]{figures/pgfm_droop_T5.png}
 	\captionsetup{width=0.92\textwidth, font=small}
-	\caption[Test T5 on the companion model.]{Test T5 on \code{pgfm\_droop}: \SI{450}{\kilo\watt} + \SI{150}{\kilo\var}, loss of the grid at \SI{1.0}{s}, trip of module 3 at \SI{1.5}{s}; after the trip module 3 runs alone at no load (\SI{50.4}{Hz}).}
+	\caption[Test T5 on the companion model.]{Test T5 on \code{pgfm\_droop}: \SI{450}{\kilo\watt} + \SI{150}{\kilo\var}, loss of the grid at \SI{1.0}{s}, trip of module 3 at \SI{1.5}{s}; after the trip module 3 runs alone at no load (\SI{50.4}{Hz}). The spike of $|u|$ at the trip, \SI{1.22}{pu} (above \SI{1.05}{pu} for \SI{7}{ms}), is the voltage at the terminals of module 3, on its side of the open switch, which loses its load at once; the bus dips to \SI{0.84}{pu}.}
 	\label{fig:t5}
 \end{figure}
 
