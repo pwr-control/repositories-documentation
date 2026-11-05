@@ -73,6 +73,7 @@
 \addcontentsline{toc}{section}{Nomenclature}
 \label{sec:nomenclature}
 
+\begingroup % row colours of this table only: a \rowcolors left active breaks the multi-line TikZ nodes
 \rowcolors{2}{tableShade}{white}
 \begin{longtable}{@{} l p{0.74\linewidth} @{}}
 	\toprule
@@ -109,8 +110,8 @@
 	$C\ped{pole}$, $C\ped{ac}$ & capacitance to earth of one battery pole, of one phase of the LV side \\
 	$r\ped{gnd}$, $r\ped{star}$ & earthing resistor of one battery pole; resistance from the transformer star point to earth \\
 \end{longtable}
+\endgroup
 \addtocounter{table}{-1}
-\rowcolors{1}{white}{white}
 
 % =============================================================
 \section{Scope and summary}
