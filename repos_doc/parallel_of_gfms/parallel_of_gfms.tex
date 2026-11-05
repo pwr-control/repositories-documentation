@@ -430,7 +430,7 @@ Rev.~00 checked the power loops with the swing equation (\ref{eq:vsm}) of a modu
 	\label{tab:smallsignal}
 	\rowcolors{2}{tableShade}{white}
 	\footnotesize
-	\begin{tabular}{@{} l l c c c c @{}}
+	\begin{tabularx}{\textwidth}{@{} >{\raggedright\arraybackslash}p{0.22\textwidth} l *{4}{>{\centering\arraybackslash}X} @{}}
 		\toprule
 		\textbf{Design} & \textbf{Modes} & \textbf{stiff grid} & \textbf{grid of the model} & \textbf{weak grid, SCR 3} & \textbf{island} \\
 		\midrule
@@ -443,7 +443,7 @@ Rev.~00 checked the power loops with the swing equation (\ref{eq:vsm}) of a modu
 		voltage PI of the block (0.5, \SI{18}{s^{-1}}) & swing & 0.23, \SI{5.1}{Hz} & 0.23, \SI{5.1}{Hz} & 0.24, \SI{5.0}{Hz} & 0.25, \SI{4.9}{Hz} \\
 		without feedforward of $i\ped{o}$ & swing & $-0.29$, \SI{2.4}{Hz} & $-0.28$, \SI{2.4}{Hz} & $-0.27$, \SI{2.4}{Hz} & $-0.25$, \SI{2.3}{Hz} \\
 		\bottomrule
-	\end{tabular}
+	\end{tabularx}
 	\rowcolors{1}{white}{white}
 \end{table}
 
