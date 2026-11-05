@@ -103,6 +103,8 @@
 	$p$, $q$; $P\ped{f}$, $Q\ped{f}$ & active and reactive power of a module; the same after the low-pass filter (pu of $S\ped{b}$) \\
 	$P^*$, $Q^*$ & set-points of a module from the plant controller \\
 	$m\ped{p}$, $n\ped{q}$ & P--f and Q--V droop coefficients \\
+	$m\ped{d}$ & gain of the lead term on the measured power (optional damping of the power loops) \\
+	$X\ped{c,\mathit{k}}$, $\gamma_k$ & reactance of the connection of module $k$ to the common bus; gain error of its voltage measurement \\
 	$\tau\ped{p}$, $\tau\ped{q}$ & time constants of the power filters \\
 	$H$, $D$ & inertia constant and damping of the equivalent virtual synchronous machine \\
 	$R\ped{v}$, $X\ped{v}$ & virtual resistance and reactance \\
@@ -127,7 +129,7 @@ The model \code{pgfm\_ctrl\_analysis} of the folder \path{parallel_of_GFMs} of t
 The note proposes a first control version (V1) that can be implemented and simulated now, and a test plan to judge it. The main points are:
 
 \begin{mybox}
-	\textbf{Control V1 (Section~\ref{sec:v1}).} Every module is a voltage source behind a virtual impedance: P--f droop with a low-pass filter on the measured power ($m\ped{p} = \SI{2}{\percent}$, $\tau\ped{p} = \SI{50}{ms}$, the same as a virtual synchronous machine with $H = \SI{1.25}{s}$ and $D = 50$), Q--V droop ($n\ped{q} = \SI{5}{\percent}$), a virtual admittance ($R\ped{v} = 0.02$, $X\ped{v} = \SI{0.10}{pu}$) that turns the voltage difference into the reference of the existing current loop, a current limit of \SI{1.2}{pu} with a threshold virtual impedance, and the time base of the modules aligned by PTP. There is no grid-loss detection and no mode change: on the loss of the grid the modules take the load at once and the frequency settles at $-m\ped{p}\,\Delta P$ (\SI{-0.32}{Hz} in the test case). The power loops have a damping ratio of about 0.4 both on the grid and in the island.
+	\textbf{Control V1 (Section~\ref{sec:v1}).} Every module is a voltage source behind a virtual impedance: P--f droop with a low-pass filter on the measured power ($m\ped{p} = \SI{2}{\percent}$, $\tau\ped{p} = \SI{50}{ms}$, the same as a virtual synchronous machine with $H = \SI{1.25}{s}$ and $D = 50$), Q--V droop ($n\ped{q} = \SI{5}{\percent}$), a virtual admittance ($R\ped{v} = 0.02$, $X\ped{v} = \SI{0.10}{pu}$) that turns the voltage difference into the reference of the existing current loop, a current limit of \SI{1.2}{pu} with a threshold virtual impedance, and the time base of the modules aligned by PTP. There is no grid-loss detection and no mode change: on the loss of the grid the modules take the load at once and the frequency settles at $-m\ped{p}\,\Delta P$ (\SI{-0.32}{Hz} in the test case). The power loops have a damping ratio of 0.38 on the grid and 0.28 between the modules in the island; a lead term on the measured power raises both to 0.5 if the simulation asks for it. The reactive sharing is limited by the accuracy of the voltage measurements more than by the impedances.
 
 	\textbf{Implementation (Section~\ref{sec:routes}).} Recommended: the control as an option of the library block \code{grid\_forming\_dqctrl} (two non-virtual blocks per module) in a light companion model with a breaker and a local load; then the validated control back into \code{pgfm\_ctrl\_analysis} for the common-mode and earthing studies, which need its switching details.
 
@@ -151,7 +153,7 @@ Figure~\ref{fig:system} shows the model and Table~\ref{tab:system} its data. Eac
 		new/.style={draw, thick, dashed, rounded corners=2pt, align=center, fill=green!8, font=\scriptsize}]
 		% battery and DC bus
 		\node[gb, minimum width=2.0cm, minimum height=3.4cm] (bat) at (0,0) {\code{battery\_1}\\lithium-ion\\\SI{1183}{V}\\pack of\\\SI{250}{\kilo\watt\hour}};
-		\draw[very thick] (1.75,-2.0) -- (1.75,2.0) node[above, font=\scriptsize] {DC bus};
+		\draw[very thick] (1.75,-2.0) -- (1.75,2.0) node[above, xshift=-3mm, font=\scriptsize] {DC bus};
 		\draw[thick] (bat.east) -- (1.75,0);
 		% modules
 		\foreach \y/\n in {1.45/1, 0/2, -1.45/3} {
@@ -159,12 +161,16 @@ Figure~\ref{fig:system} shows the model and Table~\ref{tab:system} its data. Eac
 			\draw[thick] (1.75,\y) -- (m\n.west);
 			\draw[thick] (m\n.east) -- (6.0,\y);
 		}
+		% clocks and PWM carriers of the modules on the PTP time
+		\node[draw, dashed, thick, rounded corners=4pt, yellow!50!black, fit=(m1)(m3), inner sep=0.15cm] (grp) {};
+		\node[gb, minimum width=2.9cm, minimum height=0.6cm, fill=yellow!15] (ptp) at (3.65,2.85) {global timing (PTP)};
+		\draw[->, dashed, thick, yellow!50!black] (ptp.south) -- (grp.north);
 		% LV bus
-		\draw[very thick] (6.0,-2.0) -- (6.0,2.0) node[above, font=\scriptsize] {LV bus \SI{690}{V}};
+		\draw[very thick] (6.0,-2.0) -- (6.0,2.0) node[above, xshift=5mm, font=\scriptsize] {LV bus \SI{690}{V}};
 		% proposed breaker and load
-		\node[new, minimum width=1.3cm, minimum height=0.7cm] (brk) at (7.3,0) {breaker\\(to add)};
+		\node[new, minimum width=1.3cm, minimum height=0.7cm] (brk) at (7.2,0) {breaker\\(to add)};
 		\draw[thick] (6.0,0) -- (brk.west);
-		\node[new, minimum width=1.6cm, minimum height=0.7cm] (load) at (7.3,-1.6) {local load\\(to add)};
+		\node[new, minimum width=1.5cm, minimum height=0.7cm] (load) at (7.2,-1.6) {local load\\(to add)};
 		\draw[thick] (6.0,-1.6) -- (load.west);
 		% transformer
 		\draw[thick] (brk.east) -- (8.45,0);
@@ -175,20 +181,15 @@ Figure~\ref{fig:system} shows the model and Table~\ref{tab:system} its data. Eac
 		\draw[thick] (9.65,0) -- (10.35,0);
 		\node[gb, minimum width=1.3cm, minimum height=0.9cm] (grid) at (11.05,0) {grid\\$L\ped{grid}$, FRT};
 		% earthing elements
-		\node[nw] (hfb) at (0,-3.0) {HF and Ground Network:\\$C\ped{pole}$, $r\ped{gnd}$ per pole};
+		\node[nw] (hfb) at (0,-2.85) {HF and Ground Network:\\$C\ped{pole}$, $r\ped{gnd}$ per pole};
 		\draw[dashed] (bat.south) -- (hfb.north);
-		\node[nw] (hft) at (8.8,-1.6) {LV star point:\\$r\ped{star} \parallel 3C\ped{ac}$};
-		\draw[dashed] (8.8,-0.35) -- (hft.north);
-		\node[ground] at (0,-3.55) {};
-		\node[ground] at (8.8,-2.15) {};
-		% timing
-		\node[gb, minimum width=2.5cm, minimum height=0.6cm, fill=yellow!15] (ptp) at (3.65,2.7) {global timing (PTP)};
-		\draw[->, dashed] (ptp.south) -- (m1.north);
-		\draw[->, dashed] (ptp.south west) to[out=-120, in=150] (m2.west);
-		\draw[->, dashed] (ptp.south east) to[out=-60, in=30] (m3.east);
+		\draw (hfb.south) -- ++(0,-0.15) node[ground] {};
+		\node[nw] (hft) at (10.5,-1.6) {LV star point:\\$r\ped{star} \parallel 3C\ped{ac}$};
+		\draw[dashed] (8.8,-0.35) |- (hft.west);
+		\draw (hft.south) -- ++(0,-0.15) node[ground] {};
 	\end{tikzpicture}
 	\captionsetup{width=0.92\textwidth, font=small}
-	\caption[The model \code{pgfm\_ctrl\_analysis}.]{The model \code{pgfm\_ctrl\_analysis}: three modules on one battery and on the LV bus of the grid emulator. Dashed: the earthing elements of Section~\ref{sec:earthing}; green: the breaker and the local load that the tests of Section~\ref{sec:tests} need.}
+	\caption[The model \code{pgfm\_ctrl\_analysis}.]{The model \code{pgfm\_ctrl\_analysis}: three modules on one battery and on the LV bus of the grid emulator. Blue: the earthing elements of Section~\ref{sec:earthing}; yellow: the clocks and the PWM carriers of the modules, aligned to the PTP time; green: the breaker and the local load that the tests of Section~\ref{sec:tests} need.}
 	\label{fig:system}
 \end{figure}
 
@@ -223,7 +224,7 @@ Figure~\ref{fig:system} shows the model and Table~\ref{tab:system} its data. Eac
 
 The modules are grid-following today. Each one has a PLL, a current loop with resonant PI controllers ($k\ped{p} = 0.6$, $k\ped{i} = \SI{35}{s^{-1}}$), the fault ride-through logic of VDE-AR-N 4110 and a current reference set by the init ($i_\xi^* = \SI{-0.85}{pu}$, then the reactive-current steps after the fault). A zero-sequence term \code{u\_cm\_comp\_modN} for the parallel operation is enabled by \code{param.afe.ref.en\_parallel\_mode} (0 for module 1, $-1$ for modules 2 and 3).
 
-The block \code{global timing} gives each module its own clock with a gain error (\code{param.afe.behav.time\_gain\_module\_N} = 1.0002, 1.0015, 0.9988, i.e.\ errors of 200 to \SI{1500}{ppm}, deliberately large) and aligns it to the master time through a compensation loop and a transmission delay of \SI{250}{\micro s}: this is the model of the time distribution by PTP. The PWM carriers of the modules run on the aligned time, with an optional phase shift \code{param.afe.behav.pwm\_phase\_shift\_modN} (zero today: carriers aligned).
+The block \code{global timing} gives each module its own clock with a gain error (fields \code{time\_gain\_module\_N} of \code{param.afe.behav}: 1.0002, 1.0015, 0.9988, i.e.\ errors of 200 to \SI{1500}{ppm}, deliberately large) and aligns it to the master time through a compensation loop and a transmission delay of \SI{250}{\micro s}: this is the model of the time distribution by PTP. The PWM carriers of the modules run on the aligned time, with an optional phase shift (fields \code{pwm\_phase\_shift\_modN}, zero today: carriers aligned).
 
 \subsection{What the model cannot do yet}
 
@@ -243,7 +244,7 @@ The requirements below are the ones the first version is judged against; the num
 \begin{enumerate}[label=R\arabic*., nosep]
 	\item \textbf{On the grid}: each module follows its set-points $P^*$, $Q^*$ from the plant controller and, without anything added, gives inertia and a frequency response proportional to the frequency deviation (primary response).
 	\item \textbf{Loss of the main grid}: the upstream breaker opens with a local load on the LV bus. No detection, no change of mode: the modules keep voltage and frequency (frequency within \SI{\pm 1}{Hz}, positive-sequence voltage within \SI{\pm 10}{\percent}) and share the load in proportion to their rating (error below \SI{5}{\percent} of $S\ped{b}$ for $P$, below \SI{10}{\percent} for $Q$).
-	\item \textbf{Robust sharing}: the sharing must survive different impedances between the modules and the bus (cables, tolerances) and the clock errors of the modules.
+	\item \textbf{Robust sharing}: the sharing must survive different impedances between the modules and the bus (cables, tolerances), the errors of the voltage measurements and the clock errors of the modules.
 	\item \textbf{N$-$1}: the trip of one module in the island must not stop the others.
 	\item \textbf{Current}: the converter current stays below \SI{1.2}{pu} in every event, the module stays grid-forming while it limits.
 	\item \textbf{Later}: frequency and voltage restoration in the island, resynchronization and reconnection to the grid, fault ride-through as a grid-forming unit (GB grid code GC0137 style).
@@ -301,24 +302,24 @@ Figure~\ref{fig:v1} shows the control of one module. All quantities are in pu of
 	\begin{tikzpicture}[font=\footnotesize, >=Latex, node distance=0.55cm,
 		blk/.style={draw, thick, rounded corners=2pt, minimum height=1.0cm, align=center, fill=orange!15},
 		old/.style={draw, thick, rounded corners=2pt, minimum height=1.0cm, align=center, fill=gray!10}]
-		\node[blk, minimum width=2.0cm] (pq) at (0,0) {power\\$p$, $q$, LPF};
-		\node[blk, minimum width=2.6cm] (pf) at (3.3,0.9) {P--f droop\\$\omega = 1 + m\ped{p}(P^* - P\ped{f})$};
-		\node[blk, minimum width=2.6cm] (qv) at (3.3,-0.9) {Q--V droop\\$E = 1 + n\ped{q}(Q^* - Q\ped{f})$};
-		\node[blk, minimum width=1.4cm] (int) at (6.4,0.9) {$\theta = \int \omega\ped{b}\,\omega\,\dif t$};
-		\node[blk, minimum width=2.6cm] (va) at (6.6,-0.9) {virtual admittance\\$\dfrac{e - u}{R\ped{v} + \jj X\ped{v}}$};
-		\node[blk, minimum width=1.6cm] (lim) at (9.4,-0.9) {current\\limit};
-		\node[old, minimum width=1.7cm] (cl) at (11.6,-0.9) {current loop\\(existing)};
-		\node[old, minimum width=1.7cm] (pwm) at (11.6,0.9) {SVPWM\\carrier on PTP};
-		\draw[->] (pq.east) ++(0,0.25) -- ++(0.35,0) |- node[pos=0.75, above] {$P\ped{f}$} (pf.west);
-		\draw[->] (pq.east) ++(0,-0.25) -- ++(0.35,0) |- node[pos=0.75, below] {$Q\ped{f}$} (qv.west);
+		\node[blk, text width=1.1cm] (pq) at (0,0) {power\\$p$, $q$\\LPF};
+		\node[blk, text width=3.0cm] (pf) at (3.25,0.95) {P--f droop\\$\omega = 1 + m\ped{p}(P^* - P\ped{f})$};
+		\node[blk, text width=3.0cm] (qv) at (3.25,-0.95) {Q--V droop\\$E = 1 + n\ped{q}(Q^* - Q\ped{f})$};
+		\node[blk, text width=2.4cm] (int) at (7.0,0.95) {angle\\$\theta = \int \omega\ped{b}\,\omega\,\dif t$};
+		\node[blk, text width=2.7cm] (va) at (7.0,-0.95) {virtual admittance\\$i^* = \dfrac{e - u}{R\ped{v} + \jj X\ped{v}}$};
+		\node[blk, text width=1.3cm] (lim) at (9.75,-0.95) {current\\limit};
+		\node[old, text width=1.9cm] (cl) at (12.25,-0.95) {current loop\\(existing)};
+		\node[old, text width=2.2cm] (pwm) at (12.25,0.95) {SVPWM,\\carrier on PTP};
+		\draw[->] ([yshift=0.3cm]pq.east) -- ++(0.4,0) |- node[pos=0.75, above] {$P\ped{f}$} (pf.west);
+		\draw[->] ([yshift=-0.3cm]pq.east) -- ++(0.4,0) |- node[pos=0.75, below] {$Q\ped{f}$} (qv.west);
 		\draw[->] (pf.east) -- node[above] {$\omega$} (int.west);
 		\draw[->] (qv.east) -- node[above] {$E$} (va.west);
 		\draw[->] (va.east) -- node[above] {$i^*$} (lim.west);
-		\draw[->] (lim.east) -- node[above] {$i^*_{lim}$} (cl.west);
+		\draw[->] (lim.east) -- node[above] {$i^*\ped{lim}$} (cl.west);
 		\draw[->] (cl.north) -- node[right] {$m$} (pwm.south);
-		\draw[->] (int.east) -- ++(0.5,0) node[right, font=\scriptsize, align=left] {$\theta$ to all\\frames};
-		\draw[<-] (pq.west) -- ++(-0.7,0) node[left, align=right] {$u$, $i\ped{s}$};
-		\draw[<-] (va.south) -- ++(0,-0.6) node[below] {$u$ in the frame $\theta$};
+		\draw[->] (int.east) -- ++(0.45,0) node[right, font=\scriptsize, align=left] {$\theta$ to all\\frames};
+		\draw[<-] (pq.south) -- ++(0,-0.5) node[below] {$u$, $i\ped{s}$};
+		\draw[<-] (va.south) -- ++(0,-0.5) node[below] {$u$ in the frame $\theta$};
 		\draw[<-] (pf.north) -- ++(0,0.45) node[above] {$P^*$};
 		\draw[<-] (qv.south) -- ++(0,-0.45) node[below] {$Q^*$};
 	\end{tikzpicture}
@@ -360,7 +361,12 @@ The amplitude of the internal voltage is
 	E = 1 + n\ped{q}\,(Q^* - Q\ped{f}), \qquad n\ped{q} = 0.05 .
 	\label{eq:qv}
 \end{equation}
-Unlike the frequency, the voltage is not the same at every module: with the internal voltage behind the reactance $X_k$ (virtual plus filter) the reactive power of module $k$ is about $Q_k \simeq (1 + n\ped{q} Q^* - U)/(X_k + n\ped{q})$, $U$ the bus voltage. With $X_k = X\ped{v} + X\ped{L} = 0.10 + 0.093 = \SI{0.19}{pu}$ and $n\ped{q} = 0.05$, a difference of \SI{0.005}{pu} in $X_k$ (\SI{5}{\percent} of the filter inductance) moves the share of reactive power by \SI{2}{\percent}: this is what the virtual reactance is for.
+Unlike the frequency, the voltage is not the same at every module. The filter inductor is inside the current loop and does not count: module $k$ is its internal voltage behind the virtual reactance $X\ped{v}$ and the reactance $X\ped{c,\mathit{k}}$ of its connection to the common bus (cable, busbar), and its reactive power is about
+\begin{equation}
+	Q_k \simeq \frac{1 + n\ped{q} Q^* - (1 + \gamma_k)\,U}{X\ped{v} + X\ped{c,\mathit{k}} + n\ped{q}} ,
+	\label{eq:qshare}
+\end{equation}
+$U$ the bus voltage and $\gamma_k$ the gain error of the voltage measurement of the module. With $X\ped{v} = \SI{0.10}{pu}$ and $n\ped{q} = 0.05$, a difference of \SI{0.005}{pu} in $X\ped{c,\mathit{k}}$ (\SI{8.6}{\milli\ohm}, about \SI{100}{m} of LV cable) moves the share of reactive power of the module by \SI{3}{\percent} of its value, while a gain error of \SI{0.5}{\percent} moves its reactive power by \SI{0.033}{pu} of $S\ped{b}$: in the island the accuracy of the voltage measurement, not the impedances, sets the reactive sharing. The virtual reactance is what keeps both effects small.
 
 \subsection{Virtual admittance and current reference}
 
@@ -389,27 +395,34 @@ For one module on the grid, or two modules against each other in the island, the
 	\omega\ped{n} = \sqrt{\frac{K\omega\ped{b}}{2H}}, \qquad \zeta = \frac{D}{4H\omega\ped{n}} .
 	\label{eq:swing}
 \end{equation}
-On the grid all modules move together against the grid, so each of them sees $X = X\ped{v} + X\ped{L} + 3X\ped{grid} = 0.10 + 0.093 + 0.083 = \SI{0.276}{pu}$ ($X\ped{grid}$: transformer and source, \SI{10}{\percent} on \SI{1}{MVA}, \SI{0.028}{pu} on $S\ped{b}$). In the island the modules move against each other through $X = X\ped{v} + X\ped{L} = \SI{0.193}{pu}$; the common motion of the modules against a load that does not depend on the frequency is a first-order mode with time constant $2H/D = \tau\ped{p}$. Table~\ref{tab:smallsignal} gives the result; $H = \SI{2.5}{s}$ ($\tau\ped{p} = \SI{0.1}{s}$) is the variant with more inertia and less damping.
+The filter inductor does not enter $X$: the current loop hides it, and the module is its internal voltage behind $X\ped{v}$ at the bus. On the grid all modules move together against the grid, so each of them sees $X = X\ped{v} + 3X\ped{grid} = 0.10 + 0.083 = \SI{0.183}{pu}$ ($X\ped{grid}$: transformer and source, \SI{10}{\percent} on \SI{1}{MVA}, \SI{0.028}{pu} on $S\ped{b}$). In the island the modules move against each other through $X = X\ped{v} = \SI{0.10}{pu}$; the common motion of the modules against a load that does not depend on the frequency is a first-order mode with time constant $2H/D = \tau\ped{p}$. Table~\ref{tab:smallsignal} gives the result; $H = \SI{2.5}{s}$ ($\tau\ped{p} = \SI{0.1}{s}$) is the variant with more inertia and less damping.
 
 \begin{table}[H]
 	\centering
 	\captionsetup{width=0.9\textwidth, font=small}
-	\caption{Electromechanical modes of the power loops ($m\ped{p} = 0.02$, $D = 50$).}
+	\caption{Electromechanical modes of the power loops ($m\ped{p} = 0.02$, $D = 50$; settling time to \SI{2}{\percent}).}
 	\label{tab:smallsignal}
 	\rowcolors{2}{tableShade}{white}
 	\small
 	\begin{tabular}{@{} l c c c c c @{}}
 		\toprule
-		\textbf{Case} & $K$ [pu/rad] & $\omega\ped{n}$ [rad/s] & $f\ped{n}$ [Hz] & $\zeta$ & settling (\SI{2}{\percent}) [s] \\
+		\textbf{Case} & $K$ [pu/rad] & $\omega\ped{n}$ [rad/s] & $f\ped{n}$ [Hz] & $\zeta$ & settling [s] \\
 		\midrule
-		on the grid, $H = \SI{1.25}{s}$ & 3.62 & 21.3 & 3.40 & 0.47 & 0.40 \\
-		island, module against module, $H = \SI{1.25}{s}$ & 5.19 & 25.5 & 4.07 & 0.39 & 0.40 \\
-		on the grid, $H = \SI{2.5}{s}$ & 3.62 & 15.1 & 2.40 & 0.33 & 0.80 \\
-		island, module against module, $H = \SI{2.5}{s}$ & 5.19 & 18.1 & 2.87 & 0.28 & 0.80 \\
+		on the grid, $H = \SI{1.25}{s}$ & 5.46 & 26.2 & 4.17 & 0.38 & 0.40 \\
+		island, module against module, $H = \SI{1.25}{s}$ & 10.0 & 35.4 & 5.64 & 0.28 & 0.40 \\
+		on the grid, $H = \SI{2.5}{s}$ & 5.46 & 18.5 & 2.95 & 0.27 & 0.80 \\
+		island, module against module, $H = \SI{2.5}{s}$ & 10.0 & 25.1 & 3.99 & 0.20 & 0.80 \\
 		\bottomrule
 	\end{tabular}
 	\rowcolors{1}{white}{white}
 \end{table}
+
+The mode between the modules in the island is the least damped ($\zeta = 0.28$, 0.20 with the larger inertia): there the only reactance between the modules is the virtual one. Test T3 checks it. If the simulation confirms the weak damping, a lead term on the measured power in the frequency law,
+\begin{equation}
+	\omega = 1 + m\ped{p}\,(P^* - P\ped{f}) - m\ped{d}\,(p - P\ped{f}) ,
+	\label{eq:pflead}
+\end{equation}
+adds $\omega\ped{b} m\ped{d} K$ to $2\zeta\omega\ped{n}$ without changing the droop, the steady state or the frequency of the mode: $m\ped{d} = 0.005$ gives $\zeta = 0.50$ to 0.55 in the four cases of Table~\ref{tab:smallsignal}.
 
 \paragraph{Loss of the grid, numbers.} Test T2 of Section~\ref{sec:tests}: local load \SI{600}{\kilo\watt} and \SI{200}{\kilo\var}, modules at $P^* = \SI{0.4}{pu}$ (\SI{111}{\kilo\watt} each), the grid supplies \SI{267}{\kilo\watt}. After the opening each module takes \SI{0.32}{pu} more: the frequency settles at $\Delta f = -m\ped{p}\,\Delta P\, f\ped{0} = \SI{-0.32}{Hz}$ with the time constant $\tau\ped{p}$, i.e.\ an initial rate of change of \SI{-6.4}{Hz/s} ($H = \SI{1.25}{s}$) or \SI{-3.2}{Hz/s} ($H = \SI{2.5}{s}$), without overshoot; each module ends at \SI{0.72}{pu} of active power and \SI{0.24}{pu} of reactive power, of which \SI{0.11}{pu} come from its own filter capacitor. The current stays near \SI{0.75}{pu}, far from the limit.
 
@@ -440,6 +453,7 @@ With the gains of the model, modules 2 and 3 are \SI{2700}{ppm} apart: without t
 		\midrule
 		P--f droop $m\ped{p}$ & 0.02 & \SI{1}{Hz} per pu; $D = 50$ \\
 		power filter $\tau\ped{p}$ & \SI{50}{ms} & $H = \SI{1.25}{s}$; variant \SI{0.1}{s}, $H = \SI{2.5}{s}$ \\
+		lead term $m\ped{d}$ & 0 & 0.005 if T3 shows a weak damping (\ref{eq:pflead}) \\
 		Q--V droop $n\ped{q}$, filter $\tau\ped{q}$ & 0.05, \SI{50}{ms} & \\
 		virtual impedance $R\ped{v}$, $X\ped{v}$ & 0.02, 0.10 & \SI{34}{\milli\ohm}, \SI{0.55}{mH} \\
 		current limit & 1.0 / \SI{1.2}{pu} & threshold virtual impedance $k_X = 1$, $R/X = 0.2$; clip at \SI{1.2}{pu} with anti-windup \\
@@ -475,10 +489,10 @@ The two routes are complementary: A to design and validate the control, B afterw
 		\textbf{Test} & \textbf{Event} & \textbf{What is checked, expected result} \\
 		\midrule
 		T0 & clock errors of the model, alignment off and on & sharing error (\ref{eq:clock}): up to \SI{13.5}{\percent} off, below \SI{1}{\percent} on \\
-		T1 & on the grid: $P^*$ of module 1 from 0 to \SI{0.8}{pu}, then all modules & tracking and damping: $\zeta \simeq 0.47$, settling \SI{0.4}{s} \\
+		T1 & on the grid: $P^*$ of module 1 from 0 to \SI{0.8}{pu}, then all modules & tracking and damping: $\zeta \simeq 0.38$, settling \SI{0.4}{s} \\
 		T2 & loss of the grid with \SI{600}{\kilo\watt} + \SI{200}{\kilo\var} on the bus, modules at $P^* = \SI{0.4}{pu}$ & frequency \SI{-0.32}{Hz}, rate of change \SI{-6.4}{Hz/s}, voltage dip, sharing after the event, peak current \\
-		T3 & island: load step of +\SI{150}{\kilo\watt} & \SI{-0.18}{Hz}, sharing, voltage \\
-		T4 & island: module 3 with +\SI{20}{\percent} filter inductance (or a longer cable) & reactive sharing error below \SI{10}{\percent} \\
+		T3 & island: load step of +\SI{150}{\kilo\watt} & \SI{-0.18}{Hz}, sharing, voltage; damping of the mode between the modules ($\zeta \simeq 0.28$) \\
+		T4 & island: module 3 with +\SI{20}{\percent} filter inductance, then with a cable of \SI{0.01}{pu}, then with a gain error of \SI{1}{\percent} on its voltage measurement & reactive sharing error below \SI{10}{\percent} of $S\ped{b}$; expected: no effect, below \SI{1}{\percent}, about \SI{4.5}{\percent} (\ref{eq:qshare}) \\
 		T5 & island at \SI{450}{\kilo\watt}: trip of module 3 & the two remaining modules go from 0.54 to \SI{0.81}{pu}, no loss of synchronism \\
 		T6 & (V2) FRT test 25.4 on the grid as grid-forming units & current below \SI{1.2}{pu}, recovery, synchronism \\
 		\bottomrule
@@ -519,26 +533,25 @@ does not reach the grid and is not seen by a current loop in the $dq$ frame, but
 \begin{figure}[H]
 	\centering
 	\begin{circuitikz}[european, font=\footnotesize, scale=0.95, transform shape]
-		% module 1 and 2: CM sources and chokes
+		% modules: common-mode sources (referred to the DC midpoint) and common-mode chokes
 		\draw (0,0) to[V, l=$v\ped{cm,1}$] (0,2.2) to[L, l=$L_0/3$] (0,4.4);
-		\draw (3,0) to[V, l_=$v\ped{cm,2}$] (3,2.2) to[L, l_=$L_0/3$] (3,4.4);
-		\draw (0,4.4) -- (7.2,4.4);
-		\draw (0,0) -- (7.2,0);
-		\node[above] at (1.5,4.4) {LV bus (common-mode node)};
-		\node[below] at (1.5,0) {DC link (one battery)};
-		% earth paths
-		\draw (5.2,4.4) to[C, l_=$3C\ped{ac}$] (5.2,2.2);
-		\draw (7.2,4.4) to[R, l=$r\ped{star}$] (7.2,2.2);
-		\draw (5.2,0) to[C, l=$2C\ped{pole}$] (5.2,2.2);
-		\draw (7.2,0) to[R, l_=$r\ped{gnd}/2$] (7.2,2.2);
-		\draw (5.2,2.2) -- (7.2,2.2);
-		\draw (7.2,2.2) -- (8.0,2.2) node[ground] {};
-		\node[font=\scriptsize] at (6.2,2.55) {earth};
-		% loop arrows
-		\draw[->, thick, red!70!black] (0.6,1.4) arc[start angle=-120, end angle=200, radius=0.75];
-		\node[red!70!black] at (1.55,2.2) {$i\ped{zs}$};
-		\draw[->, thick, blue!70!black, dashed] (4.3,3.7) -- (4.3,0.7);
-		\node[blue!70!black, align=center, font=\scriptsize] at (4.25,-0.65) {to earth: $i\ped{e}$};
+		\draw (2.8,0) to[V, l_=$v\ped{cm,2}$] (2.8,2.2) to[L, l_=$L_0/3$] (2.8,4.4);
+		\draw (0,4.4) -- (8.4,4.4);
+		\draw (0,0) -- (8.4,0);
+		\node[above] at (1.4,4.4) {LV bus (common-mode node)};
+		\node[below] at (1.4,0) {DC link midpoint (one battery)};
+		% earth paths: AC side above, DC side below
+		\draw (6.2,4.4) to[C, l=$3C\ped{ac}$] (6.2,2.2);
+		\draw (8.4,4.4) to[R, l=$r\ped{star}$] (8.4,2.2);
+		\draw (6.2,2.2) to[C, l=$2C\ped{pole}$] (6.2,0);
+		\draw (8.4,2.2) to[R, l=$r\ped{gnd}/2$] (8.4,0);
+		\draw (6.2,2.2) -- (8.4,2.2) -- (9.3,2.2) node[ground] {};
+		\node[font=\scriptsize] at (7.3,2.45) {earth};
+		% currents
+		\draw[->, thick, red!70!black] (1.05,1.594) arc[start angle=-120, end angle=200, radius=0.7];
+		\node[red!70!black] at (1.4,2.2) {$i\ped{zs}$};
+		\draw[->, thick, blue!70!black, dashed] (5.3,3.9) -- (5.3,0.5);
+		\node[blue!70!black, left] at (5.3,2.2) {$i\ped{e}$};
 	\end{circuitikz}
 	\captionsetup{width=0.9\textwidth, font=small}
 	\caption[Common-mode paths of modules on one battery.]{Common-mode paths of modules on one battery (lumped, one source per module referred to the DC midpoint). Red: circulating current between the modules; blue: current to earth through the parasitic capacitances (Section~\ref{sec:earthing}).}
@@ -666,7 +679,7 @@ The symmetric earthing resistors of the battery and the IMD do the same job in t
 \end{equation}
 three phases on the AC side, DC+ and DC$-$ on the DC side. Unlike an RCD, which opens its own contacts, the RCMU is a measuring function inside the converter: its signal goes to the control and protection of the converter, which opens the converter contactor. With power converters it must be of \emph{type B}: it measures smooth DC and AC residual currents up to the kilohertz range (a flux-gate sensor), because an insulation fault behind a rectifying bridge gives a DC residual current that saturates the core of an ordinary (type A) device.
 
-\paragraph{Why a BESS needs it.} The IMD finds slow degradations of the insulation; the RCMU finds the sudden ones, including a person touching a live part of the DC side, and it measures what the IMD cannot: the capacitive leakage current that the common-mode voltage drives through the parasitic capacitances. For the transformerless PV inverters the rule is in IEC 62109-2 and VDE V 0126-1-1 \cite{iec62109_2, vde0126}, and it is often taken over for battery converters: disconnection when the continuous residual current exceeds \SI{300}{mA} (converters up to \SI{30}{\kilo\VA}) or \SI{10}{mA} per \si{\kilo\VA} (larger converters), and on sudden steps of 30, 60 and \SI{150}{mA} within 0.3, 0.15 and \SI{0.04}{s}. The step thresholds catch a fault current added on top of the capacitive leakage, whatever its size.
+\paragraph{Why a BESS needs it.} The IMD finds the slow degradation of the insulation; the RCMU finds the faults that appear at once, as a step of the residual current, and it measures what the IMD cannot: the capacitive leakage current that the common-mode voltage drives through the parasitic capacitances. For the transformerless PV inverters the rule is in IEC 62109-2 and VDE V 0126-1-1 \cite{iec62109_2, vde0126}, and it is often taken over for battery converters: disconnection when the continuous residual current exceeds \SI{300}{mA} (converters up to \SI{30}{\kilo\VA}) or \SI{10}{mA} per \si{\kilo\VA} (larger converters), and on sudden steps of 30, 60 and \SI{150}{mA} within 0.3, 0.15 and \SI{0.04}{s}. The step thresholds catch a fault current added on top of the capacitive leakage, whatever its size.
 
 \paragraph{Where.} One summation transformer on the AC side of each PCS (the three phases, the star point of the IT system is not a conductor of the circuit), and one on the DC cables of each battery string (DC+ and DC$-$); Figure~\ref{fig:rcmu}. The AC one sees every earth current of the PCS; the DC one tells which string leaks.
 
@@ -681,15 +694,15 @@ three phases on the AC side, DC+ and DC$-$ on the DC side. Unlike an RCD, which 
 		\draw[very thick] (-0.4,-3.0) -- (12.6,-3.0) node[right] {PE};
 		% battery
 		\node[gb, minimum width=1.5cm, minimum height=2.6cm] (bat) at (0.4,0) {battery\\string};
-		\draw[thick] (1.15,0.9) -- (5.0,0.9) node[pos=0.0, above right, font=\scriptsize] {DC+};
-		\draw[thick] (1.15,-0.9) -- (5.0,-0.9) node[pos=0.0, below right, font=\scriptsize] {DC$-$};
+		\draw[thick] (1.15,0.9) -- (5.0,0.9) node[pos=0.2, above, font=\scriptsize] {DC+};
+		\draw[thick] (1.15,-0.9) -- (5.0,-0.9) node[pos=0.2, above, font=\scriptsize] {DC$-$};
 		% DC summation transformer
 		\draw[thick, fill=yellow!40, fill opacity=0.5] (3.4,0) ellipse (0.22 and 1.25);
 		\node[meas] at (3.4,1.75) {RCMU DC\\type B};
 		% PCS
 		\node[gb, minimum width=2.2cm, minimum height=2.6cm] (pcs) at (6.1,0) {PCS module\\bridge, $L$, $L_0$,\\$C\ped{F}$};
 		% AC lines
-		\foreach \y in {0.6,0,-0.6} { \draw[thick] (7.2,\y) -- (10.4,\y); }
+		\foreach \y in {0.6,0,-0.6} { \draw[thick] (7.2,\y) -- (10.3,\y); }
 		\draw[thick, fill=yellow!40, fill opacity=0.5] (8.6,0) ellipse (0.22 and 0.95);
 		\node[meas] at (8.6,1.45) {RCMU AC\\type B};
 		% transformer
@@ -699,20 +712,20 @@ three phases on the AC side, DC+ and DC$-$ on the DC side. Unlike an RCD, which 
 		\node[font=\scriptsize, align=center] at (11.1,1.25) {LV/MV, earthed\\screen};
 		\draw[thick] (11.85,0) -- (12.6,0) node[right] {MV};
 		% screen to earth
-		\draw (11.07,-0.75) -- (11.07,-3.0);
+		\draw (11.07,-0.75) -- (11.07,-1.05) -- (12.1,-1.05) -- (12.1,-3.0);
 		% LV star point with IMD
-		\draw (10.75,-0.45) -- (10.75,-1.3);
-		\node[meas, minimum width=0.9cm] (imd) at (10.75,-1.75) {IMD};
+		\draw (10.75,-0.45) -- (10.75,-1.5);
+		\node[meas, minimum width=0.9cm] (imd) at (10.75,-1.8) {IMD};
 		\draw (imd.south) -- (10.75,-3.0);
 		% parasitic capacitances (dashed) and earthing resistor of the poles, drawn on DC- (the same on DC+)
-		\draw (1.6,-0.9) to[R, l_={\scriptsize $r\ped{gnd}$}] (1.6,-3.0);
-		\draw[dashed] (2.3,-0.9) to[C, l={\scriptsize $C\ped{pole}$}] (2.3,-3.0);
+		\draw (1.55,-0.9) to[R, l_={\scriptsize $r\ped{gnd}$}] (1.55,-3.0);
+		\draw[dashed] (2.4,-0.9) to[C, l={\scriptsize $C\ped{pole}$}] (2.4,-3.0);
 		\node[font=\scriptsize, align=center] at (1.95,-3.45) {(the same on DC+)};
 		\draw[dashed] (6.1,-1.3) to[C, l={\scriptsize $C\ped{ac}$}] (6.1,-3.0);
-		\draw[dashed] (9.6,-0.6) to[C, l={\scriptsize $C\ped{ac}$}] (9.6,-3.0);
+		\draw[dashed] (9.6,-0.6) to[C, l_={\scriptsize $C\ped{ac}$}] (9.6,-3.0);
 		% insulation fault between the summation transformer and the PCS
-		\draw[red!70!black, thick] (4.3,-0.9) to[R, l={\scriptsize $R\ped{fault}$}, color=red!70!black] (4.3,-3.0);
-		\draw[->, red!70!black, thick] (4.6,-2.6) -- (5.4,-2.6) node[right, font=\scriptsize] {fault current};
+		\draw[red!70!black, thick] (4.5,-0.9) to[R, l={\scriptsize $R\ped{fault}$}, color=red!70!black] (4.5,-3.0);
+		\draw[->, red!70!black, thick] (4.15,-1.45) -- (4.15,-2.45) node[midway, left, font=\scriptsize] {$i\ped{f}$};
 	\end{tikzpicture}
 	\captionsetup{width=0.92\textwidth, font=small}
 	\caption[RCMU and IMD in a BESS with an IT LV system.]{RCMU and IMD in a BESS with an IT LV system (one PCS and one string shown). The summation transformers see the sum of the currents of their conductors, i.e.\ the current that returns through earth: the capacitive leakage through $C\ped{pole}$ and $C\ped{ac}$ (dashed) and the current of an insulation fault (red). The IMD sits between the LV system and earth; the screen of the transformer keeps the common-mode current away from the MV network.}
