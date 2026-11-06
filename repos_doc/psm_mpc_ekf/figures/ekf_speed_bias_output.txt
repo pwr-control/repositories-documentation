@@ -1,0 +1,10 @@
+ts = 66.67 us, theta per step at 1 pu = ts*omega_bez = 0.00646 rad (0.370 deg); theta/2 = 0.323 %; L = 1.0033, R = 0.0424
+Euler (the block), q 1/100              : speed state 0.99717 x true (-0.283 %), angle error +0.110 deg, |psi| 1.0039
+Euler, q 1/10                           : speed state 0.99725 x true (-0.275 %), angle error +0.140 deg, |psi| 1.0034
+Euler, no load (iq = 0)                 : speed state 0.99717 x true (-0.283 %), angle error +0.117 deg, |psi| 1.0039
+Euler, half speed (w = 0.5)             : speed state 0.99831 x true (-0.169 %), angle error +0.057 deg, |psi| 1.0020
+Euler + clock 1.001                     : speed state 0.99618 x true (-0.382 %), angle error +0.059 deg, |psi| 1.0049
+exact prediction (expm)                 : speed state 1.00000 x true (+0.000 %), angle error +0.000 deg, |psi| 1.0000
+Euler current + exact flux rotation     : speed state 1.00000 x true (-0.000 %), angle error +0.178 deg, |psi| 1.0000
+Taylor-2 prediction                     : speed state 0.99999 x true (-0.001 %), angle error -0.000 deg, |psi| 1.0000
+Taylor-2 + clock 1.001                  : speed state 0.99899 x true (-0.101 %), angle error -0.050 deg, |psi| 1.0010

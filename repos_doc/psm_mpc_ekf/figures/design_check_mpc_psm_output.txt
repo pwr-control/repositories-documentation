@@ -1,0 +1,112 @@
+==============================================================================================================
+mpc_psm design check, before and after the control fixes (numbers of init_model.m)
+==============================================================================================================
+
+1. Per-unit chain (one of the six systems)
+   machine: ubez = 365.8 V peak, ibez = 486.0 A peak, tau_bez = 143.06 kNm, omega_bez = 96.93 rad/s (15.43 Hz), 1 pu power = 266.7 kW
+   Rs = 30.10 mOhm, Ld = 6.24 mH (0.8036 pu), Lq = 7.56 mH (0.9736 pu), Ls = (Ld + Lq)/2 = 0.8886 pu; with the 230 uH inductor the bridge sees 0.8333 pu (d) and 1.0033 pu (q)
+   battery: 332 cells, open circuit 1249 V at soc 0.85 (1.168 pu of udc_nom 1070 V), R0 = 72 mOhm, R1 = 72 mOhm, C1 = 10 mF
+   Before the fix the predictive control computes the vectors from vdc = 1 (Constant) without any voltage
+   scale: 2/3 for the vector [1 0 0], in pu of udc_nom, while its model needs pu of ubez.
+   The true vector is 2/3*udc/ubez = 2.277 pu: the prediction sees the voltage 3.42 times too small.
+   EKF voltage before the fix: 3/2*u*u_psm_scale_ekf = 3/2*u*1.6889 -> 1.689 pu for [1 0 0], 0.742 x the true voltage, and the vector of the last step (one step too new).
+   Fixed predictive control: state voltages from the measured vdc (pu of udc_nom) times u_scale = udc_nom/ubez = 2.9252 -> pu of ubez;
+   prediction and EKF with L_norm = (Lq + LFi)/Lbez = 1.0033 pu and R_norm = (Rs + RLFi)/Xbez = 0.0424 pu (before: Ls_norm = 0.8886, Rs_norm = 0.0400);
+   the EKF gets the voltage of the vector of two steps before (output of the predictive control = vector of the
+   last step, then the Unit Delay of mp control), gains 1, u_psm_scale_ekf = 1.
+   rated speed: torque curve 125.0 kNm per system -> iq_ref = -0.874 pu (id = 0), bridge voltage 476 V peak = 1.30 pu of ubez = 0.66 of the linear limit udc/sqrt(3)
+   With L_norm = Lq + LFi the flux of the EKF is the "active flux" psi_m + (Ld - Lq)*id: it lies on the d axis for
+   any id, so the EKF angle has no saliency error (with Ls it lagged by about atan((Lq_t - Ls)*iq/psi_m)).
+   Saliency error of the EKF before the fix at rated torque: -5.7 deg
+   Angle delay of the chain: the EKF angle used at step k is the one of t(k-2) and the vector acts until t(k+1):
+   3 steps = 1.11 deg at rated speed, i.e. id = -0.017 pu for the rated iq (not compensated, small).
+
+2. Predictive current loop seen as a deadbeat loop (no vector limit, one axis)
+   g = (true voltage / predicted voltage)*(L_prediction / L_true).
+   Before: no delay compensation -> e(k+1) = e(k) - g*e(k-1), poles z^2 - z + g = 0.
+   before, q axis                : g = 3.025, |z| = 1.739 (unstable, oscillation at 3057 Hz)
+   before, d axis                : g = 3.643, |z| = 1.909 (unstable, oscillation at 3120 Hz)
+   before, q axis, bridge 1 mH on: g = 2.681, |z| = 1.637 (unstable, oscillation at 3012 Hz)
+   With g = 1 (right voltage base, no delay compensation) |z| = 1: undamped oscillation at f_s/6.
+   After: delay compensated (current of now predicted with the vector of the last step)
+   -> e(k+1) = (1 - g)*e(k-1), poles z^2 = 1 - g: the error is multiplied by 1 - g every two steps.
+   after, q axis                 : g = 1.000, 1 - g = +0.000, |z| = 0.000 (deadbeat for g = 1)
+   after, d axis                 : g = 1.204, 1 - g = -0.204, |z| = 0.452 (deadbeat for g = 1)
+
+3. Switched simulation of the whole chain (1.25 s, values averaged over 1.0 ... 1.25 s, one of the six systems)
+   A model before the fix (dev model, bridge passives on):
+      control angle error  +9.44 deg (std 12.55), EKF speed 1.3042 x true | id +0.080 (std 0.181), iq -1.027 (std 0.031) pu for iq_ref -1.031 | torque -1.014 pu, torque curve at the true speed -0.874 pu (+16.0 %)
+      current error rms 0.1036 pu (50.4 A) | DC link 1278 V | battery charged with 254 kW | switching 959 Hz per device on average | zero vector 3 % of the steps
+      start: the torque reference leaves zero at 0.166 s (filtered speed 4 rpm), largest angle error from then to 1.0 s: 26.0 deg
+   A0 model before the fix, bridge passives off:
+      control angle error +37.07 deg (std 29.32), EKF speed 4.8889 x true | id +0.243 (std 0.377), iq -0.902 (std 0.106) pu for iq_ref -1.031 | torque -0.870 pu, torque curve at the true speed -0.874 pu (-0.4 %)
+      current error rms 0.4118 pu (200.1 A) | DC link 1274 V | battery charged with 221 kW | switching 297 Hz per device on average | zero vector 1 % of the steps
+      start: the torque reference leaves zero at 0.166 s (filtered speed 4 rpm), largest angle error from then to 1.0 s: 60.9 deg
+   N1 fixed model (sensorless, dead time 3 us):
+      control angle error  -0.06 deg (std 0.35), EKF speed 0.9992 x true | id -0.006 (std 0.007), iq -0.857 (std 0.007) pu for iq_ref -0.858 | torque -0.858 pu, torque curve at the true speed -0.874 pu (-1.7 %)
+      current error rms 0.0057 pu (2.8 A) | DC link 1274 V | battery charged with 219 kW | switching 2823 Hz per device on average | zero vector 39 % of the steps
+      start: the torque reference leaves zero at 0.183 s (filtered speed 4 rpm), largest angle error from then to 1.0 s: 1.4 deg
+   N2 fixed model, encoder angle (use_psm_encoder = 1):
+      control angle error  -0.37 deg (std 0.00), EKF speed 0.9990 x true | id -0.011 (std 0.005), iq -0.862 (std 0.006) pu for iq_ref -0.862 | torque -0.864 pu, torque curve at the true speed -0.874 pu (-1.1 %)
+      current error rms 0.0058 pu (2.8 A) | DC link 1274 V | battery charged with 221 kW | switching 2863 Hz per device on average | zero vector 38 % of the steps
+      start: the torque reference leaves zero at 0.172 s (filtered speed 4 rpm), largest angle error from then to 1.0 s: 0.4 deg
+   N3 fixed model without dead time:
+      control angle error  -0.68 deg (std 0.02), EKF speed 0.9990 x true | id -0.015 (std 0.005), iq -0.857 (std 0.007) pu for iq_ref -0.858 | torque -0.860 pu, torque curve at the true speed -0.874 pu (-1.6 %)
+      current error rms 0.0058 pu (2.8 A) | DC link 1274 V | battery charged with 221 kW | switching 2802 Hz per device on average | zero vector 37 % of the steps
+      start: the torque reference leaves zero at 0.183 s (filtered speed 4 rpm), largest angle error from then to 1.0 s: 0.9 deg
+   N4 fixed model, shaft at 12 rpm (partial load):
+      control angle error  -0.31 deg (std 0.40), EKF speed 0.9989 x true | id -0.002 (std 0.005), iq -0.232 (std 0.004) pu for iq_ref -0.232 | torque -0.232 pu, torque curve at the true speed -0.233 pu (-0.3 %)
+      current error rms 0.0043 pu (2.1 A) | DC link 1254 V | battery charged with 41 kW | switching 2158 Hz per device on average | zero vector 65 % of the steps
+      start: the torque reference leaves zero at 0.240 s (filtered speed 4 rpm), largest angle error from then to 1.0 s: 1.1 deg
+   N5 fixed model with the bridge passives still on (1 mH, 2 mF):
+      control angle error  -6.30 deg (std 0.30), EKF speed 0.9988 x true | id -0.099 (std 0.006), iq -0.850 (std 0.007) pu for iq_ref -0.856 | torque -0.865 pu, torque curve at the true speed -0.874 pu (-1.0 %)
+      current error rms 0.0054 pu (2.6 A) | DC link 1274 V | battery charged with 219 kW | switching 2907 Hz per device on average | zero vector 39 % of the steps
+      start: the torque reference leaves zero at 0.183 s (filtered speed 4 rpm), largest angle error from then to 1.0 s: 6.7 deg
+   L1 fixed model, machine inductances +20 % (control unchanged):
+      control angle error  -9.45 deg (std 0.29), EKF speed 0.9987 x true | id -0.146 (std 0.006), iq -0.843 (std 0.007) pu for iq_ref -0.855 | torque -0.864 pu, torque curve at the true speed -0.874 pu (-1.1 %)
+      current error rms 0.0052 pu (2.5 A) | DC link 1274 V | battery charged with 222 kW | switching 2919 Hz per device on average | zero vector 38 % of the steps
+      start: the torque reference leaves zero at 0.183 s (filtered speed 4 rpm), largest angle error from then to 1.0 s: 9.6 deg
+   L2 fixed model, machine inductances -10 % (control unchanged):
+      control angle error  +4.57 deg (std 0.50), EKF speed 0.9991 x true | id +0.063 (std 0.009), iq -0.856 (std 0.007) pu for iq_ref -0.859 | torque -0.847 pu, torque curve at the true speed -0.874 pu (-3.0 %)
+      current error rms 0.0063 pu (3.0 A) | DC link 1274 V | battery charged with 217 kW | switching 2765 Hz per device on average | zero vector 38 % of the steps
+      start: the torque reference leaves zero at 0.183 s (filtered speed 4 rpm), largest angle error from then to 1.0 s: 5.3 deg
+   L3 fixed model, machine inductances -20 % (control unchanged):
+      control angle error  +9.36 deg (std 1.29), EKF speed 0.9993 x true | id +0.135 (std 0.020), iq -0.849 (std 0.008) pu for iq_ref -0.860 | torque -0.830 pu, torque curve at the true speed -0.874 pu (-5.0 %)
+      current error rms 0.0070 pu (3.4 A) | DC link 1273 V | battery charged with 213 kW | switching 2641 Hz per device on average | zero vector 37 % of the steps
+      start: the torque reference leaves zero at 0.183 s (filtered speed 4 rpm), largest angle error from then to 1.0 s: 10.5 deg
+   L4 fixed model, machine inductances -25 % (control unchanged):
+      control angle error +11.76 deg (std 2.07), EKF speed 0.9989 x true | id +0.170 (std 0.031), iq -0.843 (std 0.010) pu for iq_ref -0.861 | torque -0.819 pu, torque curve at the true speed -0.874 pu (-6.3 %)
+      current error rms 0.0077 pu (3.7 A) | DC link 1273 V | battery charged with 211 kW | switching 2553 Hz per device on average | zero vector 35 % of the steps
+      start: the torque reference leaves zero at 0.183 s (filtered speed 4 rpm), largest angle error from then to 1.0 s: 13.8 deg
+   L5 fixed model, machine inductances -25 %, encoder angle:
+      control angle error  -0.37 deg (std 0.00), EKF speed 0.9995 x true | id -0.011 (std 0.007), iq -0.863 (std 0.007) pu for iq_ref -0.862 | torque -0.864 pu, torque curve at the true speed -0.874 pu (-1.1 %)
+      current error rms 0.0076 pu (3.7 A) | DC link 1274 V | battery charged with 221 kW | switching 2519 Hz per device on average | zero vector 40 % of the steps
+      start: the torque reference leaves zero at 0.172 s (filtered speed 4 rpm), largest angle error from then to 1.0 s: 0.4 deg
+   E1 as N1 with the legacy EKF noise q_ekf = 1/10:
+      control angle error  -0.19 deg (std 0.79), EKF speed 0.9987 x true | id -0.008 (std 0.012), iq -0.857 (std 0.007) pu for iq_ref -0.858 | torque -0.858 pu, torque curve at the true speed -0.874 pu (-1.7 %)
+      current error rms 0.0057 pu (2.8 A) | DC link 1274 V | battery charged with 220 kW | switching 2806 Hz per device on average | zero vector 38 % of the steps
+      start: the torque reference leaves zero at 0.183 s (filtered speed 4 rpm), largest angle error from then to 1.0 s: 1.9 deg
+   E2 as L2 (inductances -10 %) with q_ekf = 1/10:
+      control angle error  +7.41 deg (std 13.91), EKF speed 1.0005 x true | id +0.086 (std 0.189), iq -0.844 (std 0.031) pu for iq_ref -0.864 | torque -0.833 pu, torque curve at the true speed -0.874 pu (-4.7 %)
+      current error rms 0.0318 pu (15.5 A) | DC link 1273 V | battery charged with 213 kW | switching 2020 Hz per device on average | zero vector 31 % of the steps
+      start: the torque reference leaves zero at 0.183 s (filtered speed 4 rpm), largest angle error from then to 1.0 s: 29.2 deg
+   E3 inductances -15 % with q_ekf = 1/10:
+      control angle error +32.73 deg (std 27.27), EKF speed 0.9977 x true | id +0.238 (std 0.310), iq -0.861 (std 0.106) pu for iq_ref -0.925 | torque -0.830 pu, torque curve at the true speed -0.874 pu (-5.0 %)
+      current error rms 0.2923 pu (142.1 A) | DC link 1273 V | battery charged with 213 kW | switching 600 Hz per device on average | zero vector 3 % of the steps
+      start: the torque reference leaves zero at 0.182 s (filtered speed 4 rpm), largest angle error from then to 1.0 s: 57.7 deg
+   S1 as N1 without the switching term (k_sw = 0):
+      control angle error  -1.20 deg (std 3.00), EKF speed 0.9999 x true | id -0.023 (std 0.045), iq -0.856 (std 0.007) pu for iq_ref -0.857 | torque -0.859 pu, torque curve at the true speed -0.874 pu (-1.7 %)
+      current error rms 0.0057 pu (2.8 A) | DC link 1274 V | battery charged with 219 kW | switching 3503 Hz per device on average | zero vector 37 % of the steps
+      start: the torque reference leaves zero at 0.183 s (filtered speed 4 rpm), largest angle error from then to 1.0 s: 5.9 deg
+   S2 as N1 with k_sw = 1e-4:
+      control angle error  -0.50 deg (std 0.25), EKF speed 0.9991 x true | id -0.014 (std 0.007), iq -0.859 (std 0.008) pu for iq_ref -0.858 | torque -0.861 pu, torque curve at the true speed -0.874 pu (-1.5 %)
+      current error rms 0.0072 pu (3.5 A) | DC link 1274 V | battery charged with 220 kW | switching 1688 Hz per device on average | zero vector 39 % of the steps
+      start: the torque reference leaves zero at 0.183 s (filtered speed 4 rpm), largest angle error from then to 1.0 s: 1.3 deg
+   S3 as N1 with k_sw = 1e-3:
+      control angle error  -0.68 deg (std 0.29), EKF speed 0.9991 x true | id -0.021 (std 0.024), iq -0.859 (std 0.022) pu for iq_ref -0.858 | torque -0.862 pu, torque curve at the true speed -0.874 pu (-1.3 %)
+      current error rms 0.0240 pu (11.6 A) | DC link 1274 V | battery charged with 221 kW | switching 367 Hz per device on average | zero vector 36 % of the steps
+      start: the torque reference leaves zero at 0.183 s (filtered speed 4 rpm), largest angle error from then to 1.0 s: 1.5 deg
+   S4 as N1 with the speed state of the EKF as speed output (no double integrator observer):
+      control angle error  -0.11 deg (std 0.29), EKF speed 0.9960 x true | id -0.007 (std 0.006), iq -0.847 (std 0.006) pu for iq_ref -0.847 | torque -0.848 pu, torque curve at the true speed -0.874 pu (-2.9 %)
+      current error rms 0.0057 pu (2.8 A) | DC link 1274 V | battery charged with 217 kW | switching 2836 Hz per device on average | zero vector 39 % of the steps
+      start: the torque reference leaves zero at 0.165 s (filtered speed 4 rpm), largest angle error from then to 1.0 s: 1.4 deg
