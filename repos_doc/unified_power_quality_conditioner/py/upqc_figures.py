@@ -180,7 +180,7 @@ def main():
     if os.path.exists(os.path.join(DATA, "s1_lim1_k1_env.csv")):
         cases.append((load("s1_lim1_k1_env.csv"), "tab:orange", "up to $\\pi/2$, gains of main"))
     if cases:
-        cases.append((e1, "tab:green", "default case"))
+        cases.append((e1, "tab:green", "up to $\\pi/2$, faster PI (default case)"))
         fig_dab_fix(cases, os.path.join(out, "upqc_dab_fix.png"))
     print("figures in", os.path.abspath(out))
 
