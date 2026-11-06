@@ -1,190 +1,102 @@
 # repos_doc — reports on the models of the other repositories
 
-One folder per report. Each holds the `.tex` source (sometimes with included chapters or a
-local `settings.tex`) and, where compiled, the PDF. All are in English unless noted; author
-Davide Bagnara. The build is `pdflatex <file>.tex` from inside the folder, since the preamble
-is loaded as `../../AAA_template_latex_settings/settings`.
+One folder per report, with the `.tex` source and, where compiled, the PDF. Author Davide
+Bagnara; English unless noted. Build from inside the folder with `pdflatex <file>.tex` (twice,
+for the references), since the preamble is loaded as `../../AAA_template_latex_settings/settings`.
+A `py/` subfolder, where present, holds the Python scripts that give the numbers and figures.
 
-## Electrical machines and drives
+How to read the tables:
 
-- `psm_model_observer_ctrl` — *Permanent Magnet Synchronous Machines: model derivation, control
-  and Simscape implementation* (May 2021). PMSM in machine variables, αβ and dq; FOC, MTPA,
-  robust field weakening, per-unit normalization; parameter identification from no-load,
-  short-circuit and load tests; back-EMF observer and parameter deviation analysis.
-- `induction_motor_model_and_control` — *Induction Motor: Modelization and Parameters
-  Estimation*. Symmetrical machine, steady-state equivalent circuit, parameter calculation from
-  factory tests, reference-frame theory, αβ dynamic model with rotor flux observer, online rotor
-  resistance estimation.
-- `psm_mpc_ekf` — MPC of a PMSM with an extended Kalman filter observer: control design, EKF for
-  the nonlinear machine, space vector and predictive modulators, current reference generator,
-  simulation results. (The `\title` still reads "Application to IM…", copied from the next one.)
-- `im_mpc_ekf` — *Extended Kalman Filter: Application to IM with T-type MPC Three Phase
-  Inverter*. Induction motor model derivation and EKF observer.
-- `psm_nonlinear_observer` — *Equazioni dell'osservatore adattativo* (Italian). Equations of an
-  adaptive observer for a PMSM in the stator dq frame.
-- `inverter_for_drone` — *Flying Basket Inverter Design: model, control strategy and hardware
-  dimensioning*. PMSM drive for a drone: parameter identification, DC-link, MOSFET and heatsink
-  sizing, electro-thermal simulation, control architectures, firmware, user manual.
-- `igbt_selection_and_procedure` — *IGBT for EDrive: selection procedure*. Feasibility of the
-  Infineon FF1200R17IP5 as replacement of the DP650B1700, FF650R17IE4 and FF650R17IE4D_B2 in a
-  690 V drive: theoretical losses plus double pulse tests with the DB1.00 and DB1.51 driver boards.
-- `semiconductor_devices_igbt_1` — *IGBTs performance analysis: application to electrical
-  drives* — the same study as a report plus a Beamer presentation (*DPT results, 690 V
-  electrical drive*).
-- `long_cable_effects_in_electrical_drives` — *Long Power Cable Effects in electrical drives*
-  (July 2026). Acoustic emission of a 120 m shielded inverter-motor cable under PWM: on-site
-  measurement conclusions, high-frequency cable model (distributed parameters, cascaded π
-  sections, Simscape), sound-emission model from Ampère forces to acoustic radiation,
-  mitigation, vibration-induced fatigue.
-- `modularity` — *Modularity in Power Electronics: impact on grid power quality* (October 2023).
-  Two to eight paralleled AFE + inverter + PMSM drives on an MV grid: harmonic model of parallel
-  AFEs, THD versus operating point, PWM carriers and PCC impedance, four case scenarios.
-- `control-of-string-actuated` — *Control of String-Actuated: following the work of Ruth
-  Curtain* (September 2024). Two-pulley string-actuated system: string displacement and torsional
-  models, coupled oscillators, control design, one- and two-mode study cases.
-- `flexible_shaft` — *Flexible Shaft: model derivation and Simscape implementation* (October
-  2022). Two-mass torsional model, resonance and anti-resonance, extension to a generic gear.
-- `moving_coil` — *Moving Coil: modelization and control system design* (October 2022).
-  Actuator model in moving and stationary frames, control with and without load estimator.
+- **Document**: the folder, the revision and date of the title page, the link to the PDF
+  (*no PDF* when the folder has only the source).
+- **Title and contents**: the title of the title page, then what the document contains.
+- **Model or repository**: the model, library block or repository that the document describes,
+  as its title page names it; — when it names none.
 
-## Grid-tied converters and power supplies
+Groups: [Electrical machines and their control](#electrical-machines-and-their-control) ·
+[Drives: hardware and system studies](#drives-hardware-and-system-studies) ·
+[Mechanics and actuators](#mechanics-and-actuators) ·
+[Grid-tied converters, PLLs and grid forming](#grid-tied-converters-plls-and-grid-forming) ·
+[DC/DC stages, solid-state transformers, power supplies and magnetics](#dcdc-stages-solid-state-transformers-power-supplies-and-magnetics) ·
+[Hydraulics, heavy-duty vehicles and energy storage](#hydraulics-heavy-duty-vehicles-and-energy-storage) ·
+[Notes](#notes)
 
-- `single_phase_grid_tied_inverter_analysis` — *Single-Phase Grid-Tied T-Type Inverter: model,
-  control design and discrete implementation* (Rev. 01, October 2026; Rev. 00 of June 2020
-  compared three control strategies). The controller of the library block
-  `afe_single_phase_ttype` (`afe_sp_ttype_ctrl_pwm`), the AC module of the SST bench: LCL plant
-  with the line inductance, first harmonic tracker and vector PI on the fundamental of the
-  single-phase current with the exact stationary-frame equivalent (a PR controller shaped by the
-  tracker: gain stabilization of the 1.4 kHz resonance, DC mode and the condition
-  k_i/k_p < 190 rad/s), single-phase PLL as SOGI-QSG, DC-link voltage loop, three-level
-  modulator and the discrete implementation. Companion Python script reproduces every number
-  and figure.
-- `single_phase_inverter` — *Single Phase Inverter: analysis of architecture and control
-  strategies* (June 2026), same body updated.
-- `three_phase_grid_tied_inverter_analysis` — despite the folder name, another copy of the
-  single-phase inverter study.
-- `single_phase_afe_power_decoupling` — *Active power decoupling of a single-phase AFE: the ripple
-  port and its control in the model `single_phase_afe`* (Rev. 00, October 2026). Why the power of a
-  single-phase converter pulsates at 2f and the energy that moves (P/ω); the ripple port of the
-  model `single_phase_afe` of `modelization-and-control` (second full bridge, two inductors, buffer
-  capacitor at 2000 V, boost type) and the sizing of its parts; the control step by step:
-  double-integrator observer that isolates the 100 Hz ripple of the DC-link voltage, phase-shift
-  filter that builds its quadrature, rotation at 2θ, vector PI, and why the output is applied
-  through the β axis (it compensates the 90° of the DC-link capacitor); buffer voltage and current
-  loops; averaged simulation with the discrete loops (ripple 16 % → 0.8 %, third harmonic 13 % →
-  0.5 %), check of the numbers and margins of the model, open points. Companion Python script and
-  PDF figures in the folder; same source in `library/library/documentation/`.
-- `single_phase_lock_loop` — *Single Phase Lock Loop*. SOGI-QSG based PLL and moving-average
-  filter implemented on dSPACE SCALEXIO with C-Caller and DFT.
-- `three_phase_inductors` — *Three Phase Inductors: mathematical model and construction*. Four-
-  versus three-limb reactors (differential and common mode), saturation effects.
-- `isop_architecture` — *Four-Winding Transformer: circuit model and governing equations*.
-  Flux-linkage matrix, T-equivalent, MMF balance and port relations of the transformer used in
-  the input-series output-parallel rail supply.
-- `solid_state_transformers` — *Solid State Transformers: architecture, modelization and
-  control* (Rev. 01, October 2026). DAB, three-phase DAB and CLLC stages with NPC and T-type
-  inverters, control loops, HF transformer design, simulation comparison (the 2025 study), and
-  the two-module bench the repository keeps today: CLLC-DCX 800 V / 800 V, 50 kW, 50 kHz and
-  T-type single-phase inverter per module, inverters in series on the line, the two models
-  (compact library blocks, discrete blocks with losses), `param` structure, timing and
-  Backward Euler settings. Figures are referenced without extension (EPS here, PDF in the copy
-  kept in `library/library/documentation/`).
-- `cllc_dcx` — *CLLC-DCX isolated DC/DC stage: 800 V / 800 V, 50 kW, 50 kHz, sizing, simulation
-  model and library block* (Rev. 00, October 2026). The isolated stage of the SST module as an
-  open-loop DC transformer: FHA gain, why the stage is not regulated (tank reactance, power
-  against phase), resonant tank and magnetizing inductance for ZVS, transformer on stacked
-  UU93 ferrite sets, SiC modules and synchronous rectifier drive, DC links, loss budget; the
-  35 kHz variant 790 V → 700 V and its origin; the Simscape bench of `solid-state-transformers`
-  (modes, switch model, Backward Euler damping against the solver step); the library block
-  `cllc_dcx` (ports, measurement and gate vectors, control chain, control log, parameter
-  structure). Analytic figures from `py/cllc_dcx_figures.py` (pgfplots data in `figures/`).
-  Same source in `library/library/documentation/cllc_dcx/`.
-- `grid_forming_following_afe` — *Grid-forming and grid-following AFE blocks: two-level bridge
-  with LCL filter, description and user guide* (Rev. 00, October 2026). The library blocks
-  `grid_forming_dqctrl` and `grid_following_dqctrl` (one Simscape component for the power
-  stage, one MATLAB Function for the control and the PWM): quick-start user guide, power stage
-  (two-level bridge, DC link, LCL filter, switch model, measurement and gate vectors), the
-  control parts common to both blocks (local clock and carrier, acquisitions, Clarke and Park,
-  first harmonic tracker and sequences, vector PI, SVPWM and dead time), the grid-forming chain
-  (phase generator, voltage and current loops, master/slave `sync` ports, negative-sequence
-  compensator), the grid-following chain (PLL, DC-link loop, zero-sequence loop), ports and
-  control logs, the `p` parameter structure with the example values, what the blocks do not
-  model. All figures are TikZ. Same source in
-  `library/library/documentation/grid_forming_following_afe/`; that PDF is the Help of the two
-  block masks.
-- `afe_uvw_ctrl` — *AFE control in the uvw frame: the five MATLAB Function blocks of
-  `afe_uvw_ctrl`* (Rev. 01, November 2026). The controller of the model `afe_uvw_three_phase` as
-  written in the library package `masked_models/afe_uvw_ctrl` (library PR #35): Clarke and
-  sequence frames with the fractional-window moving average, grid voltage sequences, fault
-  ride-through of VDE-AR-N 4110 (voltage-rate observers, state machine, power limitation,
-  pre-fault averages and reactive current references), the three clamped PIs of the reactive
-  current loops, the per-phase resonant PI current control in detail (continuous design; the
-  forward-backward Euler resonator of the block since library rev. 03, poles inside the unit
-  circle, δ = 0.005; the forward Euler resonator of the model and its pole radius: poles outside
-  the unit circle for δ < ω ts/2, stable closed loop with the plant anyway; the loop with the
-  three resonators), vector limiter, output delay and zero-sequence loop, the new passive
-  islanding detector, the parameter structure and its mapping to the model init, the checks
-  against the original diagrams (Python twin, Octave loop, MATLAB bench), differences and open
-  points. Rev. 01: the forward-backward resonator proposed in rev. 00 is now the one of the block.
-  Companion Python script `afe_uvw_ctrl_figures.py` (resonant PI figures and numbers, PDF
-  figures in `figures/`).
-- `parallel_of_gfms` — *Parallel grid-forming modules: power sharing, loss of the main grid,
-  earthing and common mode* (Rev. 01, November 2026). Design note of the model `pgfm_ctrl_analysis`
-  of `grid-forming/parallel_of_GFMs` (three 250 kW AFE modules on one battery and on a 690 V grid
-  emulator): the model as it runs today; what the group of M. Liserre (Kiel) and S. Bolognani (ETH
-  Zürich) offer for power sharing among grid-forming units; the control V1 (P–f droop with
-  low-pass filter and lead term, i.e. a virtual synchronous machine with H = 1.25 s, Q–V droop,
-  virtual impedance in front of a voltage loop on the filter capacitor and of the current loop,
-  current limitation, PTP time base) with the small-signal analysis of the discrete-time loop, the
-  effect of the clock errors on the sharing, its implementation as the droop mode of the library
-  block `grid_forming_dqctrl` and the results of the tests on the companion model `pgfm_droop`
-  (`parallel_of_GFMs/power_sharing`); the common mode of modules on one battery (common-mode chokes, carriers aligned to the PTP time,
-  zero-sequence circulating current); the earthing of an industrial BESS with the HF parasitics and
-  earthing resistances of the model (`param.gnd`), simulated for IT, high-resistance and solid
-  earthing of the LV star point (`earthing_cases.m`); insulation monitor and RCMU with a schematic;
-  three-level outlook. The model opens the PDF from its annotation "Design note": `init_model.m`
-  puts this folder on the MATLAB path when this repository sits next to `grid-forming`.
-- `three_phase_dab` — *Three-phase dual active bridge (DAB3): 1200 V / 1200 V, 250 kW, 10 kHz,
-  sizing, control, simulation model and runs* (Rev. 00, October 2026). The isolated stage of
-  `advanced-dcdc-converters/analysis_three_phase_dab` between two batteries: six-step bridges,
-  three single-phase transformers in star-star, power against phase shift and harmonic model,
-  comparison with the single-phase DAB, series inductance, transformer and choice of the
-  frequency, SiC modules and ZVS map, DC links, loss budget; current loop with feed-forward and
-  its sample rate; DC bias of the transformers (origin, gap and ZVS damping, flux-centred start,
-  updates of the phase shift, measurement with slow sampling, DC regulators); the Simscape bench
-  (`param` structure, changes from the original model, Backward Euler damping, phase
-  quantization) and runs 01 to 04 against the harmonic model. Analytic figures from
-  `py/three_phase_dab_figures.py`, figures of the runs from `py/three_phase_dab_runs.py`
-  (pgfplots data in `figures/`).
-- `ps_25V_12kA` — *Power supply for electrolysis* (July 2026). 300 kW, 25 V / 12 kA from a 480 V
-  grid: AFE with LCL filter, phase-shift full bridge with centre-tapped HF transformers, diode
-  rectifier; design and simulation results.
-- `unified_power_quality_conditioner` — *UPQC: shunt active filter with voltage stabiliser*.
-  Skeleton only (headings, no body).
+## Electrical machines and their control
+
+| Document | Title and contents | Model or repository |
+|---|---|---|
+| [`psm_model_observer_ctrl`](psm_model_observer_ctrl/)<br>May 2021<br>[PDF](psm_model_observer_ctrl/psm_model_ctrl.pdf) | **Permanent Magnet Synchronous Machines: model derivation, control and Simscape implementation.** PMSM in machine variables, αβ and dq; FOC, MTPA and robust field weakening; per-unit normalization; parameters from the no-load, short-circuit and load tests; back-EMF observer and the effect of parameter errors. | [modelization-and-control](https://github.com/pwr-control/modelization-and-control) |
+| [`psm_mpc_ekf`](psm_mpc_ekf/)<br>Rev. 01, Nov 2026<br>[PDF](psm_mpc_ekf/psm_mpc_ekf.pdf) | **PMSM wind generator with predictive current control and extended Kalman filter.** Design note of the model `mpc_psm` (one 267 kW system of a 1.6 MW wind generator, two-level inverter, battery): machine in per unit and active flux; finite-set MPC with delay compensation and its current loop; 6-state EKF and speed observer; design check, the fixes of November 2026, parameters, open points. Scripts in `py/`. | model [`mpc_psm`](https://github.com/pwr-control/modelization-and-control/tree/dev/foundations_of_power_electronics/mpc_psm)<br>(modelization-and-control, dev) |
+| [`psm_nonlinear_observer`](psm_nonlinear_observer/)<br>no date<br>no PDF | **Equazioni dell'osservatore adattativo** (Italian). Equations of an adaptive observer for a PMSM in the stator dq frame. | — |
+| [`induction_motor_model_and_control`](induction_motor_model_and_control/)<br>May 2021<br>[PDF](induction_motor_model_and_control/im_model_and_ctrl.pdf) | **Three-Phase Induction Machines: model derivation, parameters estimation, control and Simscape implementation.** Symmetrical machine and steady-state equivalent circuit; parameters from the factory tests; reference-frame theory; αβ dynamic model with rotor flux observer; online estimation of the rotor resistance; the Simscape model. | [modelization-and-control](https://github.com/pwr-control/modelization-and-control) |
+| [`im_mpc_ekf`](im_mpc_ekf/)<br>no date<br>no PDF | **Extended Kalman Filter: Application to IM with T-type MPC Three Phase Inverter.** Induction motor model and its discretization; EKF observer, with a section on the EKF for the nonlinear PMSM. | — |
+
+## Drives: hardware and system studies
+
+| Document | Title and contents | Model or repository |
+|---|---|---|
+| [`inverter_for_drone`](inverter_for_drone/)<br>no date<br>[PDF](inverter_for_drone/flying_basket_inverter_design.pdf) | **Flying Basket Inverter Design: model, control strategy and hardware dimensioning.** PMSM drive of a drone: parameter identification; DC-link, MOSFET and heatsink sizing; electro-thermal simulation; control architectures; firmware; user manual. | — |
+| [`igbt_selection_and_procedure`](igbt_selection_and_procedure/)<br>Oct 2026<br>[PDF](igbt_selection_and_procedure/igbt_selection_procedure.pdf) | **IGBT for EDrive: selection procedure.** Can the Infineon FF1200R17IP5 replace the DP650B1700, FF650R17IE4 and FF650R17IE4D_B2 in a 690 V drive? Theoretical losses, then double pulse tests with the DB1.00 and DB1.51 driver boards. | [modelization-and-control](https://github.com/pwr-control/modelization-and-control) |
+| [`semiconductor_devices_igbt_1`](semiconductor_devices_igbt_1/)<br>Apr 2026<br>no PDF | **IGBTs performance analysis: application to electrical drives** (report) and **DPT results, 690 V electrical drive** (Beamer presentation). The study of `igbt_selection_and_procedure` as a report and as a presentation. | — |
+| [`long_cable_effects_in_electrical_drives`](long_cable_effects_in_electrical_drives/)<br>Jul 2026<br>no PDF | **Long Power Cable Effects: in electrical drives.** Acoustic noise of a 120 m shielded inverter-to-motor cable under PWM: on-site measurements; high-frequency cable model (distributed parameters, cascaded π sections, Simscape); sound model from the Ampère forces; mitigation; vibration fatigue. | [modelization-and-control](https://github.com/pwr-control/modelization-and-control) |
+| [`modularity`](modularity/)<br>Oct 2023<br>[PDF](modularity/modularity.pdf) | **Modularity in Power Electronics: impact on grid power quality.** Two to eight AFE + inverter + PMSM drives in parallel on an MV grid: harmonic model of parallel AFEs, THD against the operating point, PWM carriers and PCC impedance, four case scenarios. | [modelization-and-control](https://github.com/pwr-control/modelization-and-control) |
+
+## Mechanics and actuators
+
+| Document | Title and contents | Model or repository |
+|---|---|---|
+| [`flexible_shaft`](flexible_shaft/)<br>Oct 2022<br>[PDF](flexible_shaft/flexible_shaft_model.pdf) | **Flexible Shaft: model derivation and Simscape implementation.** Two-mass torsional model, resonance and anti-resonance, extension to a generic gear. | [modelization-and-control](https://github.com/pwr-control/modelization-and-control) |
+| [`control-of-string-actuated`](control-of-string-actuated/)<br>Sep 2024<br>[PDF](control-of-string-actuated/control-of-string-actuated.pdf) | **Control of String-Actuated: following the work of Ruth Curtain.** Two-pulley string-actuated system: string displacement and torsional models, coupled oscillators, control design, one- and two-mode study cases. | [modelization-and-control](https://github.com/pwr-control/modelization-and-control) |
+| [`moving_coil`](moving_coil/)<br>Rev. 01, Sep 2026<br>[PDF](moving_coil/moving_coil.pdf) | **Moving Coil: modelization and control system design.** Moving coil actuator with one degree of freedom: model from the field theory and as lumped parameters (third-order state space); discrete state feedback with integral action, full-state observer and extended observer of the load force; simulations with different loads. | [modelization-and-control](https://github.com/pwr-control/modelization-and-control) |
+
+## Grid-tied converters, PLLs and grid forming
+
+| Document | Title and contents | Model or repository |
+|---|---|---|
+| [`single_phase_grid_tied_inverter_analysis`](single_phase_grid_tied_inverter_analysis/)<br>Rev. 01, Oct 2026<br>[PDF](single_phase_grid_tied_inverter_analysis/single_phase_grid_tied_inverter_analysis.pdf) | **Single-Phase Grid-Tied T-Type Inverter: model, control design and discrete implementation.** The controller of the library block `afe_single_phase_ttype` (AC module of the SST bench): LCL plant; first harmonic tracker and vector PI on the fundamental current, with its stationary-frame equivalent; SOGI-QSG PLL; DC-link loop; three-level modulator; discrete implementation. Python script. Rev. 00 (June 2020) compared three control strategies. | block [`afe_single_phase_ttype`](https://github.com/pwr-control/library/tree/dev/library/masked_models/afe_single_phase_ttype)<br>(library, dev) |
+| [`single_phase_inverter`](single_phase_inverter/)<br>Jun 2026<br>[PDF](single_phase_inverter/single_phase_inverter.pdf) | **Single Phase Inverter: analysis of architecture and control strategies.** Architecture, control architectures and simulation results of a single-phase inverter. | [single-phase-inverter](https://github.com/pwr-control/single-phase-inverter) |
+| [`three_phase_grid_tied_inverter_analysis`](three_phase_grid_tied_inverter_analysis/)<br>no date<br>no PDF | **Single Phase Inverter: architecture, control, and simulation results.** Despite the folder name, a copy of the single-phase inverter study of `single_phase_inverter`. | — |
+| [`single_phase_afe_power_decoupling`](single_phase_afe_power_decoupling/)<br>Rev. 00, Oct 2026<br>[PDF](single_phase_afe_power_decoupling/single_phase_afe_power_decoupling.pdf) | **Active power decoupling of a single-phase AFE: the ripple port and its control in the model `single_phase_afe`.** Why the power of a single-phase converter pulsates at 2f; the ripple port (second full bridge, 2000 V buffer capacitor) and its sizing; the control step by step (observer of the 100 Hz ripple, phase-shift filter, rotation at 2θ, vector PI on the β axis); buffer loops; simulation (ripple 16 % → 0.8 %); open points. Python script. | model [`single_phase_afe`](https://github.com/pwr-control/modelization-and-control/tree/dev/foundations_of_power_electronics/single_phase_afe_with_active_power_decoupling)<br>(modelization-and-control, dev) |
+| [`single_phase_lock_loop`](single_phase_lock_loop/)<br>Rev. 00, May 2021<br>[PDF](single_phase_lock_loop/single_phase_pll.pdf) | **Single Phase Locked Loop: structures, transfer functions and laboratory implementation.** Basic structure of a PLL; SOGI-QSG PLL and moving-average filter; implementation on dSPACE SCALEXIO with C-Caller and DFT. | [modelization-and-control](https://github.com/pwr-control/modelization-and-control) |
+| [`afe_uvw_ctrl`](afe_uvw_ctrl/)<br>Rev. 01, Nov 2026<br>[PDF](afe_uvw_ctrl/afe_uvw_ctrl.pdf) | **AFE control in the uvw frame: the five MATLAB Function blocks of `afe_uvw_ctrl`.** The controller of the model `afe_uvw_three_phase` as written in the library: sequence frames with a fractional-window moving average; fault ride-through of VDE-AR-N 4110; reactive current PIs; per-phase resonant PI in detail; vector limiter, output delay, zero-sequence loop; islanding detector; parameter mapping, checks, open points. Python script. | blocks [`afe_uvw_ctrl`](https://github.com/pwr-control/library/tree/dev/library/masked_models/afe_uvw_ctrl)<br>(library, dev);<br>model [`afe_uvw_three_phase`](https://github.com/pwr-control/modelization-and-control/tree/dev/foundations_of_power_electronics/afe_uvw_three_phase)<br>(modelization-and-control, dev) |
+| [`grid_forming_following_afe`](grid_forming_following_afe/)<br>Rev. 00, Oct 2026<br>[PDF](grid_forming_following_afe/grid_forming_following_afe.pdf) | **Grid-forming and grid-following AFE blocks: two-level bridge with LCL filter, description and user guide.** User guide of the library blocks `grid_forming_dqctrl` and `grid_following_dqctrl`: power stage (bridge, DC link, LCL filter); common control parts (clock, Clarke and Park, first harmonic tracker, vector PI, SVPWM, dead time); grid-forming chain; grid-following chain; ports, logs and the `p` structure. The PDF is the Help of the block masks. | blocks [`grid_forming`](https://github.com/pwr-control/library/tree/dev/library/masked_models/grid_forming) and [`grid_following`](https://github.com/pwr-control/library/tree/dev/library/masked_models/grid_following)<br>(library, dev) |
+| [`parallel_of_gfms`](parallel_of_gfms/)<br>Rev. 01, Nov 2026<br>[PDF](parallel_of_gfms/parallel_of_gfms.pdf) | **Parallel grid-forming modules: power sharing, loss of the main grid, earthing and common mode.** Design note of the model `pgfm_ctrl_analysis` (three 250 kW AFE modules on one battery and a 690 V grid emulator): power sharing in the literature; control V1 (P–f droop as a virtual synchronous machine, Q–V droop, virtual impedance, PTP time base) and its small-signal analysis; droop mode of `grid_forming_dqctrl`; common mode; earthing of an industrial BESS, insulation monitor and RCMU. | `parallel_of_GFMs` of [grid-forming](https://github.com/pwr-control/grid-forming) |
+| [`unified_power_quality_conditioner`](unified_power_quality_conditioner/)<br>no date<br>no PDF | **UPQC: Shunt Active Filter with Voltage Stabiliser.** Skeleton only (headings, no body). | — |
+
+## DC/DC stages, solid-state transformers, power supplies and magnetics
+
+| Document | Title and contents | Model or repository |
+|---|---|---|
+| [`solid_state_transformers`](solid_state_transformers/)<br>Rev. 01, Oct 2026<br>[PDF](solid_state_transformers/solid_state_transformers.pdf) | **Solid State Transformers: architecture, modelization and control.** DAB, three-phase DAB and CLLC stages with NPC and T-type inverters, control loops, HF transformer and simulation comparison (2025 study); the two-module bench of today (CLLC-DCX 800 V / 800 V, 50 kW, 50 kHz and a T-type inverter per module, inverters in series on the line), its two models and solver settings. | [solid-state-transformers](https://github.com/pwr-control/solid-state-transformers) |
+| [`cllc_dcx`](cllc_dcx/)<br>Rev. 00, Oct 2026<br>[PDF](cllc_dcx/cllc_dcx.pdf) | **CLLC-DCX isolated DC/DC stage: 800 V / 800 V, 50 kW, 50 kHz, sizing, simulation model and library block.** The isolated stage of the SST module as an open-loop DC transformer: FHA gain and why it is not regulated; resonant tank and magnetizing inductance for ZVS; transformer, SiC modules, synchronous rectifier, DC links, losses; the 35 kHz variant; the Simscape bench and the library block. Python script. | block [`cllc_dcx`](https://github.com/pwr-control/library/tree/dev/library/masked_models/cllc_dcx)<br>(library, dev);<br>bench in [solid-state-transformers](https://github.com/pwr-control/solid-state-transformers) |
+| [`three_phase_dab`](three_phase_dab/)<br>Rev. 00, Oct 2026<br>[PDF](three_phase_dab/three_phase_dab.pdf) | **Three-phase dual active bridge (DAB3): 1200 V / 1200 V, 250 kW, 10 kHz, sizing, control, simulation model and runs.** The isolated stage between two batteries: six-step bridges, three single-phase transformers in star-star, power against phase shift, harmonic model, comparison with the single-phase DAB; sizing and ZVS map; current loop; DC bias of the transformers; Simscape bench and runs 01 to 04. Python scripts. | `analysis_three_phase_dab` of [advanced-dcdc-converters](https://github.com/pwr-control/advanced-dcdc-converters) |
+| [`ps_25V_12kA`](ps_25V_12kA/)<br>Jul 2026<br>[PDF](ps_25V_12kA/ps_25V_12kA_r.pdf) | **PS-12V-12kA: power supply for electrolysis.** 300 kW, 25 V / 12 kA from a 480 V grid: AFE with LCL filter, phase-shift full bridge with centre-tapped HF transformers, diode rectifier; design and simulation results. | model [`ps_25V_12kA`](https://github.com/pwr-control/modelization-and-control/tree/dev/foundations_of_power_electronics/ps_25V_12kA)<br>(modelization-and-control, dev) |
+| [`isop_architecture`](isop_architecture/)<br>no date<br>[PDF](isop_architecture/four_winding_transformer.pdf) | **Four-Winding Transformer: circuit model and governing equations.** Flux-linkage matrix, T-equivalent, MMF balance and port relations of the transformer of the input-series output-parallel (ISOP) rail supply. | — |
+| [`three_phase_inductors`](three_phase_inductors/)<br>Rev. 00, Sep 2024<br>[PDF](three_phase_inductors/three_phase_inductor_with_saturation_effects.pdf) | **Three Phase Inductors: mathematical model, construction and saturation effects.** Three coupled windings with self and mutual inductance; differential-mode (La + Lm) and common-mode (La − 2Lm) inductance; four-limb, three-limb and single-limb or toroidal cores; current-dependent inductance matrix with saturation. | [modelization-and-control](https://github.com/pwr-control/modelization-and-control) |
 
 ## Hydraulics, heavy-duty vehicles and energy storage
 
-- `hydraulic_fluid_power` — *Hydrostatic Fluid Power: modelization and control* (October 2022).
-  Fluid modelling, hydrostatic components (pumps, motors, relief valve, pressure-controlled pump,
-  spool valves), powertrain identification and validation against tests, servo actuator, solenoid
-  valve, diesel engine model and control.
-- `electrification_heavy_duty_vehicles` — *Electrification of Heavy Duty Vehicles* (October
-  2022). Replacing the diesel and hydrostatic transmissions of a tracked bulldozer: hydrostatic
-  powertrain model, PMSM design alternatives (16p/12s, 8p/12s) with thermal model and losses,
-  and an ANSYS RMxprt/Maxwell tutorial chapter.
-- `nonlinear_observers` — *Nonlinear Observers: application to hydrostatic transmission and to
-  electrical machines* (October 2022). Load and driveline-pressure estimators for a hydrostatic
-  transmission; appendices on DC motor, induction machine, nonlinear normal forms and
-  local/EKF/global observers (Khalil, Isidori, Slotine).
-- `lithium_ion_battery` — *Lithium Ion Battery: modelization and Simscape implementation*
-  (October 2022). Thevenin equivalent circuit with SOC-dependent OCV, coulomb-counting SOC
-  estimator, parameters and outputs of the Simscape block.
-- `pemfuelcell` — *PEM Fuel Cell: model derivation and Simscape implementation* (October 2022).
-  Nernst-based stack model, gas dynamics, material conservation, parameters and outputs.
+| Document | Title and contents | Model or repository |
+|---|---|---|
+| [`hydraulic_fluid_power`](hydraulic_fluid_power/)<br>Oct 2022<br>[PDF](hydraulic_fluid_power/hydraulic_fluid_power.pdf) | **Hydrostatic Fluid Power: modelization and control.** Fluid modelling; hydrostatic components (pumps, motors, relief valve, pressure-controlled pump, spool valves); powertrain identification and validation against tests; servo actuator; solenoid valve; diesel engine model and control. | [lectures-on-advanced-control-engineering](https://github.com/pwr-control/lectures-on-advanced-control-engineering) |
+| [`electrification_heavy_duty_vehicles`](electrification_heavy_duty_vehicles/)<br>Oct 2022<br>[PDF](electrification_heavy_duty_vehicles/ehd_ver1.pdf) | **Electrification of Heavy Duty Vehicles: with Ansys layout investigation.** Electric drives in place of the diesel engine and the hydrostatic transmission of a tracked bulldozer: hydrostatic powertrain model, PMSM alternatives (16p/12s, 8p/12s) with thermal model and losses, ANSYS RMxprt/Maxwell tutorial chapter. | [lectures-on-advanced-control-engineering](https://github.com/pwr-control/lectures-on-advanced-control-engineering) |
+| [`nonlinear_observers`](nonlinear_observers/)<br>Oct 2022<br>[PDF](nonlinear_observers/nonlinear_observers.pdf) | **Nonlinear Observers: application to hydrostatic transmission, and to electrical machines.** Load and driveline-pressure estimators for a hydrostatic transmission; appendices on the DC motor, the induction machine, nonlinear normal forms and local, EKF and global observers (Khalil, Isidori, Slotine). | [modelization-and-control](https://github.com/pwr-control/modelization-and-control) |
+| [`lithium_ion_battery`](lithium_ion_battery/)<br>Oct 2022<br>[PDF](lithium_ion_battery/lithium_ion_battery.pdf) | **Lithium Ion Battery: modelization and Simscape implementation.** Thevenin equivalent circuit with SOC-dependent OCV, coulomb-counting SOC estimator, parameters and outputs of the Simscape block. | [modelization-and-control](https://github.com/pwr-control/modelization-and-control) |
+| [`pemfuelcell`](pemfuelcell/)<br>Oct 2022<br>[PDF](pemfuelcell/permfc_simscape_model.pdf) | **PEM Fuel Cell: model derivation and Simscape implementation.** Nernst-based stack model, gas dynamics, conservation of the materials, parameters and outputs. | [modelization-and-control](https://github.com/pwr-control/modelization-and-control) |
 
 ## Notes
 
-Several folders overlap: `igbt_selection_and_procedure` and the report in
-`semiconductor_devices_igbt_1` share the same body; the three single-phase inverter folders share
-the same body; `psm_mpc_ekf` reuses the title of `im_mpc_ekf`; `control-of-string-actuated`
-reuses the abstract of `flexible_shaft`. The `ps_25V_12kA` title says "PS-12V-12kA".
+- Same body in two folders: `igbt_selection_and_procedure` and the report of
+  `semiconductor_devices_igbt_1`; `single_phase_inverter` and `three_phase_grid_tied_inverter_analysis`.
+  `control-of-string-actuated` reuses the abstract of `flexible_shaft`, and its title page reads
+  "String-Actutated". The title of `ps_25V_12kA` says "PS-12V-12kA".
+- `psm_mpc_ekf` rev. 01 (November 2026) is a complete rewrite on the model `mpc_psm`. Rev. 00
+  also held older material on the induction machine and had the title of `im_mpc_ekf`; it is in
+  the git history, and its figures were the same files that are in `im_mpc_ekf/figures/`.
+- The same sources are also in `library/library/documentation/` of the library repository, so
+  that the models and the block masks can link the PDFs: `cllc_dcx`, `grid_forming_following_afe`,
+  `single_phase_afe_power_decoupling`, `single_phase_grid_tied_inverter_analysis`,
+  `solid_state_transformers`, `three_phase_dab`.
+- `parallel_of_gfms` is not copied: the init of the model puts this folder on the MATLAB path when
+  this repository sits next to `grid-forming`, and the model opens the PDF from its annotation
+  "Design note".
