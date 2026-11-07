@@ -1,0 +1,143 @@
+three_phase_plls_comparison: numbers of the note (2026-11-07)
+ts = 125 us, omega_n = 2 pi 50 Hz
+
+=== 1. dq-PLL loop: T(s) = omega_n (kp s + ki) / (s^2 + omega_n kp s + omega_n ki)
+gain set                               wn rad/s    wn Hz   zeta |T(2w0)| |T(6w0)| |T(12w0)|     wc, PM wc, PM w/ LPF
+normal                                    158.5    25.23  0.991    0.475   0.1657   0.0832   324   76    255   33.5
+fault (kp 0.2)                            158.5    25.23  0.198    0.126   0.0343   0.0168   165   22    155  354.9
+alternative fault (kp 0.2, ki 3.2)         31.7     5.05  0.991    0.100   0.0333   0.0167    65   76     64   64.4
+DDSRF improved (kp 0.32, ki 8)             50.1     7.98  1.003    0.159   0.0533   0.0267   103   76     99   58.3
+LaTeX rows (gain set & kp & ki & wn [rad/s] & wn [Hz] & zeta & |T(j2w0)| & |T(j6w0)| & wc [rad/s] & PM & wc with LPF & PM with LPF):
+  normal & 1 & 80 & 159 & 25.2 & 0.99 & 0.475 & 0.166 & 324 & \ang{76} & 255 & \ang{33} \\
+  fault (kp 0.2) & 0.2 & 80 & 159 & 25.2 & 0.20 & 0.126 & 0.034 & 165 & \ang{22} & 155 & \ang{355} \\
+  alternative fault (kp 0.2, ki 3.2) & 0.2 & 3.2 & 32 & 5.0 & 0.99 & 0.100 & 0.033 & 65 & \ang{76} & 64 & \ang{64} \\
+  DDSRF improved (kp 0.32, ki 8) & 0.32 & 8 & 50 & 8.0 & 1.00 & 0.159 & 0.053 & 103 & \ang{76} & 99 & \ang{58} \\
+discrete loop poles (theta[k+1] = theta[k] + ts w0 (kp e + i1), i1[k] = i1[k-1] + ki ts e):
+  normal                               z = [0.97941+0.j 0.98093+0.j] -> s = [-166.5+0.j -154. +0.j] rad/s (continuous [-157.1+21.4j -157.1-21.4j])
+  fault (kp 0.2)                       z = [0.99588+0.01938j 0.99588-0.01938j] -> s = [-31.5+155.7j -31.5-155.7j] rad/s (continuous [-31.4+155.4j -31.4-155.4j])
+  alternative fault (kp 0.2, ki 3.2)   z = [0.99607+0.00047j 0.99607-0.00047j] -> s = [-31.5+3.8j -31.5-3.8j] rad/s (continuous [-31.4+4.3j -31.4-4.3j])
+  -> figures/pll_loops.pdf
+
+=== 2. first harmonic tracker: H1 = (l1 s + l1 d w0 + l2)/D, H2 = (l2 s - l1 w0^2)/D, D = s^2 + (l1 + d w0) s + l1 d w0 + w0^2 + l2
+continuous gains l1 = 4.950 omega0 = 1555.1 1/s, l2 = 2.7525 omega0^2 = 271661 1/s^2; discrete gains Ld = [0.18191 29.588] (designed on I + A ts)
+poles: intended z = [0.8538+0.j 0.9608+0.j] (s = [-1264.+0.j  -320.+0.j] rad/s); actual (delayed innovation) z = [0.9618+0.j 0.8052+0.j 0.2295+0.j] (s = [  -312.  -1733. -11776.] rad/s)
+positive sequence calculator gain |G|, angle [deg]: continuous | actual discrete | consistent states | consistent, delta 0
+  fundamental +50 Hz         0.9818    0.80 | 0.9810    4.15 | 0.9814    0.80 | 1.0000    0.01
+  negative sequence -50 Hz   0.0212   59.04 | 0.0393   70.39 | 0.0214   59.87 | 0.0001  120.78
+  +49 Hz                     0.9830    1.64 | 0.9816    4.94 | 0.9824    1.66 | 1.0009    0.88
+  +51 Hz                     0.9805   -0.02 | 0.9803    3.37 | 0.9802   -0.05 | 0.9990   -0.85
+  -51 Hz                     0.0184   32.65 | 0.0337   59.33 | 0.0186   33.75 | 0.0098  -60.07
+  DC                         0.7235   58.78 | 0.7164   59.31 | 0.7164   59.31 | 0.7215   59.55
+  2nd (+100 Hz)              0.8557  -29.80 | 0.8922  -24.64 | 0.8609  -31.01 | 0.8807  -32.17
+  5th (-250 Hz)              0.3451   11.50 | 0.3500   11.86 | 0.3499   17.50 | 0.3625   15.01
+  7th (+350 Hz)              0.3985  -81.47 | 0.5199  -80.36 | 0.4045  -88.75 | 0.4157  -90.40
+  11th (-550 Hz)             0.2186   35.97 | 0.2125   47.80 | 0.2237   49.09 | 0.2310   46.95
+  13th (+650 Hz)             0.2239  -97.73 | 0.3249 -105.78 | 0.2292 -112.10 | 0.2358 -113.87
+LaTeX rows (component & continuous & actual & consistent & consistent delta 0; each |G| / angle):
+  fundamental +50 Hz & 0.982 / \ang{0.8} & 0.981 / \ang{4.1} & 0.981 / \ang{0.8} & 1.000 / \ang{0.0} \\
+  negative sequence -50 Hz & 0.021 / \ang{59.0} & 0.039 / \ang{70.4} & 0.021 / \ang{59.9} & 0.000 / \ang{120.8} \\
+  +49 Hz & 0.983 / \ang{1.6} & 0.982 / \ang{4.9} & 0.982 / \ang{1.7} & 1.001 / \ang{0.9} \\
+  +51 Hz & 0.981 / \ang{-0.0} & 0.980 / \ang{3.4} & 0.980 / \ang{-0.0} & 0.999 / \ang{-0.8} \\
+  -51 Hz & 0.018 / \ang{32.7} & 0.034 / \ang{59.3} & 0.019 / \ang{33.8} & 0.010 / \ang{-60.1} \\
+  DC & 0.724 / \ang{58.8} & 0.716 / \ang{59.3} & 0.716 / \ang{59.3} & 0.722 / \ang{59.6} \\
+  2nd (+100 Hz) & 0.856 / \ang{-29.8} & 0.892 / \ang{-24.6} & 0.861 / \ang{-31.0} & 0.881 / \ang{-32.2} \\
+  5th (-250 Hz) & 0.345 / \ang{11.5} & 0.350 / \ang{11.9} & 0.350 / \ang{17.5} & 0.362 / \ang{15.0} \\
+  7th (+350 Hz) & 0.398 / \ang{-81.5} & 0.520 / \ang{-80.4} & 0.405 / \ang{-88.8} & 0.416 / \ang{-90.4} \\
+  11th (-550 Hz) & 0.219 / \ang{36.0} & 0.212 / \ang{47.8} & 0.224 / \ang{49.1} & 0.231 / \ang{46.9} \\
+  13th (+650 Hz) & 0.224 / \ang{-97.7} & 0.325 / \ang{-105.8} & 0.229 / \ang{-112.1} & 0.236 / \ang{-113.9} \\
+single FHT output at +50 Hz: actual 0.9922, 1.96 deg; intended 0.9920, -0.28 deg
+  -> figures/fht_frontend.pdf
+
+=== 3. DDSRF decoupling network: 1 - F(s) F(s + j 2 w0) = 0 -> s = -(wf + j w0) +- sqrt(wf^2 - w0^2)
+  wf = w0/2                     tau 6.37 ms  poles (-157.1-42.1j) (-157.1-586.2j)  slowest decay 157 1/s (6.37 ms)  |F(j w0)| 0.447 |F(j2w0)| 0.243 |F(j6w0)| 0.083
+  wf = w0/sqrt(2)               tau 4.50 ms  poles (-222.1-92j) (-222.1-536.3j)  slowest decay 222 1/s (4.50 ms)  |F(j w0)| 0.577 |F(j2w0)| 0.333 |F(j6w0)| 0.117
+  wf = w0 (model, tau = 1/w0)   tau 3.18 ms  poles (-314.2-314.2j) (-314.2-314.2j)  slowest decay 314 1/s (3.18 ms)  |F(j w0)| 0.707 |F(j2w0)| 0.447 |F(j6w0)| 0.164
+  wf = 1.5 w0                   tau 2.12 ms  poles (-120-314.2j) (-822.5-314.2j)  slowest decay 120 1/s (8.33 ms)  |F(j w0)| 0.832 |F(j2w0)| 0.600 |F(j6w0)| 0.243
+  wf = 2 w0                     tau 1.59 ms  poles (-84.2-314.2j) (-1172.5-314.2j)  slowest decay 84 1/s (11.88 ms)  |F(j w0)| 0.894 |F(j2w0)| 0.707 |F(j6w0)| 0.316
+LaTeX rows (wf & tau [ms] & pole 1 & pole 2 & slowest time constant [ms] & |F(j2w0)| & |F(j6w0)|):
+  $\omega_0$/2 & 6.37 & $-157 -42j$ & $-157 -586j$ & 6.37 & 0.243 & 0.083 \\
+  $\omega_0$/$\sqrt{2}$ & 4.50 & $-222 -92j$ & $-222 -536j$ & 4.50 & 0.333 & 0.117 \\
+  $\omega_0$ (model, tau = 1/$\omega_0$) & 3.18 & $-314 -314j$ & $-314 -314j$ & 3.18 & 0.447 & 0.164 \\
+  1.5 $\omega_0$ & 2.12 & $-120 -314j$ & $-822 -314j$ & 8.33 & 0.600 & 0.243 \\
+  2 $\omega_0$ & 1.59 & $-84 -314j$ & $-1172 -314j$ & 11.88 & 0.707 & 0.316 \\
+  -> figures/ddsrf_poles.pdf
+
+=== 4. synthetic tests (ideal three-phase set, ts = 125 us, every loop starts locked at 1 pu)
+phase jump +30 deg:
+  dq         offset  -0.00 deg  peak  30.00 deg  ripple pp  0.000 deg  omega peak 0.212 pu  omega ripple pp 0.0000  settle(0.5 deg)  35.2 ms
+  dq_frt     offset  -0.00 deg  peak  30.00 deg  ripple pp  0.013 deg  omega peak 0.191 pu  omega ripple pp 0.0001  settle(0.5 deg) 124.0 ms
+  fht        offset   4.15 deg  peak  30.00 deg  ripple pp  0.000 deg  omega peak 0.177 pu  omega ripple pp 0.0000  settle(0.5 deg)  37.3 ms
+  ddsrf_pos  offset   1.96 deg  peak  30.00 deg  ripple pp  0.134 deg  omega peak 0.275 pu  omega ripple pp 0.0017  settle(0.5 deg) 165.5 ms
+  ddsrf_imp  offset   1.96 deg  peak  30.00 deg  ripple pp  0.002 deg  omega peak 0.121 pu  omega ripple pp 0.0000  settle(0.5 deg) 107.1 ms
+frequency step 50 -> 51 Hz:
+  dq         offset  -0.00 deg  peak   0.84 deg  ripple pp  0.000 deg  omega peak 0.020 pu  omega ripple pp 0.0000  settle(0.5 deg)  14.9 ms
+  dq_frt     offset  -0.00 deg  peak   1.72 deg  ripple pp  0.001 deg  omega peak 0.020 pu  omega ripple pp 0.0000  settle(0.5 deg)  35.6 ms
+  fht        offset   4.15 deg  peak   1.61 deg  ripple pp  0.000 deg  omega peak 0.020 pu  omega ripple pp 0.0000  settle(0.5 deg) 399.9 ms
+  ddsrf_pos  offset   1.96 deg  peak   1.69 deg  ripple pp  0.003 deg  omega peak 0.020 pu  omega ripple pp 0.0000  settle(0.5 deg)  53.7 ms
+  ddsrf_imp  offset   1.96 deg  peak   3.37 deg  ripple pp  0.001 deg  omega peak 0.020 pu  omega ripple pp 0.0000  settle(0.5 deg) 102.5 ms
+balanced sag to 0.3 pu (400 ms):
+  dq         offset  -0.00 deg  peak   0.00 deg  ripple pp  0.000 deg  omega peak 0.000 pu  omega ripple pp 0.0000  settle(0.5 deg)   0.0 ms
+  dq_frt     offset  -0.00 deg  peak   0.00 deg  ripple pp  0.000 deg  omega peak 0.000 pu  omega ripple pp 0.0000  settle(0.5 deg)   0.0 ms
+  fht        offset   4.15 deg  peak   8.21 deg  ripple pp  0.000 deg  omega peak 0.094 pu  omega ripple pp 0.0000  settle(0.5 deg)  17.5 ms
+  ddsrf_pos  offset   1.96 deg  peak  42.36 deg  ripple pp  0.257 deg  omega peak 0.401 pu  omega ripple pp 0.0033  settle(0.5 deg) 190.9 ms
+  ddsrf_imp  offset   1.96 deg  peak  11.60 deg  ripple pp  0.000 deg  omega peak 0.077 pu  omega ripple pp 0.0000  settle(0.5 deg)  30.1 ms
+type D dip: pos. 0.625, neg. 0.375 pu (400 ms):
+  dq         offset  -0.00 deg  peak  21.41 deg  ripple pp 33.492 deg  omega peak 0.298 pu  omega ripple pp 0.4598  settle(0.5 deg) 399.9 ms
+  dq_frt     offset  -0.00 deg  peak  12.83 deg  ripple pp  8.584 deg  omega peak 0.118 pu  omega ripple pp 0.1195  settle(0.5 deg) 399.9 ms
+  fht        offset   4.15 deg  peak   9.51 deg  ripple pp  1.338 deg  omega peak 0.092 pu  omega ripple pp 0.0187  settle(0.5 deg) 397.4 ms
+  ddsrf_pos  offset   1.96 deg  peak  11.71 deg  ripple pp  0.042 deg  omega peak 0.143 pu  omega ripple pp 0.0007  settle(0.5 deg) 161.4 ms
+  ddsrf_imp  offset   1.96 deg  peak   3.14 deg  ripple pp  0.000 deg  omega peak 0.026 pu  omega ripple pp 0.0000  settle(0.5 deg)  27.7 ms
+harmonics 5th 5 %, 7th 3 %, 11th 2 %, 13th 1.5 %:
+  dq         offset  -0.00 deg  peak   0.32 deg  ripple pp  0.391 deg  omega peak 0.003 pu  omega ripple pp 0.0038  settle(0.5 deg)   0.0 ms
+  dq_frt     offset  -0.00 deg  peak   0.12 deg  ripple pp  0.081 deg  omega peak 0.001 pu  omega ripple pp 0.0008  settle(0.5 deg)   0.0 ms
+  fht        offset   4.15 deg  peak   0.26 deg  ripple pp  0.418 deg  omega peak 0.003 pu  omega ripple pp 0.0039  settle(0.5 deg)   0.0 ms
+  ddsrf_pos  offset   1.96 deg  peak   0.18 deg  ripple pp  0.081 deg  omega peak 0.002 pu  omega ripple pp 0.0008  settle(0.5 deg)   0.0 ms
+  ddsrf_imp  offset   1.96 deg  peak   0.07 deg  ripple pp  0.025 deg  omega peak 0.000 pu  omega ripple pp 0.0002  settle(0.5 deg)   0.0 ms
+DC offset 2 % on phase a:
+  dq         offset  -0.00 deg  peak   0.67 deg  ripple pp  1.282 deg  omega peak 0.008 pu  omega ripple pp 0.0154  settle(0.5 deg) 399.9 ms
+  dq_frt     offset  -0.00 deg  peak   0.59 deg  ripple pp  0.651 deg  omega peak 0.006 pu  omega ripple pp 0.0078  settle(0.5 deg)  23.5 ms
+  fht        offset   4.15 deg  peak   0.49 deg  ripple pp  0.936 deg  omega peak 0.006 pu  omega ripple pp 0.0112  settle(0.5 deg)   0.0 ms
+  ddsrf_pos  offset   1.96 deg  peak   2.91 deg  ripple pp  5.109 deg  omega peak 0.034 pu  omega ripple pp 0.0612  settle(0.5 deg) 399.6 ms
+  ddsrf_imp  offset   1.96 deg  peak   0.37 deg  ripple pp  0.490 deg  omega peak 0.004 pu  omega ripple pp 0.0059  settle(0.5 deg)   0.0 ms
+LaTeX rows per variant (scenario & peak & settle & ripple & omega peak):
+  dq-PLL ($k_p$ 1, $k_i$ 80) & 30 / 35 / 5.19e-12 & 0.843 / 15 / 5.5e-12 & 3.53e-12 / 0 / 5.19e-12 & 21.4 / 400 / 33.5 & 0.322 / 0 / 0.391 & 0.674 / 400 / 1.28 \\
+  dq-PLL fault gains ($k_p$ 0.2, $k_i$ 80) & 30 / 124 / 0.0128 & 1.72 / 36 / 0.00127 & 3.12e-12 / 0 / 5.19e-12 & 12.8 / 400 / 8.58 & 0.124 / 0 / 0.0813 & 0.593 / 23 / 0.651 \\
+  FHT-PLL & 30 / 37 / 5.29e-12 & 1.61 / 400 / 5.5e-12 & 8.21 / 17 / 5.19e-12 & 9.51 / 397 / 1.34 & 0.26 / 0 / 0.418 & 0.491 / 0 / 0.936 \\
+  DDSRF-PLL, positive feed ($k_p$ 1, $k_i$ 80) & 30 / 165 / 0.134 & 1.69 / 54 / 0.00271 & 42.4 / 191 / 0.257 & 11.7 / 161 / 0.0421 & 0.176 / 0 / 0.0812 & 2.91 / 400 / 5.11 \\
+  DDSRF-PLL improved ($k_p$ 0.32, $k_i$ 8, $\omega$ init 1 pu) & 30 / 107 / 0.00245 & 3.37 / 103 / 0.000794 & 11.6 / 30 / 0.000459 & 3.14 / 28 / 3.28e-06 & 0.0746 / 0 / 0.0251 & 0.374 / 0 / 0.49 \\
+  -> figures/synth_steps.pdf
+  -> figures/synth_disturbances.pdf
+
+=== 5. logged run sim_results_01.mat: 18000 samples, 0.000-2.250 s
+reference angle: linear fit of the alpha-beta angle on 0.30-0.74 s: f = 49.9900 Hz (0.99980 pu), theta0 = 0.4831 rad; logged FHT-PLL omega mean 0.99980 pu
+  one-period DFT before the fault |pos| 1.0007 pu angle  -0.00 deg   |neg| 0.0002 pu
+  one-period DFT in the fault     |pos| 0.6254 pu angle  -0.00 deg   |neg| 0.3752 pu
+  one-period DFT after the fault  |pos| 1.0007 pu angle  -0.01 deg   |neg| 0.0002 pu
+FHT front end (logged): angle(u_fht) - ref = 1.958 deg; angle(-u_sr) - ref = 4.154 deg before the fault, 4.150 deg mean and 2.81 deg pp in the fault
+logged FHT-PLL phase - ref: 4.154 deg before the fault
+offline runs: 2.1 s
+check: offline FHT-PLL vs logged phase: max |diff| 3.87e-05 rad (1.01e-05 after 0.02 s); omega max |diff| 1.20e-05 pu
+metrics (phase error vs the reference angle; offset = mean before the fault; lock = last time |e - offset| > 1 deg before the fault):
+variant            offset  lock s   in:peak in:settle ripple pp  w ripple  out:peak out:settle
+dq                 -0.000   0.037     19.49     915.0    33.554    0.4605     15.41      21.2   (omega peaks 0.246 / 0.209 pu)
+dq_sched           -0.000   0.037      4.95     915.0     8.611    0.1197     16.25      22.9   (omega peaks 0.067 / 0.169 pu)
+fht                 4.154   0.059      1.81      23.1     1.380    0.0191      1.85      15.6   (omega peaks 0.021 / 0.020 pu)
+ddsrf_model       -48.716   0.740    227.82     915.0     0.101    0.0010    171.76     585.4   (omega peaks 0.655 / 0.037 pu)
+ddsrf_pos          -0.105   0.740    180.03     915.0   359.921    0.0010    179.99     585.4   (omega peaks 2.383 / 2.016 pu)
+ddsrf_pos_init1     1.959   0.158      3.86      26.4     0.328    0.0038      3.54      24.4   (omega peaks 0.038 / 0.036 pu)
+ddsrf_imp           1.959   0.107      2.49      36.4     0.051    0.0004      1.34      31.6   (omega peaks 0.013 / 0.011 pu)
+LaTeX rows (variant & offset [deg] & lock [ms] & fault-in peak [deg] & settle [ms] & ripple pp [deg] & omega ripple pp [pu] & recovery peak [deg] & settle [ms]):
+  dq-PLL ($k_p$ 1, $k_i$ 80) & -0.00 & 37 & 19.5 & 915 & 33.55 & 0.460 & 15.4 & 21 \\
+  dq-PLL as in the model ($k_p$ 1 $\to$ 0.2 in the fault) & -0.00 & 37 & 4.9 & 915 & 8.61 & 0.120 & 16.2 & 23 \\
+  FHT-PLL & 4.15 & 59 & 1.8 & 23 & 1.38 & 0.019 & 1.9 & 16 \\
+  DDSRF-PLL as built (negative feed) & -48.72 & 740 & 227.8 & 915 & 0.10 & 0.001 & 171.8 & 585 \\
+  DDSRF-PLL, positive feed ($k_p$ 1, $k_i$ 80) & -0.10 & 740 & 180.0 & 915 & 359.92 & 0.001 & 180.0 & 585 \\
+  DDSRF-PLL, positive feed, $\omega$ init 1 pu & 1.96 & 158 & 3.9 & 26 & 0.33 & 0.004 & 3.5 & 24 \\
+  DDSRF-PLL improved ($k_p$ 0.32, $k_i$ 8, $\omega$ init 1 pu) & 1.96 & 107 & 2.5 & 36 & 0.05 & 0.000 & 1.3 & 32 \\
+  -> figures/logged_voltage.pdf
+  -> figures/logged_as_built.pdf
+  -> figures/logged_compare.pdf
+  -> figures/logged_startup_ripple.pdf
+  -> figures/logged_ddsrf.pdf
+DDSRF-PLL as built: omega mean 0.5-0.74 s 0.9966 pu, phase error at 0.5/0.7 s -39.6/-52.4 deg; in the fault (1.2-1.65 s) omega 0.9998 pu, error mean 122.0 deg pp 0.10 deg; |u_neg| output in the fault 0.372 pu
+DDSRF-PLL positive feed, zero start: omega at 0.7 s -0.9989 pu (locked on -omega), |u_neg| output 0.992 pu
