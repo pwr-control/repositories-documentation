@@ -68,6 +68,7 @@
 \addcontentsline{toc}{section}{Nomenclature}
 \label{sec:nomenclature}
 
+\begingroup
 \rowcolors{2}{tableShade}{white}
 \begin{longtable}{@{} l p{0.74\linewidth} @{}}
 	\toprule
@@ -103,8 +104,8 @@
 	$d\ped{a}$, $d\ped{b}$, $d\ped{c}$ & duties of the three legs on the carrier, between 0 and 1 \\
 \end{longtable}
 \addtocounter{table}{-1}
-\rowcolors{1}{white}{white}
-
+%\rowcolors{1}{white}{white}
+\endgroup
 % =============================================================
 \section{Introduction}
 \label{sec:intro}
@@ -654,6 +655,7 @@ An unbalanced load, for instance a single-phase load on a transformer, draws a n
 	\rowcolors{1}{white}{white}
 \end{table}
 
+\begingroup
 \rowcolors{2}{tableShade}{white}
 \small
 \begin{longtable}{@{} c l p{0.56\linewidth} @{}}
@@ -696,8 +698,8 @@ An unbalanced load, for instance a single-phase load on a transformer, draws a n
 	42, 43 & \code{r\_d}, \code{r\_q} & resonant terms of the current loop (0 without the compensator) \\
 \end{longtable}
 \normalsize
-\rowcolors{1}{white}{white}
-
+%\rowcolors{1}{white}{white}
+\endgroup
 % =============================================================
 \section{The grid-following block \code{grid\_following\_dqctrl}}
 \label{sec:gfl}

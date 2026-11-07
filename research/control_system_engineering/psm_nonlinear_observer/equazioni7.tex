@@ -1,7 +1,67 @@
 \documentclass[11pt, a4paper]{scrartcl}
+%\input{../../../AAA_template_latex_settings/settings}
+\usepackage[british]{babel}
+\usepackage[tmargin=1in, bmargin=1in, lmargin=0.75in, rmargin=0.75in]{geometry}
+\usepackage[dvipsnames,table]{xcolor}  % prima di tikz, listings, ecc.
 
-\input{../latex_settings/settings.tex}
-
+\usepackage{tikz}
+\usepackage{graphicx}
+\usepackage{pgfplots}
+\pgfplotsset{width=12cm, compat=1.9}
+\usepackage{setspace}
+\usepackage{chemmacros}
+\usepackage{chemfig}
+\usepackage{tabularray}
+\usepackage{makeidx}
+\usepackage{epstopdf}
+\usepackage{amssymb}
+\usepackage{mathrsfs}
+\usepackage{bm}
+\usepackage{amsmath}
+% esint deve essere caricato DOPO amsmath: entrambi definiscono \iint, \iiint,
+% \iiiint e \idotsint. Le si rende indefinite in modo che esint le ridefinisca
+% (versioni con i simboli di integrale multiplo corretti) senza errori.
+\let\iint\undefined
+\let\iiint\undefined
+\let\iiiint\undefined
+\let\idotsint\undefined
+\usepackage{esint}
+\usepackage{enumitem}
+%\usepackage[english]{varioref}
+\usepackage{physics}
+\usepackage{lipsum}
+\usepackage{fancyhdr}
+\usepackage{float}
+\usepackage{empheq}
+\usepackage[framemethod=tikz]{mdframed}
+\numberwithin{equation}{section}
+\usepackage{eso-pic}
+\usepackage{calc}
+\usepackage{nccmath}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{gensymb}
+\usepackage{amsfonts, amsthm, epsfig, epstopdf, titling, url, array}
+\usepackage{tabularx}
+\usepackage{makecell}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{siunitx}
+\sisetup{input-digits=0123456789\pi}
+\usepackage[symbol]{footmisc}
+\usepackage{multicol}
+%\usepackage{boondox-cal}
+\usepackage{blindtext}
+\usepackage{changepage}
+\usepackage{nomencl}
+\usepackage{hyperref}
+\usepackage{xurl}
+\usepackage{ragged2e}
+\usepackage[version=4]{mhchem}  % ← conflitto di opzioni
+\usepackage{longtable}
+\usepackage{chemformula}
+\usetikzlibrary{arrows.meta,positioning,calc}
+\usepackage[page,toc]{appendix}
 
 \begin{document}
 
