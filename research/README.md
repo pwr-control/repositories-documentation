@@ -13,6 +13,14 @@ Physics:
   conduction, reverse recovery, lifetime control, MPS diodes.
 - `diode/charge_control_model` — *Dall'equazione di continuità ambipolare al modello a controllo
   di carica* (IT): why the two-state Lauritzen-Ma form is needed for di/dt-dependent recovery.
+- `diode/lauritzen_ma_datasheet_conversion` — *From datasheet data to the Lauritzen-Ma diode
+  model*: theory of the two-charge model on a current ramp of any length (peak reverse current in
+  closed form with the Lambert function, long-ramp and abrupt limits), recovery-time conventions and
+  softness, conversion from $I_{rr}$, $Q_{rr}$, $t_{rr}$ to $\tau$ and $T_M$ with a convergent
+  iteration and a criterion for the long-ramp closed form, sensitivity to the data, forward and
+  blocking parameters, what the model cannot reproduce (slope and forward-current laws), two worked
+  examples checked in a simulated commutation cell; `lm_conversion_calc.py` reproduces every number
+  and figure (relations in the module `lm_conversion.py`).
 - `igbt/igbt_fermi_levels`, `thyristor/thyristor_fermi_levels` — band diagrams with Fermi and
   quasi-Fermi levels in the rest, blocking and conduction states (IT).
 - `thyristor/thyristor` — *Il tiristore (SCR): principio di funzionamento e fisica del
