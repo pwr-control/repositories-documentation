@@ -74,17 +74,11 @@
 \pagestyle{fancy} 
 \fancypagestyle{firstpage}{
 \rhead{
-%	\begin{picture}(0,0) 
-%			\put(-30,0){\includegraphics[width=1cm]{figures/MCI_4C_bw.eps}} 
-%	\end{picture}
 }
 }
 \fancyhead[L]{\slshape\nouppercase{\leftmark}}
 \chead{}
 \rhead{
-%	\begin{picture}(0,0) 
-%		\put(-30,0){\includegraphics[width=1cm]{figures/MCI_4C_bw.eps}} 
-%	\end{picture}
 }
 \lfoot{\textit{}}
 \cfoot{-\ \thepage\ -}
@@ -132,7 +126,7 @@ innerrightmargin=6pt,innertopmargin=6pt,innerbottommargin=6pt]{mybox}
 
 \title{\textbf{ 
 	\begin{LARGE}
-		Flying Basket Inverter Design
+		Drone Inverter Design
 	\end{LARGE} \\[24pt]
 	\begin{Large}
 		Model, control strategy and hardware dimensioning 
@@ -1042,7 +1036,7 @@ $(\tilde{\mathbf{A}}-\mathbf{LC})$.
 
 \chapter{Appendix B - User-Manual}
 \section{Introduction}	
-In the following a short introduction to the \textit{how to use} the firmware developed for the flying basket project. This document can be useful in case of testing, debugging and firmware code improvement.
+In the following a short introduction to the \textit{how to use} the firmware developed for the drone project. This document can be useful in case of testing, debugging and firmware code improvement.
 
 \section{Firmware configuration}	
 The firmware source code is basically fully allocated into the folder:
@@ -1060,9 +1054,9 @@ where the following configuration file is available.
 			
 			/* begin - Configuration application */
 			
-			/* MCI-EPL Inverter */
+			/* EPL Inverter */
 			#define MAD_MOTOR
-			#define MCI_EPL_INVERTER
+			#define EPL_INVERTER
 			#define PMSM_LOAD
 			
 			/* end - Configuration devices and application */

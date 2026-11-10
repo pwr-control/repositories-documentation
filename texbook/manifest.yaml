@@ -79,8 +79,8 @@
   title: Thyristor gate driver design guidelines
   slug: thygate
 
-- file: ocem_e637.tex
-  title: The O.C.E.M. E637 firing card
+- file: scr_firing_card.tex
+  title: An industrial SCR firing card
   slug: e637
   # [IT]
 
