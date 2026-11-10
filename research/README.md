@@ -147,6 +147,26 @@ Line-commutated rectifiers and protection:
   snubbers and DC LC filter: sizing formula sheet and design path* (fourteen steps, 440 V /
   1000 A worked example; Rev. 01 adds the RC snubber design criteria), with `b6c_example_calc.py`
   and the switched-circuit check `b6c_snubber_sim.py`.
+- `../diode-stack` (top-level folder of `research`) — *Series-connected diode stacks for medium-voltage
+  six-pulse rectifiers: design guidelines*: the arms of a line-commutated diode bridge on an MV transformer,
+  each a stack of press-pack rectifier diodes with a balancing resistor and an RC snubber per diode. Design
+  path in nine steps: operating point (overlap, commutation voltage, current slope of 0.1 to 0.2 A/µs on a
+  ramp of about half a millisecond), first cut of the number of devices from a transient factor and a sharing
+  factor, static sharing (leakage at the working point; with $R_b C_{sn}$ longer than the blocking interval
+  the sharing of the running bridge is capacitive), recovered charge at the slope of the circuit (the
+  datasheet point can be scaled neither linearly nor along the $Q_S$ curve: charge-control model with a
+  quadratic recombination term, floor and ceiling of the charge, a 10 % band of $Q_S$ at datasheet conditions
+  is 25 % in the bridge), charge model of the level that blocks first with the capacitor tolerance, two-mode
+  closed form of the commutation transient with the recovery tail (a current-stiff DC side raises the highest
+  arm voltage by about 20 % over the crest, on the arms across the DC terminals and not on the arm that turns
+  off), snubber resistor (its lower and upper limit, its losses), ratings and layout, thermal stability of the
+  blocking diode, insulation inside the stack and to earth, faults (DC short circuit, one device failed short,
+  lowest $u_k$). Worked example with generic data (10 kV / 100 A, six 4.5 kV diodes per arm, assumed component
+  data), checked against a switched simulation of the whole bridge (weak level at 78 % of $V_{RRM}$ with a
+  resistive load and at 89 % with a smoothing reactor, where seven devices or a larger snubber are needed),
+  comparison with the application-note rules for snubbers and series connection, thirteen design rules;
+  `diode_stack_calc.py` (with the switched simulator `diode_stack_sim.py` and the recovery model
+  `diode_stack_recovery.py`) reproduces every number and figure.
 - `soft_starters_and_snubbers` — *Thyristor-based soft starters for high-power motors*.
 - `thyristor_based_crowbar/unidirectional_crowbar` — *Crowbar thyristor for the 3 kV / 3600 A
   static-switch test bench*: device selection and passive self-triggering gate circuit, with
