@@ -331,7 +331,7 @@ def disc_poles(x, method):
 
 methods = ['forward Euler', 'backward Euler', 'Taylor 2', 'Tustin', 'semi-implicit, a = x', 'semi-implicit, a = 2 sin(x/2)', 'exact (ZOH)']
 apps = [('study model, 2 f0 = 100 Hz, ts = 125 us', 2*np.pi*100, 125e-6),
-        ('TELEMA VFC0, 2 f0 = 33.3 Hz, ts = 200 us', 2*np.pi*100/3, 200e-6),
+        ('VFC0, 2 f0 = 33.3 Hz, ts = 200 us', 2*np.pi*100/3, 200e-6),
         ('FHT internal model, f0 = 50 Hz, ts = 125 us', 2*np.pi*50, 125e-6),
         ('FHT internal model, f0 = 16.7 Hz, ts = 200 us', 2*np.pi*50/3, 200e-6)]
 for lab, wr_, ts_ in apps:
@@ -419,7 +419,7 @@ def fht_response_d(z, Af, L, w, v_timing):
     return uhat, v
 
 
-for lab, w_, ts_ in [('study model 50 Hz, 125 us', w0, ts), ('TELEMA VFC0 16.7 Hz, 200 us', 2*np.pi*50/3, 200e-6)]:
+for lab, w_, ts_ in [('study model 50 Hz, 125 us', w0, ts), ('VFC0 16.7 Hz, 200 us', 2*np.pi*50/3, 200e-6)]:
     pr(f'\n  {lab}:')
     for dl in (0.05, 0.0):
         Lc = fht_gains(w_, dl, ts_, 'cont')

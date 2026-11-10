@@ -456,7 +456,7 @@ Name & Symbol & Default & Source \\
 \end{itemize}
 
 \subsection{Limitations}
-The model has no charge dynamics: the on-state, the turn-on collapse and the recovery are represented by the surrogate state $x_b$ rather than by stored charge, so the reverse recovery of the BOD (relevant only through $D_1$), the current-dependent turn-on and the dependence of $t_q$ on the previous current are not represented. The $\dvdt$ criterion is a calibrated approximation valid near the rated point; the $\mathrm{d}i/\mathrm{d}t$ limit, the surge $I^2t$ and the holding voltage $\Vh$ are not enforced (they must be checked from the logged waveforms). The pre-breakover exponent $m$, $C_j$, $t_d$, $r_{av}$, $V_{rq}$ and $R_{RB}$ are assumed values chosen for a plausible shape and numerical robustness, not fitted to measurements; the OCEM test report on the DTT BOD board \cite{crowbardtt} could be used to refine $t_d$ and the $\dvdt$ behaviour.
+The model has no charge dynamics: the on-state, the turn-on collapse and the recovery are represented by the surrogate state $x_b$ rather than by stored charge, so the reverse recovery of the BOD (relevant only through $D_1$), the current-dependent turn-on and the dependence of $t_q$ on the previous current are not represented. The $\dvdt$ criterion is a calibrated approximation valid near the rated point; the $\mathrm{d}i/\mathrm{d}t$ limit, the surge $I^2t$ and the holding voltage $\Vh$ are not enforced (they must be checked from the logged waveforms). The pre-breakover exponent $m$, $C_j$, $t_d$, $r_{av}$, $V_{rq}$ and $R_{RB}$ are assumed values chosen for a plausible shape and numerical robustness, not fitted to measurements; the test report on the DTT BOD board \cite{crowbardtt} could be used to refine $t_d$ and the $\dvdt$ behaviour.
 
 %======================================================================
 \section{Verification with the Python replica}
@@ -736,7 +736,7 @@ end
 \bibitem{ixyspatent} IXYS Corporation, ``Packaged overvoltage protection circuit for triggering thyristors,'' U.S. Patent Application 2014/0332842 A1, Nov. 2014.
 \bibitem{baliga} B.~J. Baliga, \emph{Fundamentals of Power Semiconductor Devices}. New York: Springer, 2008, ch.~8 (thyristors).
 \bibitem{lutz} J.~Lutz, H.~Schlangenotto, U.~Scheuermann, and R.~De Doncker, \emph{Semiconductor Power Devices: Physics, Characteristics, Reliability}. Berlin: Springer, 2011, ch.~8.
-\bibitem{crowbardtt} D.~Bagnara, ``Crowbar for the DTT DIV in-vessel coil power supplies,'' technical note \ssc{crowbar\_dtt\_div.tex}, Rev.~03, and ``Option B configuration,'' \ssc{optionB\_configuration.tex}, Rev.~00, Secom, Sept. 2026.
+\bibitem{crowbardtt} D.~Bagnara, ``Crowbar for the DTT DIV in-vessel coil power supplies,'' technical note \ssc{crowbar\_dtt\_div.tex}, Rev.~03, and ``Option B configuration,'' \ssc{optionB\_configuration.tex}, Rev.~00, Sept. 2026.
 \bibitem{crowbarself} D.~Bagnara, ``Crowbar thyristor with passive self-firing network,'' technical note \ssc{crowbar\_thyristor\_selftrigger.tex}, Rev.~02, Sept. 2026.
 \bibitem{mathworks} The MathWorks, Inc., \emph{Simscape Language Guide}, sections ``Mode Charts'' and ``Conditional Declarations,'' 2026.
 \end{thebibliography}

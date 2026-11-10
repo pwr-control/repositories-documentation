@@ -7,7 +7,7 @@
 %  Metodo: differenze finite esplicite (FTCS) con ghost-node per
 %          la condizione di Neumann al bordo sinistro.
 %
-%  Davide Leitner SpA — Marzo 2026
+%  Davide Bagnara — Marzo 2026
 
 clear; clc; close all;
 

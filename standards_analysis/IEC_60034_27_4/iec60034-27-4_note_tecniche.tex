@@ -29,23 +29,23 @@
 
 % --- Grafica e colori ---
 \usepackage[table,xcdraw]{xcolor}
-\definecolor{leitnerblue}{RGB}{0,84,166}
+\definecolor{docblue}{RGB}{0,84,166}
 \definecolor{lightgray}{RGB}{245,245,245}
 \definecolor{warningyellow}{RGB}{255,243,205}
 
 % --- Hyperlink ---
 \usepackage[
   colorlinks=true,
-  linkcolor=leitnerblue,
-  urlcolor=leitnerblue,
-  citecolor=leitnerblue
+  linkcolor=docblue,
+  urlcolor=docblue,
+  citecolor=docblue
 ]{hyperref}
 
 % --- Intestazioni ---
 \usepackage{fancyhdr}
 \pagestyle{fancy}
 \fancyhf{}
-\fancyhead[L]{\small\textcolor{leitnerblue}{\textbf{IEC 60034-27-4}} — Note tecniche}
+\fancyhead[L]{\small\textcolor{docblue}{\textbf{IEC 60034-27-4}} — Note tecniche}
 \fancyhead[R]{\small Davide Bagnara}
 \fancyfoot[C]{\small\thepage}
 \renewcommand{\headrulewidth}{0.4pt}
@@ -64,7 +64,7 @@
 
 \newtcolorbox{infobox}[1][]{
   colback=lightgray,
-  colframe=leitnerblue,
+  colframe=docblue,
   fonttitle=\bfseries,
   #1
 }
@@ -78,7 +78,7 @@
 
 % --- Titolo ---
 \begin{center}
-  {\LARGE\bfseries\color{leitnerblue}
+  {\LARGE\bfseries\color{docblue}
     Note tecniche sulla IEC 60034-27-4}\\[6pt]
   {\large Prove di isolamento su macchine elettriche rotanti:\\
   Resistenza di isolamento, Polarization Index, DAR e HiPot}\\[10pt]
@@ -377,7 +377,7 @@ DC HiPot a rampa       & Tensione crescente linearmente; utile per macchine inve
 % ============================================================
 \section{Esempio pratico — motore PMSM 690 V}
 
-A titolo di riferimento per una macchina tipica della gamma LeitDrive (690 V, classe di isolamento F/H, avvolgimento \emph{form-wound} con rivestimento stress-control):
+A titolo di riferimento per una macchina tipica (690 V, classe di isolamento F/H, avvolgimento \emph{form-wound} con rivestimento stress-control):
 
 \begin{center}
 \rowcolors{2}{lightgray}{white}
