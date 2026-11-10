@@ -1,0 +1,221 @@
+1. Operating point of the ideal bridge
+   Lc 13.93 mH (uk 7 % on 1.60 MVA), 9.95 mH (uk 5 %); transformer rated current 92.38 A; load resistance 130.9 Ohm
+   rated grid, rated load          : Id 100.0 A, mu 20.26 deg, Vdc  13.09 kV, V0  4.90 kV, alpha 0.1758 A/us, Id/alpha  569 us; arm: crest 14.14 kV, rms 8.83 kV, mean 6.54 kV
+   grid +10 %, same load resistance: Id 110.0 A, mu 20.26 deg, Vdc  14.40 kV, V0  5.39 kV, alpha 0.1934 A/us, Id/alpha  569 us; arm: crest 15.56 kV, rms 9.71 kV, mean 7.20 kV
+   grid +10 %, uk 5 %              : Id 111.0 A, mu 17.17 deg, Vdc  14.52 kV, V0  4.59 kV, alpha 0.2309 A/us, Id/alpha  481 us; arm: crest 15.56 kV, rms 9.76 kV, mean 7.26 kV
+   rated grid, half load           : Id  50.8 A, mu 14.40 deg, Vdc  13.29 kV, V0  3.52 kV, alpha 0.1263 A/us, Id/alpha  402 us; arm: crest 14.14 kV, rms 8.91 kV, mean 6.65 kV
+
+2. Static sharing
+   balanced level voltage at the crest (grid +10 %): 2.593 kV; leakage of a device at the limit at 100 C: 0.97 mA -> equivalent resistance 2.69 MOhm
+   AN6531 (2), V_D = 3.6 kV, a = 0.05, b = 0.10: Rb <= 839 V / I_lk = 869 kOhm at 100 C; with 470 kOhm I_lk <= 1.79 mA, covered up to 111 C
+   AN6531 (2), V_D = 4.5 kV, a = 0.05, b = 0.10: Rb <= 1868 V / I_lk = 1934 kOhm at 100 C; with 470 kOhm I_lk <= 3.97 mA, covered up to 126 C
+   Rb*Csn = 70 ms against a blocking interval of 13.3 ms: 83 % of an offset is left at the end of the interval
+
+3. Reverse recovery at the current slope of the circuit (units: us, A, uC)
+   AN5950 max: tau_b 102 us at 125 C, T_M 39.8 us, k 2.78e-07 1/(uC us), rms of the fit 9.5 %; at 0.1 A/us the model gives 432 uC / 6.86 A, the power law 1059 uC / 8.47 A
+   AN5950 min: tau_b 57 us at 125 C, T_M 32.6 us, k 3.92e-07 1/(uC us), rms of the fit 9.0 %; at 0.1 A/us the model gives 138 uC / 3.57 A, the power law 320 uC / 4.50 A
+   class bulk lifetime at 150 C (tau ~ T): 108 us
+   datasheet curve: QS ~ (di/dt)^0.300, 3200 uC at 5 A/us (table: 3200 uC max, 125 A)
+   from 150 C to 100 C: Qrr x0.78, Irrm x0.88 (tau ~ T)
+   scenario  tau_b    T_M      k         point  alpha   Qrr150 Irrm150  Qrr(Tj) Irrm(Tj)   t_a    s
+   floor       38   20.0   0.00e+00   Nom   0.176      113   4.40       88   3.88     25  1.05
+   floor       38   20.0   0.00e+00   Max   0.193      124   4.84       96   4.26     25  1.05
+   floor       38   20.0   0.00e+00   Ukmin 0.231      148   5.77      115   5.09     25  1.05
+   central    108   15.5   2.43e-06   Nom   0.176      517  11.31      402   9.98     64  0.42
+   central    108   15.5   2.43e-06   Max   0.193      551  12.21      428  10.77     63  0.43
+   central    108   15.5   2.43e-06   Ukmin 0.231      618  14.07      481  12.40     61  0.44
+   upper      200   14.7   3.34e-06   Nom   0.176      735  13.86      571  12.22     79  0.35
+   upper      200   14.7   3.34e-06   Max   0.193      771  14.84      600  13.09     77  0.35
+   upper      200   14.7   3.34e-06   Ukmin 0.231      843  16.84      656  14.85     73  0.37
+   ceiling    inf   13.8   4.54e-06   Nom   0.176     1059  17.04      824  15.03     97  0.28
+   ceiling    inf   13.8   4.54e-06   Max   0.193     1093  18.09      850  15.95     94  0.29
+   ceiling    inf   13.8   4.54e-06   Ukmin 0.231     1160  20.20      902  17.81     87  0.31
+   deviation from the datasheet curve at its two ends: floor -80 % / +143 %, central -38 % / +22 %, upper -24 % / +12 %, ceiling -7 % / +2 %
+   naive scaling of the table point to 0.176 A/us at 150 C: linear 113 uC / 4.4 A, with the slope of the curve 1172 uC
+   Qrr at the circuit slope and Tj against tau_b: 39 us 94 uC, 50 us 151 uC, 60 us 205 uC, 80 us 301 uC, 100 us 376 uC, 130 us 459 uC, 160 us 517 uC, 200 us 571 uC, 250 us 617 uC, 300 us 649 uC, 400 us 691 uC, 500 us 716 uC, 700 us 746 uC, 1000 us 769 uC, 2000 us 796 uC
+   central scenario, dlnQ/dln(tau_b): 1.03 at the circuit slope, 0.40 at the datasheet point: a band of 10 % on QS becomes 25 % in the circuit
+   design set: 500 uC / 11.3 A at 0.176 A/us and 100 C (softness 0.38) -> tau 76.4 us, T_M 14.4 us, t_tail 12.1 us, t_a 64.3 us
+   design set at the slope of case Max (0.193 A/us, long ramp): 550 uC / 12.43 A
+   design set at the slope of case Ukmin (0.231 A/us, long ramp): 657 uC / 14.84 A
+
+4. Commutation transient: two-mode model of the snubbed bridge (current-stiff DC side)
+   turn-off at grid +10 %: Irr 12.43 A, t_a 64.3 us, t_tail 12.1 us, commutation voltage at the peak V0s 5.68 kV (V0 5.39 kV at the end of the ideal overlap)
+   the weak diode (u = 0.25) blocks 8.6 us before the others, at 10.76 A; its snubber then takes 7.14 A (0.57 Irr): resistive step 1.07 kV
+   mode 1: Z0 431 Ohm, f0 4.92 kHz, zeta 0.348, chi 1.89, theta 0.37: F 2.364 after 47 us (ideal snap-off 2.219)
+   mode 2: Z0 334 Ohm, f0 3.81 kHz, zeta 0.270, chi 1.46, theta 0.29: F 2.163 after 70 us (ideal snap-off 2.026)
+   mode rule: Z0 818 Ohm, f0 4.67 kHz, zeta 0.330, chi 1.79, theta 0.36: F 2.316 after 51 us (ideal snap-off 2.168)
+   recovering arm: peak 2.272 V0s = 12.91 kV (ideal snap-off 2.126, 5/3 rule 2.316); arms across the DC terminals: +3.30 kV; highest arm voltage 18.73 kV = 1.204 of the crest, 71 us after the step (ideal snap-off 18.34 kV)
+   lowest highest-arm voltage 18.21 kV with Rsn = 305 Ohm (within 1 % from 212 to 418 Ohm); zeta2 = 0.5 with 278 Ohm; Rsn*Irr = 1.86 kV
+   peak factor F of the loop (rows zeta; columns chi = 0.5, 1, 1.5, 2, 3; snap-off | theta = 0.4)
+      0.2:  1.65  1.87  2.17  2.52  3.27  |  1.75  2.02  2.33  2.67  3.38
+      0.3:  1.52  1.72  2.01  2.35  3.09  |  1.61  1.87  2.17  2.50  3.18
+      0.4:  1.42  1.61  1.91  2.27  3.05  |  1.51  1.76  2.07  2.40  3.10
+      0.5:  1.35  1.55  1.88  2.28  3.18  |  1.44  1.70  2.02  2.37  3.09
+      0.7:  1.26  1.51  2.10  2.80  4.20  |  1.36  1.66  2.02  2.41  3.20
+      1.0:  1.18  2.00  3.00  4.00  6.00  |  1.33  1.71  2.14  2.58  3.48
+   closed form printed in the note against mcm(): largest difference 5.8e-15
+
+5. Simulations (grid +10 % unless stated; weak level / nominal level)
+   case          Vdc[kV] Idc[A]  Irrm[A]      Qrr[uC]      Vpk[kV]      Vrms[kV]     P_Rsn[W]    P_Rb[W]   stack pk[kV]  resistors/stack[W]
+   R              14.41  110.1  10.44/11.16   389.6/ 515.2  3.250/2.447  2.121/1.524  23.6/ 15.2   9.6/  4.9    15.47        134
+   L              14.39  110.0  10.64/11.48   396.9/ 524.9  3.729/2.905  2.130/1.522  30.3/ 21.0   9.7/  4.9    18.24        170
+   R_ctol         14.41  110.1  10.41/11.17   389.8/ 515.2  3.484/2.402  2.265/1.495  23.7/ 15.3  10.9/  4.8    15.47        135
+   L_ctol         14.39  110.0  10.60/11.46   397.0/ 525.0  3.982/2.845  2.274/1.493  30.5/ 21.1  11.0/  4.7    18.18        171
+   R_tol          14.41  110.1  10.42/11.18   389.7/ 515.1  3.496/2.398  2.277/1.492  23.7/ 15.3  10.5/  5.0    15.47        136
+   L_tol          14.39  110.0  10.62/11.47   396.9/ 525.0  3.991/2.841  2.286/1.491  30.5/ 21.1  10.6/  5.0    18.18        172
+   R_bal          14.40  110.0  12.11/12.11   517.9/ 517.9  2.578/2.578  1.622/1.622  17.1/ 17.1   5.6/  5.6    15.47        136
+   L_bal          14.38  109.9  12.27/12.27   527.7/ 527.7  3.054/3.054  1.622/1.622  23.3/ 23.3   5.6/  5.6    18.32        174
+   R_ukmin        14.54  111.1  12.30/13.08   456.2/ 602.3  3.366/2.436  2.209/1.515  23.4/ 12.7  10.4/  4.9    15.52        122
+   L_ukmin        14.52  110.9  12.66/13.58   468.6/ 618.9  3.809/2.845  2.225/1.512  30.1/ 18.0  10.5/  4.9    18.01        155
+   R_nom          13.10  100.1   9.50/10.15   354.2/ 468.3  2.955/2.224  1.928/1.385  19.5/ 12.5   7.9/  4.1    14.06        111
+   L_nom          13.08  100.0   9.68/10.44   360.8/ 477.2  3.390/2.641  1.936/1.384  25.1/ 17.3   8.0/  4.1    16.58        140
+   R_short        14.41  110.1  10.44/11.17   389.7/ 515.2  3.742/2.935  2.427/1.828  29.6/ 20.7  12.5/  7.1    15.47        153
+   L_short        14.39  110.0  10.63/11.48   396.9/ 524.9  4.299/3.472  2.436/1.826  38.1/ 28.2  12.6/  7.1    18.18        192
+   R_short_ctol   14.41  110.1  10.41/11.17   389.8/ 515.2  4.004/2.872  2.588/1.787  29.7/ 20.8  14.3/  6.8    15.47        154
+   L_short_ctol   14.39  110.0  10.60/11.45   397.0/ 525.0  4.585/3.391  2.597/1.785  38.2/ 28.4  14.4/  6.8    18.12        193
+   R_half         14.63   55.9   7.31/ 7.81   268.4/ 353.7  3.052/2.499  1.980/1.566  12.0/  7.9   8.3/  5.2    15.54         86
+   L_half         14.62   55.9   7.49/ 8.14   277.2/ 365.4  3.328/2.755  1.991/1.563  15.5/ 10.9   8.4/  5.2    17.10        104
+   R_noleak       14.41  110.1  10.41/11.19   389.7/ 515.2  3.235/2.453  2.104/1.527  23.6/ 15.2   9.4/  5.0    15.47        134
+   R_leakw        14.41  110.1  10.47/11.17   389.8/ 515.3  3.213/2.461  2.080/1.531  23.5/ 15.2   9.2/  5.0    15.47        134
+   S_snap         14.39  109.8  12.36/12.36   395.7/ 395.7  3.045/3.045  1.622/1.622  23.8/ 23.8   0.0/  0.0    18.27        143
+   S_soft         14.39  109.8  12.25/12.25   524.3/ 524.3  3.099/3.099  1.623/1.623  23.8/ 23.8   0.0/  0.0    18.60        143
+
+6. Hand formulas against the simulations
+   smallest Csn of the charge model with the tolerance (R): 147 nF for a charge difference of 134 uC at the crest
+   R: stack peak hand 15.56 kV / sim 15.47 kV; weak level hand 3.34 kV (without leakage 3.32) / sim 3.25 kV; with Csn -+5 % hand 3.59 kV / sim 3.48 kV; P_Rsn nominal hand 18.0 W / sim 15.2 W, weak hand 30.8 W / sim 23.6 W
+   L: stack peak hand 18.73 kV / sim 18.24 kV; weak level hand 3.87 kV (without leakage 3.85) / sim 3.73 kV; with Csn -+5 % hand 4.16 kV / sim 3.98 kV; P_Rsn nominal hand 24.6 W / sim 21.0 W, weak hand 37.4 W / sim 30.3 W
+   hand values against the simulation: voltages from +0.6 % to +4.5 %, powers from +17 % to +31 %; long-ramp Irr 12.43 A against 11.16 A (R) and 11.48 A (L) in the simulation
+   R: charge model with the simulated stack peak and dQ over the Qrr-u sweep: deviation of the weak-level peak from -1.2 % to +1.8 %
+   L: charge model with the simulated stack peak and dQ over the Qrr-u sweep: deviation of the weak-level peak from -1.0 % to +0.2 %
+   R: P_Rsn of a nominal level, formula with the simulated Irrm / simulation - 1 [%] (rows Csn, columns Rsn)
+        68 nF:   +31   +21   +15   +20   +35   +54
+       100 nF:    -0    -2    +5   +13   +27   +43
+       150 nF:    -9    -5    +1    +9   +22   +35
+       220 nF:    -9    -5    +1    +8   +19   +30
+       330 nF:    -7    -4    +2    +9   +19   +29
+       470 nF:    -5    -1    +5   +13   +22   +32
+      whole sweep from -9 % to +54 %; from 100 nF and up to 220 Ohm from -9 % to +13 %
+   L: P_Rsn of a nominal level, formula with the simulated Irrm / simulation - 1 [%] (rows Csn, columns Rsn)
+        68 nF:   +16   +13   +13   +21   +36   +54
+       100 nF:    +1    +1    +7   +16   +29   +46
+       150 nF:    -5    -2    +4   +13   +25   +40
+       220 nF:    -6    -1    +5   +13   +24   +37
+       330 nF:    -3    +1    +7   +15   +26   +38
+       470 nF:    +0    +5   +11   +19   +30   +41
+      whole sweep from -6 % to +54 %; from 100 nF and up to 220 Ohm from -6 % to +19 %
+   AN6531 (3), V_D = 3.6 kV: Cs >= 120 nF for dQ = 138 uC; with 150 nF dQ <= 172 uC
+   AN6531 (3), V_D = 4.5 kV: Cs >= 63 nF for dQ = 138 uC; with 150 nF dQ <= 326 uC
+   stiff limit, S_snap: Irr 12.36 A, V0s 5.66 kV, t_tail 1.0 us; recovering arm peak sim 12.22 kV / model 12.32 kV (ideal snap-off 12.21, 5/3 rule 12.56); arm across the DC terminals sim 18.27 kV / model 18.36 kV (ideal snap-off 18.32)
+      energy in the snubber resistors of an arm per period: sim 2.75 J; model 2.85 J = steps 0.70 + inductance 2.13 + source during the tail 0.07 - diodes 0.04
+   stiff limit, S_soft: Irr 12.26 A, V0s 5.66 kV, t_tail 12.1 us; recovering arm peak sim 12.91 kV / model 13.02 kV (ideal snap-off 12.15, 5/3 rule 13.27); arm across the DC terminals sim 18.60 kV / model 18.69 kV (ideal snap-off 18.30)
+      energy in the snubber resistors of an arm per period: sim 2.75 J; model 2.86 J = steps 0.70 + inductance 2.09 + source during the tail 0.84 - diodes 0.77
+
+7. Sweeps
+   R, u = 0.25: weak level at 0.8 VRRM for Qrr = 781 uC (95 % of the ceiling); its Rsn at 51.0 W for Qrr > 1100 uC
+   R, u = 0.25, Csn -+5 %: weak level at 0.8 VRRM for Qrr = 590 uC (72 % of the ceiling)
+   R: unbalance that brings the weak level to 0.8 VRRM, by Qrr: 200 uC: > 0.40, 350 uC: > 0.40, 500 uC: 0.38, 650 uC: 0.30, 800 uC: 0.24, 950 uC: 0.21, 1100 uC: 0.18
+   L, u = 0.25: weak level at 0.8 VRRM for Qrr = 428 uC (52 % of the ceiling); its Rsn at 51.0 W for Qrr = 943 uC
+   L, u = 0.25, Csn -+5 %: weak level at 0.8 VRRM for Qrr = 298 uC (36 % of the ceiling)
+   L: unbalance that brings the weak level to 0.8 VRRM, by Qrr: 200 uC: > 0.40, 350 uC: 0.33, 500 uC: 0.20, 650 uC: 0.14, 800 uC: 0.10, 950 uC: 0.07, 1100 uC: 0.05
+   Csn-Rsn sweep, weak-level peak [kV] / P_Rsn of the weak level [W] / resistors per stack [W]; * = the peak occurs at the turn-off of the arm
+   R   68 nF: 68: 3.82*/16/100  100: 3.79/18/106  150: 3.95/19/110  220: 3.96/21/109  330: 3.96/23/105  470: 4.14*/27/102
+   R  100 nF: 68: 3.47/18/122  100: 3.56/20/125  150: 3.56/21/122  220: 3.56/23/118  330: 3.56/26/114  470: 3.75*/29/111
+   R  150 nF: 68: 3.25/21/138  100: 3.25/22/136  150: 3.25/24/134  220: 3.25/26/131  330: 3.25/29/128  470: 3.52*/32/126
+   R  220 nF: 68: 3.05/24/153  100: 3.05/25/152  150: 3.05/27/151  220: 3.05/29/149  330: 3.05/33/149  470: 3.39*/37/151
+   R  330 nF: 68: 2.90/27/176  100: 2.90/29/177  150: 2.90/32/179  220: 2.90/35/182  330: 2.90/39/188  470: 3.31*/45/198
+   R  470 nF: 68: 2.81/33/206  100: 2.81/35/211  150: 2.81/38/219  220: 2.81/43/230  330: 2.81/50/248  470: 3.26*/58/271
+   L   68 nF: 68: 4.64*/22/136  100: 4.62/23/140  150: 4.74/25/141  220: 4.69/26/137  330: 4.63/29/131  470: 4.61/33/126
+   L  100 nF: 68: 4.20/24/156  100: 4.26/26/158  150: 4.19/27/154  220: 4.12/29/149  330: 4.08/32/142  470: 4.10/36/137
+   L  150 nF: 68: 3.86/28/177  100: 3.80/29/174  150: 3.73/30/170  220: 3.67/33/165  330: 3.66/36/159  470: 3.79*/39/155
+   L  220 nF: 68: 3.54/31/197  100: 3.48/32/194  150: 3.41/34/190  220: 3.37/37/187  330: 3.38/40/183  470: 3.62*/44/182
+   L  330 nF: 68: 3.29/36/226  100: 3.22/38/225  150: 3.16/40/224  220: 3.13/43/224  330: 3.18/47/226  470: 3.52*/53/231
+   L  470 nF: 68: 3.12/42/263  100: 3.06/45/266  150: 3.00/48/270  220: 2.99/52/277  330: 3.06/58/289  470: 3.45*/66/307
+   R: largest change of the weak-level peak along Rsn (largest value excluded), by Csn: 68 nF 4.2 %, 100 nF 2.4 %, 150 nF 0.0 %, 220 nF 0.0 %, 330 nF 0.0 %, 470 nF 0.0 %
+   R, 150 nF, nominal level, 68 -> 470 Ohm: snubber resistor 16.6 -> 12.0 W, turn-off loss of the diode 3.6 -> 6.9 W
+   R, 150 nF and 470 Ohm: weak level 3.52 kV, 1.15 ms after the natural commutation (overlap 1.13 ms), snubber current 6.68 A peak, Rsn x current = 3.14 kV
+   L, 150 nF: lowest weak-level peak 3.66 kV at 330 Ohm (-1.8 % against 150 Ohm), P_Rsn of the weak level +17 %
+   R, Rb = 235 kOhm: weak 3.212 kV, P_Rb 18.5/10.0 W
+   R, Rb = 940 kOhm: weak 3.270 kV, P_Rb 4.9/2.5 W
+   L, Rb = 235 kOhm: weak 3.697 kV, P_Rb 18.6/10.0 W
+   L, Rb = 940 kOhm: weak 3.746 kV, P_Rb 4.9/2.5 W
+   Ld =      3 mH (  0.1 x 2Lc): stack 15.47 kV, weak 3.250 kV, P_Rsn 23.6/15.2 W, resistors per stack 134 W
+   Ld =     10 mH (  0.4 x 2Lc): stack 15.43 kV, weak 3.245 kV, P_Rsn 24.4/15.7 W, resistors per stack 137 W
+   Ld =     28 mH (  1.0 x 2Lc): stack 16.23 kV, weak 3.386 kV, P_Rsn 26.1/17.2 W, resistors per stack 146 W
+   Ld =    100 mH (  3.6 x 2Lc): stack 17.64 kV, weak 3.628 kV, P_Rsn 29.1/19.8 W, resistors per stack 162 W
+   Ld =    300 mH ( 10.8 x 2Lc): stack 18.24 kV, weak 3.729 kV, P_Rsn 30.3/21.0 W, resistors per stack 170 W
+   Ld =    600 mH ( 21.5 x 2Lc): stack 18.39 kV, weak 3.753 kV, P_Rsn 30.6/21.3 W, resistors per stack 171 W
+   Ld =   1500 mH ( 53.9 x 2Lc): stack 18.48 kV, weak 3.766 kV, P_Rsn 30.7/21.4 W, resistors per stack 172 W
+   Ld =   3000 mH (107.7 x 2Lc): stack 18.50 kV, weak 3.769 kV, P_Rsn 30.7/21.4 W, resistors per stack 172 W
+   option reference network: weak 3.98 kV with Csn tolerance (88 %), P_Rsn 30/21 W, stack 171 W (+0 %)
+   option Csn 220 nF, Rsn 220 Ohm: weak 3.59 kV with Csn tolerance (80 %), P_Rsn 37/24 W, stack 189 W (+10 %)
+   option Csn 330 nF, Rsn 180 Ohm: weak 3.36 kV with Csn tolerance (75 %), P_Rsn 42/30 W, stack 227 W (+33 %)
+   option n = 7, reference network: weak 3.56 kV with Csn tolerance (79 %), P_Rsn 26/17 W, stack 158 W (-8 %)
+   option n = 7, Csn 220 nF, Rsn 220 Ohm: weak 3.19 kV with Csn tolerance (71 %), P_Rsn 31/19 W, stack 172 W (+1 %)
+   DC damper 680 Ohm + 150 nF: weak 3.509 kV, stack 16.93 kV, damper 290 W
+   DC damper 680 Ohm + 300 nF: weak 3.450 kV, stack 16.57 kV, damper 460 W
+   DC damper 330 Ohm + 300 nF: weak 3.451 kV, stack 16.58 kV, damper 473 W
+   n = 5: R: weak 3.74 kV, with Csn tolerance 4.00 kV, resistors 148 W; L: weak 4.28 kV, with Csn tolerance 4.57 kV, resistors 187 W
+   n = 6: R: weak 3.25 kV, with Csn tolerance 3.48 kV, resistors 134 W; L: weak 3.73 kV, with Csn tolerance 3.98 kV, resistors 170 W
+   n = 7: R: weak 2.90 kV, with Csn tolerance 3.11 kV, resistors 123 W; L: weak 3.33 kV, with Csn tolerance 3.56 kV, resistors 156 W
+   n = 8: R: weak 2.64 kV, with Csn tolerance 2.83 kV, resistors 114 W; L: weak 3.04 kV, with Csn tolerance 3.24 kV, resistors 146 W
+   R: k_tr 0.99, k_sh 1.35 (with Csn tolerance) -> n >= 5.8
+   L: k_tr 1.17, k_sh 1.31 (with Csn tolerance) -> n >= 6.6
+   ratings of the snubber of the weak level (peak voltage with the tolerances of Csn and Rb)
+      R: capacitor rated voltage >= 5.0 kV (70 % rule on 3.50 kV), 0.40 A rms, 7.28 A peak, 49 V/us; resistor 0.47 J per period, peak 1.09 kV
+      L: capacitor rated voltage >= 5.7 kV (70 % rule on 3.99 kV), 0.45 A rms, 7.79 A peak, 52 V/us; resistor 0.61 J per period, peak 1.17 kV
+      impulse of 6 kV on a level: 40 A in Rsn; loop inductance of the snubber <= Rsn^2 Cj/4 = 1.7 to 3.4 uH for Cj = 0.3 to 0.6 nF
+
+8. Losses and thermal design (grid +10 %)
+   R: I_F(AV) 36.7 A, I_F(rms) 62.6 A, peak 118.3 A -> P_F 33.6 W; turn-off 4.8 W; reverse loss at the leakage limit, weak-level voltage: 90 C 1.1 W, 100 C 1.7 W, 110 C 3.0 W, 125 C 6.7 W
+      Rth(h-a) 0.4 K/W: Tj 71.7 C without leakage, nominal level 72, weak level 72
+      Rth(h-a) 0.6 K/W: Tj 79.4 C without leakage, nominal level 80, weak level 80
+      Rth(h-a) 0.8 K/W: Tj 87.1 C without leakage, nominal level 87, weak level 88
+      Rth(h-a) 1.0 K/W: Tj 94.7 C without leakage, nominal level 95, weak level 96
+      Rth(h-a) 1.2 K/W: Tj 102.4 C without leakage, nominal level 104, weak level 105
+      Rth(h-a) 1.4 K/W: Tj 110.1 C without leakage, nominal level 113, weak level 116
+      Rth(h-a) 1.6 K/W: Tj 117.8 C without leakage, nominal level 123, weak level runaway
+      Rth(h-a) 1.8 K/W: Tj 125.4 C without leakage, nominal level runaway, weak level runaway
+      Rth(h-a) <= 1.09 K/W for Tj = 100 C on the weak level; thermal runaway above 1.53 K/W (ratio 1.41); diode loss at 100 C 40.1 W; without reverse loss the heat sink could have 2.4 K/W at Tvj max
+      resistors per stack 134 W, diodes 241 W, stack 374 W, bridge 2.25 kW; air at 55 C and 1000 m: 0.955 kg/m3, 841 m3/h for a rise of 10 K
+   L: I_F(AV) 36.7 A, I_F(rms) 62.1 A, peak 118.7 A -> P_F 33.5 W; turn-off 5.7 W; reverse loss at the leakage limit, weak-level voltage: 90 C 1.1 W, 100 C 1.7 W, 110 C 3.0 W, 125 C 6.8 W
+      Rth(h-a) 0.4 K/W: Tj 72.0 C without leakage, nominal level 72, weak level 72
+      Rth(h-a) 0.6 K/W: Tj 79.9 C without leakage, nominal level 80, weak level 80
+      Rth(h-a) 0.8 K/W: Tj 87.7 C without leakage, nominal level 88, weak level 89
+      Rth(h-a) 1.0 K/W: Tj 95.6 C without leakage, nominal level 96, weak level 97
+      Rth(h-a) 1.2 K/W: Tj 103.4 C without leakage, nominal level 105, weak level 106
+      Rth(h-a) 1.4 K/W: Tj 111.2 C without leakage, nominal level 114, weak level 118
+      Rth(h-a) 1.6 K/W: Tj 119.1 C without leakage, nominal level 124, weak level runaway
+      Rth(h-a) 1.8 K/W: Tj 126.9 C without leakage, nominal level runaway, weak level runaway
+      Rth(h-a) <= 1.06 K/W for Tj = 100 C on the weak level; thermal runaway above 1.50 K/W (ratio 1.41); diode loss at 100 C 40.9 W; without reverse loss the heat sink could have 2.4 K/W at Tvj max
+      resistors per stack 170 W, diodes 246 W, stack 415 W, bridge 2.49 kW; air at 55 C and 1000 m: 0.955 kg/m3, 932 m3/h for a rise of 10 K
+   resistor: 100 W at 25 C, zero at 225 C -> 85.0 W in air at 55 C, 60 % of it 51.0 W (157 C on the element)
+
+9. Insulation (rms at the rated grid voltage, peak at +10 %; table values to be checked on the standard)
+   R, 1 level(s) from the weak one: 1.93 kV rms, 3.25 kV peak, impulse 6 kV -> clearance 5.5 mm, creepage 10 mm (group I) / 19 mm (III)
+   R, 2 level(s) from the weak one: 3.31 kV rms, 5.69 kV peak, impulse 12 kV -> clearance 14 mm, creepage 17 mm (group I) / 33 mm (III)
+   R, 3 level(s) from the weak one: 4.69 kV rms, 8.14 kV peak, impulse 18 kV -> clearance 25 mm, creepage 23 mm (group I) / 47 mm (III)
+   R, 4 level(s) from the weak one: 6.08 kV rms, 10.58 kV peak, impulse 24 kV -> clearance 33 mm, creepage 31 mm (group I) / 61 mm (III)
+   R, 5 level(s) from the weak one: 7.46 kV rms, 13.02 kV peak, impulse 30 kV -> clearance 40 mm, creepage 37 mm (group I) / 75 mm (III)
+   R, 6 level(s) from the weak one: 8.85 kV rms, 15.47 kV peak, impulse 36 kV -> clearance 60 mm, creepage 44 mm (group I) / 88 mm (III)
+   R, AC neutral earthed: highest node voltage to earth 6.72 kV rms, 9.22 kV peak
+   R, one DC pole earthed: highest node voltage to earth 13.12 kV rms, 15.47 kV peak
+   R, DC midpoint earthed: highest node voltage to earth 6.56 kV rms, 7.74 kV peak
+   R, one AC phase earthed (first fault of an unearthed system): highest node voltage to earth 10.13 kV rms, 16.53 kV peak
+   L, 1 level(s) from the weak one: 1.94 kV rms, 3.73 kV peak, impulse 6 kV -> clearance 5.5 mm, creepage 10 mm (group I) / 19 mm (III)
+   L, 2 level(s) from the weak one: 3.32 kV rms, 6.63 kV peak, impulse 12 kV -> clearance 14 mm, creepage 17 mm (group I) / 33 mm (III)
+   L, 3 level(s) from the weak one: 4.70 kV rms, 9.53 kV peak, impulse 18 kV -> clearance 25 mm, creepage 23 mm (group I) / 47 mm (III)
+   L, 4 level(s) from the weak one: 6.08 kV rms, 12.43 kV peak, impulse 24 kV -> clearance 33 mm, creepage 31 mm (group I) / 61 mm (III)
+   L, 5 level(s) from the weak one: 7.46 kV rms, 15.34 kV peak, impulse 30 kV -> clearance 40 mm, creepage 37 mm (group I) / 75 mm (III)
+   L, 6 level(s) from the weak one: 8.85 kV rms, 18.24 kV peak, impulse 36 kV -> clearance 60 mm, creepage 44 mm (group I) / 88 mm (III)
+   L, AC neutral earthed: highest node voltage to earth 6.72 kV rms, 10.23 kV peak
+   L, one DC pole earthed: highest node voltage to earth 13.12 kV rms, 18.24 kV peak
+   L, DC midpoint earthed: highest node voltage to earth 6.56 kV rms, 9.12 kV peak
+   L, one AC phase earthed (first fault of an unearthed system): highest node voltage to earth 10.13 kV rms, 18.55 kV peak
+   repetitive peaks of case L above those of case R: 15 to 18 %
+   rms voltage to earth, one DC pole earthed against earthed neutral: ratio 1.95
+
+10. Faults
+   short circuit on the DC terminals, uk 7 %: 1320 A rms, peak 3.36 kA (kappa 1.8), I2t 17.4e3 A2s per half wave, 87e3 A2s in 100 ms; diode: IFSM 12.0 kA, I2t 720e3 A2s
+   short circuit on the DC terminals, uk 5 %: 1848 A rms, peak 4.70 kA (kappa 1.8), I2t 34.1e3 A2s per half wave, 171e3 A2s in 100 ms; diode: IFSM 12.0 kA, I2t 720e3 A2s
+   R, one level failed short (n - 1 = 5): weak 3.74 kV = 83 % of VRRM, nominal 2.93 kV, P_Rsn 29.6/20.7 W; with the capacitor tolerance 4.00 kV = 89 % of VRRM (VRSM 4.6 kV)
+   L, one level failed short (n - 1 = 5): weak 4.30 kV = 96 % of VRRM, nominal 3.47 kV, P_Rsn 38.1/28.2 W; with the capacitor tolerance 4.58 kV = 102 % of VRRM (VRSM 4.6 kV)
