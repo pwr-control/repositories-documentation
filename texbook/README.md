@@ -67,7 +67,7 @@ dynamics · MOSFET loss model · thyristor with Lauritzen-Ma recovery ·
 CFA operational amplifier · Scott-T transformer
 
 **III — Gate drivers and firing circuits**
-Thyristor gate driver guidelines · the O.C.E.M. E637 firing card
+Thyristor gate driver guidelines · an industrial SCR firing card
 
 **IV — Converters and applications**
 Cycloconverters · thyristor soft starters · snubber design for a 2400 A leg ·

@@ -75,7 +75,7 @@ Converters and control:
   `lrc_filter_example.py` reproduces the numbers.
 - `grid_forming_control` — *Grid-forming control in the synchronous dq frame: structure,
   continuous-time design and discrete implementation*: the controller of the library block
-  `grid_forming_dqctrl` (`afe_dq_ctrl_pwm`, TELEMA VFC0 at 16.7 Hz) and of the study model
+  `grid_forming_dqctrl` (`afe_dq_ctrl_pwm`, 16.7 Hz traction application) and of the study model
   `grid_forming_dq.slx` of modelization-and-control (400 V / 250 kW / 50 Hz): free-running phase
   generator, FHT sequence separation, positive- and negative-sequence voltage PIs, PI plus resonant
   current loop, limiters and anti-windup; continuous-time analysis with complex space vectors
