@@ -49,6 +49,20 @@ Gate drivers and snubbers:
   modules; snubbers in paralleled 5SNA 1000G650300 modules; RC snubber for high-power three-phase
   diode bridges (IT, 690 V / 4 kA example).
 
+Thermal models:
+- `thermal/foster_to_cauer` — *From the Foster to the Cauer thermal network of a power device*:
+  the transformation `foster_to_cauer()` from the datasheet Foster table of $Z_{th(j-c)}$ to the
+  Cauer ladder by continued-fraction expansion, each step with its line of code, why the elements
+  are positive and unique, the closed form of the first section, the invariants that check a
+  conversion and the inverse by eigenvalues; numerical accuracy of the polynomial expansion against
+  a 200-digit reference and a stable bidiagonalization for many terms; the split of the double-side
+  impedance into one ladder per side with the single-side resistances; why a Foster network must not
+  be connected to a heat sink or a busbar; a check against a press-pack with known layers (structure
+  functions, what a fitted ladder does not contain); worked examples on a 2 kV diode and a 1.8 kV
+  thyristor in press-pack, the diode clamped between two copper bars; `foster_cauer_calc.py`
+  reproduces every number and figure (relations and a thermal network solver in the module
+  `foster_cauer.py`).
+
 ## `power_electronics`
 
 Converters and control:
