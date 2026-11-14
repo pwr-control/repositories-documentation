@@ -1,0 +1,204 @@
+component bod
+% Break-over diode (BOD)
+% Two-terminal p-n-p-n break-over diode used as a passive overvoltage
+% trigger for thyristors (anode-to-gate connection).
+%
+% Functional model with switching dynamics:
+%  - forward blocking: temperature-dependent off-state current plus a
+%    steep pre-breakover (avalanche-multiplication) term reaching I_BO
+%    at the break-over voltage V_BO(T) = V_BO*(1 + K_T*(T - 25 degC));
+%  - break-over event at v >= V_BO(T) or by dv/dt (displacement current
+%    criterion calibrated at the datasheet point 0.9*V_BO, dv/dt_cr(T));
+%  - turn-on: the voltage collapses from V_BO to the on-state along an
+%    exponential with total duration t_d (blocking-capability state xb);
+%  - on-state: v = V_T0 + r_T*i, turn-off when i < I_H(T);
+%  - recovery: after turn-off the blocking capability rebuilds from V_rq
+%    to V_BO(T) with the time constant t_q/ln(100) (tq surrogate);
+%    a forward voltage re-applied earlier re-triggers the device;
+%  - reverse: the BOD blocks only V_RB (about 10 V), beyond that it breaks
+%    down with the resistance R_RB (a series diode is required in the
+%    application circuit);
+%  - junction capacitance C_j in parallel (also provides dv/dt);
+%  - optional thermal port H: junction thermal mass C_thj = 1/K_P and
+%    junction-to-port resistance R_thjh, dissipation p = v*i_dev.
+%
+% Output M: 0 blocking, 1 break-over (voltage) triggered, 2 dv/dt
+% triggered, 3 on-state.
+%
+% Default parameters: Littelfuse/IXYS IXBOD2-11 (V_BO = 1100 V +/- 50 V).
+% Values marked (assumed) are not given in the datasheet.
+%
+% Package dtt.crowbar - functional models for the DTT DIV crowbar.
+% Rev. 00, 2026-09-22.
+
+nodes
+    p = foundation.electrical.electrical; % +:left
+    n = foundation.electrical.electrical; % -:right
+end
+
+outputs
+    M = {0, '1'}; % M:right
+end
+
+parameters
+    V_BO      = {1100, 'V'};     % Break-over voltage V_BO at 25 degC
+    I_BO      = {20,   'mA'};    % Break-over current I_BO
+    m_av      = {20,   '1'};     % Exponent of the pre-breakover current
+    I_D25     = {0.2,  'uA'};    % Off-state current at 0.8*V_BO, 25 degC
+    I_D125    = {200,  'uA'};    % Off-state current at 0.8*V_BO, 125 degC
+    V_T0      = {0.9,  'V'};     % On-state threshold voltage V_T0
+    r_T       = {80,   'mOhm'};  % On-state slope resistance r_T
+    I_H25     = {40,   'mA'};    % Holding current I_H at 25 degC
+    I_H125    = {20,   'mA'};    % Holding current I_H at 125 degC
+    K_T       = {1e-3, '1/K'};   % Temperature coefficient of V_BO, K_T
+    dvdt_cr25 = {3000, 'V/us'};  % Critical dv/dt at 0.9*V_BO, 25 degC
+    dvdt_cr150= {1000, 'V/us'};  % Critical dv/dt at 0.9*V_BO, 150 degC
+    V_RB      = {10,   'V'};     % Reverse blocking (breakdown) voltage
+    R_RB      = {1,    'Ohm'};   % Reverse breakdown resistance (assumed)
+    C_j       = {20,   'pF'};    % Junction capacitance (assumed)
+    t_d       = {0.3,  'us'};    % Turn-on time, V_BO to on-state (assumed)
+    r_av      = {1,    'Ohm'};   % Dynamic resistance during turn-on (assumed)
+    t_q       = {200,  'us'};    % Turn-off (recovery) time t_q
+    V_rq      = {50,   'V'};     % Blocking capability right after turn-off (assumed)
+    T_j       = {25,   'degC'};  % Junction temperature (thermal port off)
+    thermal_port = simscape.enum.onoff.off; % Thermal port
+    R_thjh    = {60,   'K/W'};   % Thermal resistance junction to port H
+    C_thj     = {1.43, 'mJ/K'};  % Junction thermal mass (1/K_P)
+end
+
+parameters (Access = private)
+    T_ref  = {298.15, 'K'};  % Reference temperature (25 degC)
+    T_hot  = {398.15, 'K'};  % Temperature of the I_D125 / I_H125 data (125 degC)
+    T_hot2 = {423.15, 'K'};  % Temperature of the dvdt_cr150 data (150 degC)
+    x_on   = {1e-3, '1'};    % Blocking-capability level at the end of turn-on
+    k_H    = log(I_H25/I_H125)/(T_hot - T_ref);        % I_H decay rate
+    k_D    = log(I_D125/I_D25)/(T_hot - T_ref);        % I_D growth rate
+    k_dv   = log(dvdt_cr25/dvdt_cr150)/(T_hot2 - T_ref); % dv/dt_cr decay rate
+    tau_d  = t_d/log(1/x_on);                          % Turn-on time constant
+    tau_q  = t_q/log(100);                             % Recovery time constant (99 % at t_q)
+end
+
+variables
+    v       = {0, 'V'};    % Voltage
+    i       = {0, 'A'};    % Current
+    i_dev   = {0, 'A'};    % Conduction current (without C_j)
+    dvdt    = {0, 'V/s'};  % dv/dt
+    xb      = {value = {1, '1'}, priority = priority.high}; % Blocking capability (0..1)
+    V_BOT   = {1100, 'V'}; % Break-over voltage at T_j
+    V_blk   = {1100, 'V'}; % Actual blocking capability
+    v_cl    = {1100, 'V'}; % Clamp voltage during turn-on
+    I_HT    = {40, 'mA'};  % Holding current at T_j
+    I_DT    = {0.2, 'uA'}; % Off-state current at T_j
+    dvdt_crT= {3000, 'V/us'}; % Critical dv/dt at T_j
+    p_d     = {0, 'W'};    % Dissipated power
+end
+
+branches
+    i : p.i -> n.i;
+end
+
+if thermal_port == simscape.enum.onoff.on
+    nodes
+        H = foundation.thermal.thermal; % H:bottom
+    end
+    variables
+        Tj = {value = {25, 'degC'}, priority = priority.high}; % Junction temperature
+        Q  = {0, 'W'}; % Heat flow from port H into the junction
+    end
+    branches
+        Q : H.Q -> *;
+    end
+    equations
+        Q == -(Tj - H.T)/R_thjh;
+        C_thj*der(Tj) == p_d + Q;
+    end
+else
+    variables
+        Tj = {25, 'degC'}; % Junction temperature
+    end
+    equations
+        Tj == T_j;
+    end
+end
+
+equations
+    assert(C_j > 0, 'The junction capacitance C_j must be positive')
+    assert(t_d > 0, 'The turn-on time t_d must be positive')
+    assert(t_q > 0, 'The turn-off time t_q must be positive')
+    assert(V_rq > V_T0 && V_rq < V_BO, 'V_rq must lie between V_T0 and V_BO')
+    assert(V_RB > 0, 'The reverse blocking voltage V_RB must be positive')
+
+    v == p.v - n.v;
+    dvdt == der(v);
+    i == i_dev + C_j*dvdt;
+
+    % Temperature dependence
+    V_BOT    == V_BO*(1 + K_T*(Tj - T_ref));
+    I_HT     == I_H25*exp(-k_H*(Tj - T_ref));
+    I_DT     == I_D25*exp(k_D*(Tj - T_ref));
+    dvdt_crT == dvdt_cr25*exp(-k_dv*(Tj - T_ref));
+
+    % Blocking capability and turn-on clamp
+    V_blk == V_rq + xb*(V_BOT - V_rq);
+    v_cl  == V_T0 + xb*(V_BOT - V_T0);
+
+    p_d == v*i_dev;
+end
+
+modecharts (ExternalAccess = observe)
+    bod_mc = modechart
+        modes
+            mode Blocking
+                equations
+                    if v >= 0
+                        i_dev == I_DT*v/(0.8*V_BOT) + I_BO*(v/V_BOT)^m_av;
+                    elseif v >= -V_RB
+                        i_dev == I_DT*v/(0.8*V_BOT);
+                    else
+                        i_dev == I_DT*v/(0.8*V_BOT) + (v + V_RB)/R_RB;
+                    end
+                    der(xb) == (1 - xb)/tau_q;
+                    M == 0;
+                end
+            end
+            mode Triggered
+                equations
+                    if v > v_cl
+                        i_dev == I_DT*v/(0.8*V_BOT) + (v - v_cl)/r_av;
+                    else
+                        i_dev == I_DT*v/(0.8*V_BOT);
+                    end
+                    der(xb) == -xb/tau_d;
+                    M == 1;
+                end
+            end
+            mode TriggeredDV
+                equations
+                    if v > v_cl
+                        i_dev == I_DT*v/(0.8*V_BOT) + (v - v_cl)/r_av;
+                    else
+                        i_dev == I_DT*v/(0.8*V_BOT);
+                    end
+                    der(xb) == -xb/tau_d;
+                    M == 2;
+                end
+            end
+            mode On
+                equations
+                    i_dev == (v - V_T0)/r_T;
+                    der(xb) == -xb/tau_d;
+                    M == 3;
+                end
+            end
+        end
+        transitions
+            Blocking    -> Triggered   : v >= V_blk;
+            Blocking    -> TriggeredDV : v > 0 && v*dvdt >= 0.9*V_blk*dvdt_crT;
+            Triggered   -> On          : xb <= x_on;
+            TriggeredDV -> On          : xb <= x_on;
+            On          -> Blocking    : i_dev < I_HT;
+        end
+    end
+end
+
+end

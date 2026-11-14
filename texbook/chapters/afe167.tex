@@ -1,0 +1,384 @@
+% chapters/afe167.tex
+% generated from afe_16_7hz.tex
+\chapter{Single-phase AFE for a 16.7 Hz traction grid}
+\label{ch:afe167}
+\begin{chapabstract}
+\noindent
+Il documento raccoglie le considerazioni di progetto per un convertitore monofase da
+\SI{250}{\kilo\watt} che collega un aerogeneratore a magneti permanenti alla rete di
+trazione a \SI{15}{\kilo\volt}, \SI{16.7}{\hertz}. Il bus in continua della macchina è
+a \SI{700}{\volt} con una specifica di ondulazione del \SI{5}{\percent}. Si mostra che a
+\SI{16.7}{\hertz} tale specifica non è compatibile con un bus in continua puramente
+passivo e si confrontano le architetture di disaccoppiamento attivo possibili. Sono
+inoltre discussi il dimensionamento del trasformatore a bassa frequenza, l'intervallo
+di tensione di catenaria imposto dalla EN~50163, la struttura del controllo e le
+problematiche di stabilità a bassa frequenza tipiche delle reti \SI{16.7}{\hertz}.
+\end{chapabstract}
+
+\section{Contesto}
+
+L'immissione diretta di energia rinnovabile nella rete di trazione a \SI{16.7}{\hertz}
+non passa dalla rete pubblica a \SI{50}{\hertz} e dalle relative stazioni di
+conversione. In Austria, ÖBB ha messo in servizio a Höflein (Bassa Austria) un
+aerogeneratore da circa \SI{3}{\mega\watt} collegato direttamente alla catenaria a
+\SI{15}{\kilo\volt}, \SI{16.7}{\hertz} \cite{oebb_hoeflein}; in Germania DB Energie
+sviluppa il concetto di \emph{sector coupler} per l'immissione locale di energia
+rinnovabile in linea aerea \cite{db_tuebingen}. Il progetto in esame è la versione da
+\SI{250}{\kilo\watt} dello stesso schema.
+
+I vantaggi sono la riduzione delle perdite di trasporto e il fatto di non richiedere
+nuove linee di alimentazione; il prezzo tecnico è che l'intera potenza attiva deve
+transitare attraverso un convertitore monofase a frequenza molto bassa, con le
+conseguenze descritte nel seguito.
+
+\section{Dati di progetto e ipotesi}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lll}
+\toprule
+Grandezza & Simbolo & Valore \\
+\midrule
+Potenza nominale & $P$ & \SI{250}{\kilo\watt} \\
+Frequenza di rete di trazione & $f_1$ & \SI{16.7}{\hertz} \\
+Tensione nominale di catenaria & $U_n$ & \SI{15}{\kilo\volt} \\
+Intervallo di tensione (EN 50163) & $U_{\min}\dots U_{\max}$ & \SI{11}{\kilo\volt} \dots \SI{17.25}{\kilo\volt} \\
+Tensione bus in continua lato macchina & $V_{dc1}$ & \SI{700}{\volt} \\
+Ondulazione ammessa su $V_{dc1}$ & $\Delta V/V$ & \SI{5}{\percent} \\
+Generatore & --- & PMSM su aerogeneratore \\
+\bottomrule
+\end{tabular}
+\caption{Dati di partenza.}
+\end{table}
+
+La corrente lato catenaria a potenza nominale è modesta,
+$I_{cat}=P/U_n=\SI{16.7}{\ampere}$ a \SI{15}{\kilo\volt} e \SI{22.7}{\ampere} alla
+tensione minima di \SI{11}{\kilo\volt}. Il progetto non è quindi dominato dalla corrente
+lato media tensione, bensì dalla gestione dell'energia sul lato continua.
+
+\section{Potenza pulsante a doppia frequenza}
+
+In un sistema monofase con tensione e corrente sinusoidali in fase la potenza istantanea
+vale
+\begin{equation}
+p(t) = P\bigl[1-\cos(2\omega_1 t)\bigr], \qquad \omega_1 = 2\pi f_1 .
+\end{equation}
+La componente alternata ha ampiezza pari alla potenza attiva stessa. L'energia che deve
+essere scambiata con un elemento di accumulo, da picco a picco, è
+\begin{equation}
+\Delta E_{pp} = \frac{P}{\omega_1}.
+\label{afe167:eq:energia}
+\end{equation}
+Con i dati di progetto:
+\begin{equation}
+\omega_1 = 2\pi\cdot\SI{16.7}{\hertz} = \SI{104.9}{\radian\per\second},
+\qquad
+\Delta E_{pp} = \frac{\SI{250}{\kilo\watt}}{\SI{104.9}{\radian\per\second}}
+\approx \SI{2.38}{\kilo\joule}.
+\end{equation}
+
+È utile il confronto con un sistema a \SI{50}{\hertz} di pari potenza, per il quale si
+avrebbe $\Delta E_{pp}\approx\SI{0.80}{\kilo\joule}$: la sola scelta della frequenza di
+trazione triplica il fabbisogno di accumulo. Questo è il vincolo dominante dell'intero
+progetto.
+
+\subsection{Corrente nel condensatore di bus}
+
+La componente alternata della corrente sul bus in continua vale, trascurando le perdite,
+$i_{dc}(t) = -\,(P/V_{dc})\cos(2\omega_1 t)$, da cui
+\begin{equation}
+I_{dc,\mathrm{rms}} = \frac{P}{\sqrt{2}\,V_{dc}}
+= \frac{\SI{250}{\kilo\watt}}{\sqrt{2}\cdot\SI{700}{\volt}}
+\approx \SI{253}{\ampere}.
+\label{afe167:eq:irms}
+\end{equation}
+
+Si noti che la \eqref{afe167:eq:irms} \textbf{non dipende dalla capacità installata}: aumentare
+$C$ riduce l'ondulazione di tensione ma non lo stress in corrente. Il banco va quindi
+dimensionato in corrente e non in energia, e nel caso di condensatori elettrolitici la
+corrente ammissibile va derata di un fattore \num{0.7}--\num{0.8} per il funzionamento a
+\SI{33.4}{\hertz} anziché a \SI{100}{\hertz}.
+
+\section{Il bus in continua passivo non è una soluzione praticabile}
+
+Per una piccola ondulazione attorno a $V_{dc}$ vale
+\begin{equation}
+\Delta E_{pp} \simeq C\, V_{dc}\, \Delta V_{pp}
+\quad\Longrightarrow\quad
+C = \frac{\Delta E_{pp}}{V_{dc}\,\Delta V_{pp}} .
+\label{afe167:eq:capacita}
+\end{equation}
+Con $V_{dc}=\SI{700}{\volt}$ e ondulazione del \SI{5}{\percent} picco-picco
+($\Delta V_{pp}=\SI{35}{\volt}$):
+\begin{equation}
+C = \frac{\SI{2380}{\joule}}{\SI{700}{\volt}\cdot\SI{35}{\volt}} \approx \SI{97}{\milli\farad}.
+\end{equation}
+Anche interpretando la specifica come $\pm\SI{5}{\percent}$ ($\Delta V_{pp}=\SI{70}{\volt}$)
+restano \SI{49}{\milli\farad}.
+
+Un banco da \SI{100}{\milli\farad} a \SI{700}{\volt} percorso da \SI{253}{\ampere} efficaci
+a \SI{33.4}{\hertz} richiede, con elettrolitici, alcune decine di litri di volume, un
+centinaio di componenti e una vita utile che diventa il fattore limitante della
+manutenzione dell'intero impianto; con condensatori a film il volume e il costo sono
+fuori scala. Il rapporto tra energia richiesta e capacità installabile è così sfavorevole
+che il disaccoppiamento attivo non è un raffinamento, ma l'unica strada percorribile.
+
+Una conseguenza quantitativa utile: un banco realistico sul bus a \SI{700}{\volt}, per
+esempio \SI{10}{\milli\farad}, immagazzina entro il \SI{5}{\percent} di ondulazione
+\begin{equation}
+E = C\,V_{dc}\,\Delta V_{pp} = \SI{10}{\milli\farad}\cdot\SI{700}{\volt}\cdot\SI{35}{\volt}
+\approx \SI{245}{\joule},
+\end{equation}
+cioè circa il \SI{10}{\percent} del fabbisogno. Il dimensionamento del disaccoppiatore
+attivo è quindi sostanzialmente indipendente dalla capacità del bus principale.
+
+\section{Architetture di disaccoppiamento}
+
+Le topologie di \emph{active power decoupling} per sistemi monofase sono state
+sistematizzate in \cite{sun2016review}, che le classifica in circuiti indipendenti e
+circuiti dipendenti (che condividono parzialmente o totalmente gli interruttori con il
+convertitore principale), razionalizzando l'evoluzione delle soluzioni note tramite i
+concetti di dualità, condivisione degli switch e connessione differenziale. Rassegne
+orientate al fotovoltaico si trovano in \cite{hu2013review}; una realizzazione notevole
+con buffer attivo e convertitore multilivello a condensatori flottanti è descritta in
+\cite{lei2017fcml}, dove il buffer riduce di un fattore \num{8} la capacità necessaria
+mantenendo un rendimento superiore al \SI{99}{\percent}; l'approccio a buffer in serie è
+trattato in \cite{pierquet2013}.
+
+\subsection{Opzione A --- buffer attivo su rail dedicato}
+
+Un ramo half-bridge preleva energia dal bus a \SI{700}{\volt} e la trasferisce a un
+condensatore che oscilla su un intervallo di tensione ampio. L'energia immagazzinabile è
+\begin{equation}
+\Delta E = \tfrac{1}{2}C\bigl(V_{\max}^2 - V_{\min}^2\bigr).
+\end{equation}
+Con $V_{\min}=\SI{700}{\volt}$ e $V_{\max}=\SI{1500}{\volt}$:
+\begin{equation}
+C = \frac{2\,\Delta E_{pp}}{V_{\max}^2-V_{\min}^2}
+= \frac{2\cdot\SI{2380}{\joule}}{\SI{1.76e6}{\volt\squared}}
+\approx \SI{2.7}{\milli\farad},
+\end{equation}
+ossia una riduzione di circa \num{36} volte rispetto alla soluzione passiva, con
+condensatori a film e vita utile non limitante.
+
+Il costo reale della soluzione va dichiarato: il ramo di buffer deve gestire la potenza
+istantanea di picco, pari a $P=\SI{250}{\kilo\watt}$, con una corrente di picco lato
+\SI{700}{\volt} di circa $P/V_{dc1}=\SI{357}{\ampere}$, e richiede la propria induttanza
+di accumulo. Si tratta a tutti gli effetti di mezzo convertitore aggiuntivo.
+
+\subsection{Opzione B --- stadio elevatore con bus intermedio oscillante}
+
+Il bus a \SI{700}{\volt} è basso rispetto alla tensione richiesta lato alternata (si veda
+la sezione~\ref{afe167:sec:modulazione}). Uno stadio elevatore verso un bus intermedio a
+\SI{1200}{\volt} nominali risolve simultaneamente due problemi se il controllo dello
+stadio elevatore è progettato per assorbire la pulsazione: il bus a \SI{700}{\volt} resta
+pulito e il bus intermedio oscilla liberamente. Con escursione da \SI{1000}{\volt} a
+\SI{1500}{\volt}:
+\begin{equation}
+C = \frac{2\cdot\SI{2380}{\joule}}{\SI{1500}{\volt}^2-\SI{1000}{\volt}^2}
+\approx \SI{3.8}{\milli\farad}.
+\end{equation}
+Questa è l'architettura che si ritiene preferibile: un solo stadio aggiuntivo svolge
+elevazione di tensione, disaccoppiamento e disaccoppiamento dinamico fra turbina e rete.
+Il vincolo che introduce riguarda la tenuta dei semiconduttori dello stadio di rete, che
+devono sopportare \SI{1500}{\volt}: si impone quindi l'uso di dispositivi da
+\SI{1700}{\volt}, oppure di una topologia a tre livelli (NPC o T-type) che riporta la
+tenuta dei singoli dispositivi a \SI{750}{\volt}.
+
+\subsection{Opzione C --- assorbimento lato macchina}
+
+In termini puramente energetici i \SI{2.38}{\kilo\joule} sono trascurabili rispetto
+all'energia cinetica immagazzinata nel rotore, che per una macchina di questa taglia è
+dell'ordine di alcune centinaia di \si{\kilo\joule}. Il vincolo non è energetico ma di
+coppia: assorbire l'intera pulsazione significa modulare la coppia di
+$\pm\SI{100}{\percent}$ del valore nominale a \SI{33.4}{\hertz}, condizione inaccettabile
+per l'albero, il moltiplicatore e la fatica strutturale.
+
+Un contributo del \SI{10}{\percent}--\SI{20}{\percent} è realistico e riduce il
+dimensionamento del buffer, ma va verificato che \SI{33.4}{\hertz} sia sufficientemente
+lontano dai modi torsionali del drivetrain e dai modi propri del generatore. Non è una
+soluzione sostitutiva.
+
+\subsection{Confronto}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lccl}
+\toprule
+Soluzione & Capacità & Tecnologia & Osservazioni \\
+\midrule
+Passiva su \SI{700}{\volt}      & \SI{97}{\milli\farad} & elettrolitici & non praticabile \\
+A -- buffer su rail dedicato     & \SI{2.7}{\milli\farad} & film & convertitore aggiuntivo completo \\
+B -- bus intermedio oscillante   & \SI{3.8}{\milli\farad} & film & risolve anche l'elevazione \\
+C -- lato macchina               & ---                    & ---  & solo contributo parziale \\
+\bottomrule
+\end{tabular}
+\caption{Confronto delle architetture di disaccoppiamento per $\Delta E_{pp}=\SI{2.38}{\kilo\joule}$.}
+\end{table}
+
+\section{Stadio lato rete e indice di modulazione}
+\label{afe167:sec:modulazione}
+
+La EN~50163 \cite{en50163} fissa per il sistema a \SI{15}{\kilo\volt},
+\SI{16.7}{\hertz} un intervallo permanente da \SI{11}{\kilo\volt} a
+\SI{17.25}{\kilo\volt} (con \SI{18}{\kilo\volt} ammessi per brevi periodi). Il rapporto
+fra estremi è \num{1.57}: il convertitore deve erogare la potenza nominale anche alla
+tensione minima e non deve saturare alla tensione massima.
+
+Per un ponte intero con modulazione unipolare la fondamentale massima ottenibile è
+\begin{equation}
+V_{conv,1}^{\mathrm{rms}} = \frac{m\,V_{dc}}{\sqrt{2}}, \qquad m \le 1 .
+\end{equation}
+Detto $k$ il rapporto di trasformazione $U_{cat}/V_{conv}$, le due condizioni di progetto
+sono
+\begin{equation}
+\frac{U_{\max}}{k} \le \frac{V_{dc,\min}}{\sqrt{2}}
+\qquad\text{e}\qquad
+I_{conv,\max} = \frac{P}{U_{\min}/k} .
+\end{equation}
+Con $V_{dc}=\SI{700}{\volt}$ fisso si ottiene $V_{conv,1}^{\max}=\SI{495}{\volt}$, che
+impone un rapporto tale da portare la corrente lato convertitore ben oltre
+\SI{700}{\ampere} alla tensione minima di catenaria. Con il bus intermedio dell'opzione~B
+($V_{dc,\min}=\SI{1000}{\volt}$) e un secondario a \SI{600}{\volt} nominali la corrente
+nominale scende a circa \SI{420}{\ampere} e a circa \SI{570}{\ampere} a
+\SI{11}{\kilo\volt}. È l'argomento economico più forte a favore dello stadio elevatore,
+indipendentemente dal disaccoppiamento.
+
+Per la topologia si raccomanda un ponte a tre livelli (T-type o NPC), che a queste
+tensioni di bus consente dispositivi da \SI{1200}{\volt}, riduce il $dv/dt$ verso il
+trasformatore e alleggerisce il filtro; in alternativa due ponti interi in
+\emph{interleaving} con portanti sfasate di \SI{90}{\degree}, che dimezzano la corrente
+per ramo e moltiplicano la frequenza apparente di commutazione.
+
+\section{Trasformatore a \SI{16.7}{\hertz}}
+
+La sezione del nucleo segue dalla legge di Faraday,
+\begin{equation}
+A_c = \frac{U}{4.44\, f\, N\, B_{\max}} ,
+\end{equation}
+quindi a parità di tensione, spire e induzione la sezione è inversamente proporzionale
+alla frequenza. Passando da \SI{50}{\hertz} a \SI{16.7}{\hertz} la sezione del nucleo
+triplica; con le usuali leggi di scala la massa cresce approssimativamente di un fattore
+$3^{3/4}\approx\num{2.3}$. Un trasformatore da \SI{250}{\kilo\volt\ampere} che a
+\SI{50}{\hertz} peserebbe intorno alla tonnellata si colloca quindi attorno alle due
+tonnellate. È il componente più pesante e ingombrante dell'impianto, ma anche il più
+economico e affidabile a questa taglia.
+
+\subsection{Sull'alternativa a trasformatore a media frequenza}
+
+Le architetture a cascata di ponti H con trasformatore a media frequenza (PETT, si veda
+\cite{steiner2007,zhao2014}) eliminano il trasformatore a bassa frequenza e sono la
+soluzione di riferimento per la trazione a bordo. Nel caso in esame, tuttavia, la
+corrente di catenaria è di soli \SI{16.7}{\ampere}: per raggiungere la tenuta necessaria
+($\SI{15}{\kilo\volt}\cdot\sqrt{2}\approx\SI{21}{\kilo\volt}$ di picco) servirebbero
+circa venti sottomoduli, ciascuno da poco più di \SI{12}{\kilo\watt}, con altrettanti
+trasformatori a media frequenza e stadi isolati. Il costo è dominato dal numero di
+sottomoduli e non dalla potenza: a \SI{250}{\kilo\watt} il trasformatore a bassa
+frequenza rimane con ogni probabilità la scelta corretta, mentre la soluzione PETT
+diventa competitiva a partire dal \si{\mega\watt}.
+
+\section{Filtro LCL}
+
+Il dimensionamento dell'induttanza di conversione è fissato dall'ondulazione di
+commutazione, $\Delta i \propto V_{dc}/(L f_{sw})$, ed è quindi indipendente da $f_1$: il
+filtro non cresce per il fatto di lavorare a \SI{16.7}{\hertz}. Cambia però il quadro in
+per unit, perché l'impedenza base $Z_b$ è invariata mentre $\omega_1$ è tre volte minore:
+la stessa induttanza in henry corrisponde a un terzo dell'impedenza in per unit. Il
+margine di caduta di tensione è quindi molto ampio.
+
+Specularmente, la capacità base $C_b = 1/(\omega_1 Z_b)$ è tre volte maggiore: a parità di
+potenza reattiva percentuale si può impiegare una capacità di filtro tre volte più grande
+che a \SI{50}{\hertz}, il che facilita l'attenuazione. La risonanza va collocata almeno
+un ordine di grandezza sopra $f_1$ e ben sotto $f_{sw}/2$; conviene inglobare
+l'induttanza di dispersione del trasformatore come $L_2$. Per il progetto e lo smorzamento
+attivo restano validi i riferimenti classici \cite{liserre2005,pan2014}.
+
+\section{Struttura del controllo}
+
+\begin{itemize}
+\item \textbf{Regolatore di corrente.} Controllo in coordinate stazionarie con regolatore
+proporzionale-risonante sintonizzato a \SI{16.7}{\hertz}, con termini risonanti selettivi
+sulle armoniche dispari \cite{zmood2003,teodorescu2011}. In alternativa, controllo in
+$dq$ con generazione dell'asse fittizio \cite{bahrani2011}, tenendo presente che a
+\SI{16.7}{\hertz} il quarto di periodo vale \SI{15}{\milli\second} e ogni generatore di
+quadratura introduce un ritardo corrispondentemente lungo.
+
+\item \textbf{Anello di tensione.} La pulsazione è a \SI{33.4}{\hertz}, quindi la banda
+dell'anello di tensione deve restare nell'ordine di \SI{3}{}--\SI{5}{\hertz}. Si
+raccomanda l'estrazione della componente continua tramite SOGI sintonizzato a
+\SI{33.4}{\hertz} anziché un semplice filtro passa-basso, per non sacrificare la banda.
+
+\item \textbf{Attenzione alla terza armonica.} Un residuo di \SI{33.4}{\hertz}
+nell'anello di tensione genera una terza armonica di corrente, che a \SI{16.7}{\hertz}
+cade esattamente a \SI{50}{\hertz}. Iniettare \SI{50}{\hertz} in una rete di trazione è
+particolarmente indesiderabile ed è un errore di progetto specifico di questa
+applicazione.
+
+\item \textbf{Sincronizzazione.} PLL basato su SOGI-FLL con dinamica lenta; vanno
+gestiti i salti di fase in corrispondenza dei giunti di sezione e l'ampia variabilità
+della tensione di catenaria.
+
+\item \textbf{Grid-forming.} Nelle tratte terminali, con potenza di corto circuito
+ridotta, un controllo di tipo droop o virtual synchronous machine \cite{zhong2011} offre
+un margine di robustezza superiore rispetto al puro grid-following. Conviene strutturare
+il firmware per consentire entrambe le modalità.
+\end{itemize}
+
+\section{Stabilità a bassa frequenza}
+
+Le reti di trazione a \SI{16.7}{\hertz} tedesche, svizzere e austriache hanno una
+casistica documentata di oscillazioni di potenza instabili nella banda
+\SI{4}{}--\SI{9}{\hertz}, dovute all'interazione fra il controllo dei convertitori e
+l'impedenza di rete \cite{menth2006,danielsen2010}. La bassa frequenza fondamentale, la
+scarsa smorzatura e l'elevata induttanza della catenaria rendono queste reti
+strutturalmente più fragili delle reti pubbliche a \SI{50}{\hertz}.
+
+Il progetto del controllo va quindi impostato con criteri basati sull'impedenza o
+sull'ammettenza d'ingresso \cite{sun2011,harnefors2015}, verificando la passività
+dell'impedenza equivalente del convertitore nella banda critica, e non con il solo
+margine di fase dell'anello di corrente. La verifica va ripetuta agli estremi
+dell'intervallo di tensione di catenaria e per la minima potenza di corto circuito
+prevista nel punto di connessione.
+
+\section{Compatibilità e normativa}
+
+\begin{itemize}
+\item \textbf{EN 50163} \cite{en50163} --- tensioni di alimentazione dei sistemi di
+trazione; definisce l'intervallo \SI{11}{}--\SI{17.25}{\kilo\volt} usato nel
+dimensionamento.
+\item \textbf{EN 50388} e \textbf{EN 50388-2} \cite{en50388,en50388_2} --- compatibilità
+tecnica fra alimentazione e materiale rotabile, requisiti di stabilità e di emissione
+armonica verso la rete di trazione.
+\item \textbf{EN 50238} \cite{en50238} --- compatibilità con i sistemi di rilevamento
+treni. È il vincolo più severo del progetto in termini di emissione: i limiti di corrente
+nelle bande dei circuiti di binario e dei contatori d'assi sono molto più stringenti di
+quelli delle reti pubbliche, e vanno verificati per l'intero campo di funzionamento del
+convertitore, non solo a potenza nominale.
+\item \textbf{EN 50121-2} \cite{en50121} --- compatibilità elettromagnetica del sistema
+ferroviario verso il mondo esterno.
+\item \textbf{EN 50122} --- provvedimenti di protezione, messa a terra e ritorno di
+corrente, rilevanti per l'interfaccia dell'impianto con il binario.
+\end{itemize}
+
+Per un inquadramento generale dei sistemi di alimentazione della trazione si rimanda a
+\cite{steimel2008}.
+
+\section{Raccomandazioni}
+
+\begin{enumerate}
+\item La specifica del \SI{5}{\percent} di ondulazione a \SI{700}{\volt} va accettata solo
+in presenza di un disaccoppiamento attivo. In alternativa, va rinegoziata insieme al
+costruttore dell'azionamento lato macchina.
+\item Si suggerisce l'architettura a due stadi con bus intermedio oscillante
+(opzione~B): risolve contemporaneamente il disaccoppiamento della potenza pulsante e
+l'insufficienza dei \SI{700}{\volt} rispetto all'intervallo di tensione di catenaria.
+\item Il ponte di rete va realizzato a tre livelli, con dispositivi da
+\SI{1200}{\volt} e bus fino a \SI{1500}{\volt}.
+\item Il trasformatore a \SI{16.7}{\hertz} rimane la soluzione corretta a questa
+taglia, nonostante la massa; l'alternativa a media frequenza va valutata solo se il
+progetto dovesse crescere verso il \si{\mega\watt}.
+\item La verifica di stabilità va condotta con criterio d'impedenza sulla banda
+\SI{2}{}--\SI{20}{\hertz}, e la verifica di compatibilità con il rilevamento treni va
+pianificata fin dalla fase di progetto del filtro.
+\end{enumerate}
+

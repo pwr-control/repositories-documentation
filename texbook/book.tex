@@ -1,0 +1,40 @@
+% book.tex -- master file (generated section below is rewritten by merge_tex.py)
+\documentclass[11pt,a4paper,oneside]{book}
+\input{preamble}
+\input{preamble_generated}
+
+\begin{document}
+\frontmatter
+\input{frontmatter}
+\tableofcontents
+
+\mainmatter
+% >>> BEGIN GENERATED CHAPTER LIST
+
+\part{Power semiconductor devices}
+\include{chapters/pindiode}
+\include{chapters/thyfermi}
+\include{chapters/igbtfermi}
+\include{chapters/gtoigct}
+
+\part{Device models for circuit simulation}
+\include{chapters/scottt}
+
+\part{Gate drivers and firing circuits}
+\include{chapters/thygate}
+
+\part{Converters and applications}
+\include{chapters/softstart}
+\include{chapters/snubber}
+\include{chapters/afe167}
+\include{chapters/apdfb}
+\include{chapters/dcripple}
+
+\part{Measurement, standards and system analysis}
+\include{chapters/dpt}
+\include{chapters/en50160}
+% <<< END GENERATED CHAPTER LIST
+
+\backmatter
+\input{bibliography}
+\end{document}

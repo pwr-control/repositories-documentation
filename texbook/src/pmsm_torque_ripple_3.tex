@@ -1,0 +1,736 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=25mm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{siunitx}
+\usepackage[expansion=false]{microtype}
+\usepackage[hidelinks]{hyperref}
+
+\newcommand{\thetae}{\theta_{e}}
+\newcommand{\thetam}{\theta_{m}}
+
+\title{Torque Ripple and Cogging Torque in Permanent-Magnet Synchronous Machines}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This note describes the physical origin of torque ripple in permanent-magnet
+synchronous machines (PMSM), separates the current-independent contribution
+(cogging torque) from the current-dependent contributions (back-EMF harmonics,
+reluctance modulation, inverter and sensor imperfections), and derives the
+harmonic orders associated with each mechanism. A dedicated section analyses how
+the uncompensated ripple propagates through a back-to-back AFE\,+\,inverter
+structure with a reduced DC-link capacitance, and quantifies the resulting
+interharmonic emission on a \SI{50}{\hertz} grid for a machine running at a
+fundamental frequency of \SI{15.6}{\hertz}. Design-side, control-side and
+grid-side mitigation methods are summarised at the end.
+\end{abstract}
+
+\section{Torque production in the ideal machine}
+
+In the ideal PMSM the phase flux linkages produced by the magnets are purely
+sinusoidal functions of rotor position, the airgap permeance is constant, and
+the machine is fed with sinusoidal balanced currents. Under these assumptions
+the torque in the rotor reference frame is
+\begin{equation}
+T_{e} = \frac{3}{2}\,p\,\Big[\lambda_{pm}\,i_{q} + (L_{d}-L_{q})\,i_{d}i_{q}\Big],
+\label{eq:ideal}
+\end{equation}
+where $p$ is the number of pole pairs, $\lambda_{pm}$ the magnet flux linkage
+(peak, per phase), and $L_d$, $L_q$ the synchronous inductances. Both terms are
+constant for constant $i_d$, $i_q$: the ideal machine produces no ripple.
+
+Every ripple mechanism discussed below is therefore a violation of one of the
+three assumptions: sinusoidal flux-linkage distribution, position-independent
+permeance, or ideal current control.
+
+\section{Energy-based formulation}
+
+The complete instantaneous torque follows from the derivative of the magnetic
+co-energy $W'(\mathbf{i},\thetam)$ at constant current:
+\begin{equation}
+T_{e}(\mathbf{i},\thetam) = \left.\frac{\partial W'(\mathbf{i},\thetam)}{\partial \thetam}\right|_{\mathbf{i}=\text{const}} .
+\end{equation}
+Writing $W'$ as the sum of a winding term, a mutual (magnet--winding) term and
+a magnet-only term gives the standard decomposition
+\begin{equation}
+T_{e} = \underbrace{\mathbf{i}^{\mathsf{T}}\frac{\partial \boldsymbol{\lambda}_{pm}(\thetam)}{\partial \thetam}}_{\text{alignment (mutual) torque}}
+\; + \;
+\underbrace{\frac{1}{2}\,\mathbf{i}^{\mathsf{T}}\frac{\partial \mathbf{L}(\thetam,\mathbf{i})}{\partial \thetam}\,\mathbf{i}}_{\text{reluctance torque}}
+\; + \;
+\underbrace{\frac{\partial W'_{pm}(\thetam)}{\partial \thetam}}_{\text{cogging torque}} .
+\label{eq:decomp}
+\end{equation}
+
+The three terms have fundamentally different behaviour:
+
+\begin{itemize}
+\item the first is proportional to current and reproduces the harmonic content
+      of $\partial\boldsymbol{\lambda}_{pm}/\partial\thetam$, i.e.\ of the back-EMF;
+\item the second is proportional to the square of the current and depends on
+      the position (and current) dependence of the inductance matrix, i.e.\ on
+      saliency, slotting and saturation;
+\item the third is independent of the current and exists even with the machine
+      unexcited. This is the cogging torque.
+\end{itemize}
+
+\section{Cogging torque}
+\label{sec:cogging}
+
+\subsection{Physical origin}
+
+Cogging torque is the tendency of the rotor to align itself in positions of
+minimum reluctance for the magnet flux. It exists because the stator is
+slotted: as the rotor turns, the magnets see an airgap permeance that is
+modulated by the alternation of teeth and slot openings, so the stored magnetic
+energy of the magnet field varies with position. Any variation of energy with
+position is a torque.
+
+A first-order description uses the product of the magnet magnetomotive force
+and the slotted-airgap permeance function referred to the stator:
+\begin{equation}
+F(\theta,\thetam)=\sum_{m}F_{m}\cos\!\big[mp(\theta-\thetam)\big],
+\qquad
+\Lambda(\theta)=\Lambda_{0}+\sum_{n\geq 1}\Lambda_{n}\cos\!\big(nQ\,\theta\big),
+\end{equation}
+with $Q$ the number of stator slots. The airgap energy contains products
+$F_{m}\Lambda_{n}$; after integration over the airgap circumference, only the
+terms satisfying
+\begin{equation}
+nQ = m\,p
+\end{equation}
+survive and depend on $\thetam$. The resulting torque is periodic with
+\begin{equation}
+N_{c} = \operatorname{lcm}(Q,\,2p)
+\end{equation}
+periods per mechanical revolution, and can be written as a Fourier series
+\begin{equation}
+T_{cog}(\thetam) = \sum_{k\geq 1} T_{cog,k}\,\sin\!\big(k N_{c}\thetam + \varphi_{k}\big).
+\label{eq:cogging}
+\end{equation}
+The series has zero mean over one revolution: cogging torque does not
+contribute average torque, only ripple.
+
+Referred to the electrical period, the fundamental cogging order is
+$N_{c}/p$. For $Q=12$, $2p=10$ ($p=5$): $N_{c}=60$ mechanical periods per
+revolution, i.e.\ a $12^{\text{th}}$ electrical harmonic.
+
+\subsection{Design factors}
+
+The amplitude $T_{cog,1}$ decreases as $N_{c}$ increases, and $N_{c}$ is
+maximised when $\gcd(Q,2p)$ is small; $\gcd(Q,2p)$ is therefore commonly used
+as a cogging ``goodness'' indicator (lower is better). Other dominant factors
+are the slot-opening-to-airgap ratio, the pole-arc to pole-pitch ratio, the
+magnetisation profile, and skewing.
+
+Continuous skew over an angle $\theta_{sk}$ attenuates the $k$-th cogging
+harmonic by
+\begin{equation}
+k_{sk,k}=\frac{\sin\!\big(k N_{c}\theta_{sk}/2\big)}{k N_{c}\theta_{sk}/2},
+\end{equation}
+which vanishes for $\theta_{sk}=2\pi/N_{c}$, i.e.\ one full cogging period. Step
+skew of the rotor magnets in $n_{s}$ axial blocks gives a comparable
+attenuation with simpler manufacturing.
+
+\section{Current-dependent torque ripple}
+\label{sec:current}
+
+\subsection{Back-EMF harmonics}
+
+Real magnet flux-linkage distributions are not sinusoidal. Writing the phase
+flux linkage as
+\begin{equation}
+\lambda_{a}(\thetae)=\sum_{h\ \text{odd}}\lambda_{h}\cos(h\thetae),
+\end{equation}
+the corresponding back-EMF is
+$e_{a}=\omega_{e}\sum_{h}h\lambda_{h}\sin(h\thetae)$, i.e.\ the harmonic content
+is amplified by the harmonic order $h$.
+
+Feeding the machine with a purely sinusoidal current $i_{a}=I\sin(\thetae)$ (and
+the corresponding $\pm 120^{\circ}$ phase shifts), the instantaneous torque is
+obtained from the power balance $T_{e}=\big(e_{a}i_{a}+e_{b}i_{b}+e_{c}i_{c}\big)/\omega_{m}$.
+Each product $\sin(h\thetae)\sin(\thetae)$ generates components of order $h-1$
+and $h+1$; summing the three phases cancels every order that is not a multiple
+of six, and the triplen flux-linkage harmonics produce only zero-sequence EMF,
+which develops no torque in a star-connected machine without neutral. The result is
+\begin{equation}
+T_{e}(\thetae)=\frac{3}{2}\,p\,I\left[\lambda_{1}
++\sum_{n\geq 1}\Big((6n{+}1)\lambda_{6n+1}-(6n{-}1)\lambda_{6n-1}\Big)\cos(6n\thetae)\right].
+\label{eq:6k}
+\end{equation}
+
+Equation \eqref{eq:6k} is the central result for this ripple family: the
+$5^{\text{th}}$ and $7^{\text{th}}$ back-EMF harmonics produce a
+$6^{\text{th}}$-order torque ripple, the $11^{\text{th}}$ and $13^{\text{th}}$
+produce a $12^{\text{th}}$-order ripple, and so on. Note the sign: the two
+contributions may partially cancel, so a machine with a distorted back-EMF is
+not necessarily a machine with large ripple.
+
+The dual statement also holds. If the back-EMF is sinusoidal but the current
+contains $5^{\text{th}}$ and $7^{\text{th}}$ harmonics, the same
+$6^{\text{th}}$-order ripple appears. In the rotor frame both cases appear as a
+$6k$ ripple superimposed on $i_{d}$, $i_{q}$ and on the torque.
+
+\subsection{Reluctance and saturation effects}
+
+In interior-magnet machines the inductances are position- and
+current-dependent because of slotting, rotor geometry and local saturation of
+the bridges and tooth tips. Expanding $L_{d}(i_d,i_q,\thetae)$ and
+$L_{q}(i_d,i_q,\thetae)$ in \eqref{eq:decomp} yields additional $6k$ terms whose
+amplitude grows with the square of the current, so this contribution dominates
+at high load while cogging dominates at light load. Cross-saturation
+($\partial\lambda_{d}/\partial i_{q}\neq 0$) adds a further load-dependent
+component and detunes the MTPA angle.
+
+\subsection{Inverter and control-chain contributions}
+
+These sources are independent of the machine design and are frequently the
+dominant ones in a well-designed motor:
+
+\begin{itemize}
+\item \textbf{Dead time and device voltage drop.} The distortion of the applied
+      voltage is a square-wave function of the current sign, generating
+      $6k\pm1$ current harmonics and therefore $6k$ torque ripple. The effect
+      is largest at low speed and low current, where the distortion voltage is
+      comparable with the fundamental.
+\item \textbf{Current-sensor DC offset.} An offset on one phase appears as a
+      rotating current component synchronous with the rotor, producing a
+      $1^{\text{st}}$-order torque ripple.
+\item \textbf{Current-sensor gain mismatch.} Unequal scaling between phases
+      produces a negative-sequence fundamental component and hence a
+      $2^{\text{nd}}$-order torque ripple.
+\item \textbf{Position-sensor error.} Resolver eccentricity or amplitude
+      imbalance produces $1^{\text{st}}$- and $2^{\text{nd}}$-order errors in
+      the estimated angle, which modulate the torque angle and thus the torque.
+      Encoder quantisation and observer lag act similarly at higher orders.
+\item \textbf{DC-link voltage ripple.} A ripple at $2f_{grid}$ (single-phase
+      front end) or $6f_{grid}$ (six-pulse rectifier) propagates through the
+      modulator into the currents; in voltage saturation it appears directly as
+      torque ripple at the same frequency, asynchronous with the rotor.
+\item \textbf{Finite current-loop bandwidth.} The current controller can only
+      reject disturbances well below its crossover. At high speed $6f_{e}$ may
+      exceed the achievable bandwidth, so the ripple grows with speed even
+      when the machine itself is unchanged.
+\end{itemize}
+
+\subsection{Manufacturing asymmetries}
+
+Static or dynamic rotor eccentricity, magnet dimensional and remanence
+tolerances, and partial demagnetisation break the symmetry between poles and
+introduce sub-harmonics, typically $1^{\text{st}}$- and $2^{\text{nd}}$-order
+components, together with unbalanced magnetic pull and additional acoustic
+noise.
+
+\section{Summary of harmonic orders}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+Source & Order (electrical) & Current dependence \\
+\midrule
+Cogging & $k\,N_{c}/p$, \; $N_{c}=\operatorname{lcm}(Q,2p)$ & none \\
+Back-EMF harmonics $6n\pm1$ & $6n$ & linear \\
+Current harmonics $6n\pm1$ & $6n$ & linear \\
+Saliency, slotting inductance modulation & $6n$ & quadratic \\
+Saturation and cross-saturation & $6n$ & quadratic, load dependent \\
+Dead time & $6n$ & strongest at low current \\
+Sensor offset & $1$ & constant absolute value \\
+Sensor gain mismatch & $2$ & linear \\
+Position error (resolver) & $1$, $2$ & linear \\
+Rotor eccentricity, magnet tolerance & $1$, $2$ & linear \\
+DC-link ripple & asynchronous ($2f_{g}$, $6f_{g}$) & linear \\
+\bottomrule
+\end{tabular}
+\caption{Dominant torque-ripple mechanisms and their harmonic signature.}
+\end{table}
+
+A practical consequence: the harmonic order observed in a torque or speed
+spectrum identifies the mechanism. A pure $6^{\text{th}}$ order that scales with
+current points to back-EMF or current distortion; a $6^{\text{th}}$ order that
+scales with current squared points to saturation; a component present at zero
+current is cogging; $1^{\text{st}}$- and $2^{\text{nd}}$-order components point
+to the sensing chain or to mechanical asymmetry.
+
+\section{Propagation into the DC link and into the grid}
+\label{sec:grid}
+
+This section analyses the following scenario: a back-to-back structure with an
+active front end (AFE) and a motor-side inverter sharing a \emph{light} DC link
+(film capacitor only, no electrolytic bank, no DC choke), feeding a PMSM at a
+fundamental frequency $f_{e}=\SI{15.6}{\hertz}$ on a $f_{g}=\SI{50}{\hertz}$
+grid, with \emph{no} torque-ripple compensation on the motor side. The ripple
+mechanisms of Sections \ref{sec:cogging}--\ref{sec:current} are therefore
+present at full amplitude, and the question is where the associated pulsating
+power ends up.
+
+\subsection{Instantaneous power balance}
+
+Neglecting losses and the rate of change of stored magnetic energy, the power
+delivered by the motor-side inverter equals the shaft power. A torque ripple
+component of order $n$ therefore corresponds to a pulsating power
+\begin{equation}
+\tilde{p}_{n}(t) = \tilde{T}_{n}\,\omega_{m}\cos(n\omega_{e}t+\varphi_{n}),
+\qquad \omega_{m}=\frac{\omega_{e}}{p},
+\label{eq:pripple}
+\end{equation}
+so that, in per-unit terms, the pulsating power fraction equals the torque
+ripple fraction:
+\begin{equation}
+\frac{\hat{\tilde{p}}_{n}}{P_{sh}}=\frac{\tilde{T}_{n}}{T} .
+\end{equation}
+
+\paragraph{Cogging is an exception.} Cogging torque is not supplied
+electrically: it is an energy exchange between the magnet field and the rotor
+inertia. It reaches the DC link only indirectly, through the speed ripple it
+produces, $\Delta\hat{\omega}_{m}\approx \tilde{T}_{cog}/(J\,n\omega_{e})$, and
+through the reaction of the speed and current loops. At $n\omega_{e}$ well above
+the mechanical bandwidth this path is strongly attenuated by the inertia. The
+DC-side pulsation is therefore dominated by the \emph{current-dependent} ripple:
+back-EMF harmonics, saturation-induced inductance modulation, dead time and
+sensor errors.
+
+\subsection{Split between capacitor and grid}
+
+The pulsating power \eqref{eq:pripple} can only be absorbed by the DC-link
+capacitor or transferred to the grid through the AFE. The split is set by the
+DC-voltage control loop. Denoting by $T_{v}(s)$ its complementary sensitivity
+(closed-loop transfer from power disturbance to grid-side power),
+\begin{equation}
+\tilde{p}_{grid}=|T_{v}(jn\omega_{e})|\,\tilde{p}_{n},
+\qquad
+\tilde{p}_{C}=|1-T_{v}(jn\omega_{e})|\,\tilde{p}_{n},
+\end{equation}
+and the resulting DC-link voltage ripple is
+\begin{equation}
+\Delta\hat{V}_{dc,n}
+=\frac{|1-T_{v}(jn\omega_{e})|\;\hat{\tilde{p}}_{n}}{n\omega_{e}\,C_{dc}\,V_{dc}}
+=\frac{|1-T_{v}(jn\omega_{e})|\;\tilde{T}_{n}}{n\,p\,C_{dc}\,V_{dc}} .
+\label{eq:dcripple}
+\end{equation}
+
+Equation \eqref{eq:dcripple} contains the first non-obvious result: with the
+DC-voltage loop inactive at the ripple frequency, the DC-link voltage ripple
+caused by torque ripple is \textbf{independent of speed}. The pulsating power
+grows linearly with $\omega_{e}$, while the capacitor impedance falls as
+$1/(n\omega_{e})$, and the two effects cancel exactly. Operating at low
+fundamental frequency does not reduce the DC-link voltage ripple; it only
+reduces the pulsating power in absolute terms.
+
+The second result concerns the split itself. A DC-voltage loop with closed-loop
+bandwidth $f_{bw}$ and a single dominant pole rejects the disturbance with
+$|T_{v}|\approx f_{bw}/(nf_{e})$ above crossover. At $f_{e}=\SI{50}{\hertz}$ the
+sixth-order ripple sits at \SI{300}{\hertz} and only a few percent reaches the
+grid; at $f_{e}=\SI{15.6}{\hertz}$ it sits at \SI{93.6}{\hertz}, i.e.\ only about
+three times the typical DC-loop bandwidth, and roughly a third of the pulsating
+power is transferred to the grid. \textbf{Low-speed operation is the worst case
+for grid-side emission}, even though the absolute pulsating power is smaller.
+
+An equivalent energy view is useful for sizing: the energy that must swing in
+the capacitor over one ripple period is
+$\Delta W = \hat{\tilde{p}}_{n}/(n\omega_{e})$, to be compared with the stored
+energy $W_{C}=\tfrac{1}{2}C_{dc}V_{dc}^{2}$, giving
+$\Delta \hat{V}_{dc}/V_{dc}\approx \Delta W/(2W_{C})$.
+
+\subsection{Worked example}
+
+Table \ref{tab:case} collects a representative case. The torque ripple is
+assumed to be \SI{3}{\percent} of rated torque at the sixth order, which is a
+realistic figure for an uncompensated drive with dead time and a moderately
+distorted back-EMF.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+Quantity & Symbol & Value \\
+\midrule
+Grid & $V_{g}$, $f_{g}$ & \SI{690}{\volt}, \SI{50}{\hertz} \\
+Short-circuit ratio & $S_{sc}/S_{n}$ & 20 \\
+Rated power & $P_{n}$ & \SI{250}{\kilo\watt} \\
+DC-link voltage & $V_{dc}$ & \SI{1100}{\volt} \\
+DC-link capacitance & $C_{dc}$ & \SI{200}{\micro\farad} ($\approx\SI{0.8}{\micro\farad\per\kilo\watt}$) \\
+Pole pairs & $p$ & 4 \\
+Fundamental frequency & $f_{e}$ & \SI{15.6}{\hertz} ($n=234$\,rpm) \\
+Rated torque & $T_{n}$ & \SI{10.2}{\kilo\newton\metre} \\
+\midrule
+Torque ripple, 6th order & $\tilde{T}_{6}$ & \SI{3}{\percent} $=\SI{306}{\newton\metre}$ \\
+Ripple frequency & $6f_{e}$ & \SI{93.6}{\hertz} \\
+Pulsating power (peak) & $\hat{\tilde{p}}_{6}$ & \SI{7.5}{\kilo\watt} \\
+DC current ripple (peak) & $\hat{\tilde{i}}_{dc}$ & \SI{6.8}{\ampere} \\
+DC-loop bandwidth & $f_{bw}$ & \SI{30}{\hertz} $\Rightarrow |T_{v}|\approx0.32$ \\
+Power to the grid & $\tilde{p}_{grid}$ & \SI{2.4}{\kilo\watt} \\
+DC-link voltage ripple & $\Delta\hat{V}_{dc}$ & \SI{39}{\volt} $=\SI{3.6}{\percent}$ \\
+Grid fundamental current & $I_{1}$ & \SI{209}{\ampere} \\
+Each interharmonic sideband & $I_{ih}$ & \SI{1.0}{\ampere} $=\SI{0.48}{\percent}$ of $I_{1}$ \\
+\bottomrule
+\end{tabular}
+\caption{Representative uncompensated case, AFE\,+\,inverter with light DC link.}
+\label{tab:case}
+\end{table}
+
+The sideband amplitude follows from the pulsating power on the grid side. With
+amplitude-invariant Park and unity displacement factor,
+$\hat{\tilde{p}}_{grid}=\tfrac{3}{2}\hat{V}_{ph}\,\hat{\imath}_{d,r}$, so
+\begin{equation}
+\hat{\imath}_{d,r}=\frac{2\,\hat{\tilde{p}}_{grid}}{3\,\hat{V}_{ph}},
+\end{equation}
+and a $d$-axis component oscillating at $\omega_{r}=n\omega_{e}$ maps into a
+\emph{pair} of phase-current components of amplitude $\hat{\imath}_{d,r}/2$ each.
+
+\subsection{Interharmonic sidebands}
+
+Because the DC-link ripple modulates the AFE, every DC-side ripple frequency
+$f_{r}$ appears in the grid current as a pair of sidebands
+\begin{equation}
+f_{ih}^{\pm} = |f_{g} \pm f_{r}| = |f_{g} \pm n f_{e}| .
+\label{eq:sidebands}
+\end{equation}
+Since $f_{e}$ and $f_{g}$ are unrelated, these are \emph{interharmonics}, not
+harmonics. When $f_{g}-f_{r}<0$ the lower component appears with reversed phase
+sequence, i.e.\ as a negative-sequence interharmonic. Table \ref{tab:ih} applies
+\eqref{eq:sidebands} to the case at hand.
+
+\begin{table}[h]
+\centering
+\small
+\footnotesize
+\begin{tabular}{lllll}
+\toprule
+Ripple order $n$ & Origin & $f_{r}$ [Hz] & Sidebands [Hz] & Beat with $f_{g}$ [Hz] \\
+\midrule
+1  & sensor offset, eccentricity & 15.6  & 34.4, 65.6   & 15.6 \\
+2  & sensor gain mismatch        & 31.2  & 18.8, 81.2   & 31.2 \\
+6  & back-EMF, dead time, sat. & 93.6  & \textbf{43.6} (neg.\ seq.), 143.6 & \textbf{6.4} \\
+12 & back-EMF, cogging (typ.)    & 187.2 & 137.2, 237.2 & 87.2 \\
+18 & higher orders               & 280.8 & 230.8, 330.8 & 180.8 \\
+\bottomrule
+\end{tabular}
+\caption{Interharmonic emission produced by an uncompensated drive at
+$f_{e}=\SI{15.6}{\hertz}$ on a \SI{50}{\hertz} grid.}
+\label{tab:ih}
+\end{table}
+
+\subsection{Flicker mechanism: the $|2f_{g}-6f_{e}|$ beat}
+\label{sec:flicker}
+
+The interharmonic pair of Table \ref{tab:ih} does not merely sit near the
+fundamental: it produces a genuine low-frequency fluctuation of the per-phase
+power, and therefore of the per-phase voltage drop across the supply impedance.
+Three equivalent derivations lead to the same beat frequency.
+
+\paragraph{(i) Envelope view.} The lower sideband at
+$f_{ih}^{-}=|f_{g}-6f_{e}|=\SI{43.6}{\hertz}$ superimposes on the
+\SI{50}{\hertz} fundamental; in each phase the two components beat, and the
+envelope of the phase voltage fluctuates at $|f_{g}-f_{ih}^{-}|=\SI{6.4}{\hertz}$.
+
+\paragraph{(ii) Power view.} Taking one phase, with
+$v_{a}=\hat{V}\cos(\omega_{g}t)$ and the interharmonic current
+$i_{ih}=\hat{I}_{ih}\cos(\omega_{ih}t+\phi)$, the instantaneous single-phase
+power is
+\begin{equation}
+p_{a}(t)=\frac{\hat{V}\hat{I}_{ih}}{2}
+\Big[\cos\big((\omega_{g}-\omega_{ih})t-\phi\big)
++\cos\big((\omega_{g}+\omega_{ih})t+\phi\big)\Big].
+\label{eq:pbeat}
+\end{equation}
+Substituting $\omega_{ih}=6\omega_{e}-\omega_{g}$ gives the two terms at
+\begin{equation}
+|2f_{g}-6f_{e}| = \SI{6.4}{\hertz}
+\qquad\text{and}\qquad
+6f_{e} = \SI{93.6}{\hertz},
+\end{equation}
+which is exactly the $\SI{100}{\hertz}-\SI{93.6}{\hertz}$ arithmetic. The two
+views are algebraically identical:
+\begin{equation}
+f_{beat}=\Big|f_{g}-\big|f_{g}-n f_{e}\big|\Big|
+= \big|2f_{g}-n f_{e}\big| \quad\text{for } n f_{e}>f_{g}.
+\label{eq:fbeat}
+\end{equation}
+The phase of \eqref{eq:pbeat} determines how the fluctuation splits between
+active and reactive power. Since the resulting voltage fluctuation at the PCC is
+\begin{equation}
+\frac{\Delta V}{V}\approx\frac{R\,\Delta P+X\,\Delta Q}{V^{2}},
+\end{equation}
+on MV networks with $X/R>3$ it is the \emph{reactive} fluctuation that dominates
+the voltage modulation, and hence the flicker.
+
+\paragraph{(iii) Flickermeter view.} Block 2 of the IEC 61000-4-15 flickermeter
+squares the input voltage. The square of the sum of a \SI{50}{\hertz}
+fundamental and a \SI{43.6}{\hertz} interharmonic contains a component at
+\SI{6.4}{\hertz} and one at \SI{93.6}{\hertz}; the weighting filter chain, a
+bandpass of roughly \SIrange{0.05}{35}{\hertz} followed by the eye--lamp
+weighting, passes the first and rejects the second. The instrument therefore
+responds to precisely the term identified in \eqref{eq:pbeat}.
+
+\paragraph{Why a three-phase measurement hides it.} The lower sideband is
+negative-sequence, so the \SI{6.4}{\hertz} terms of \eqref{eq:pbeat} appear in
+the three phases displaced by $\mp\SI{120}{\degree}$ and cancel in the
+three-phase sum: the total instantaneous power, and equivalently the space-vector
+magnitude or any $dq$-domain quantity, oscillates only at \SI{93.6}{\hertz}. The
+voltage drop across the supply impedance is however a per-phase quantity, and
+lamps are single-phase loads. A $dq$-based analysis of the AFE will therefore
+never reveal this flicker mechanism; it must be evaluated per phase.
+
+\paragraph{Critical fundamental frequencies.} Applying \eqref{eq:fbeat} with
+$n=6$, and taking the flicker-relevant band as roughly
+\SIrange{0.5}{25}{\hertz} with maximum sensitivity near \SI{8.8}{\hertz}, the
+sixth-order torque ripple generates flicker whenever
+\begin{equation}
+\big|2f_{g}-6f_{e}\big| < \SI{25}{\hertz}
+\qquad\Longrightarrow\qquad
+\SI{12.5}{\hertz} < f_{e} < \SI{20.8}{\hertz}
+\quad (f_{g}=\SI{50}{\hertz}),
+\end{equation}
+with the worst case at $f_{e}=(2f_{g}-8.8)/6=\SI{15.2}{\hertz}$. Table
+\ref{tab:crit} maps the band.
+
+\begin{table}[h]
+\centering
+\footnotesize
+\begin{tabular}{lllll}
+\toprule
+$f_{e}$ [Hz] & $6f_{e}$ [Hz] & $f_{ih}^{-}$ [Hz] & $f_{beat}$ [Hz] & Remark \\
+\midrule
+12.5  & 75.0  & 25.0 & 25.0 & lower edge of the flicker band \\
+14.0  & 84.0  & 34.0 & 16.0 & inside the band \\
+15.2  & 91.2  & 41.2 & 8.8  & \textbf{maximum flicker sensitivity} \\
+15.6  & 93.6  & 43.6 & 6.4  & \textbf{present operating point} \\
+16.67 & 100.0 & 50.0 & 0    & steady negative sequence: unbalance, not flicker \\
+18.0  & 108.0 & 58.0 & 8.0  & inside the band \\
+20.8  & 124.8 & 74.8 & 24.8 & upper edge of the flicker band \\
+\bottomrule
+\end{tabular}
+\caption{Beat frequency produced by the sixth-order torque ripple as a function
+of the motor fundamental frequency, $f_{g}=\SI{50}{\hertz}$.}
+\label{tab:crit}
+\end{table}
+
+The operating point of \SI{15.6}{\hertz} lies \SI{0.4}{\hertz} from the
+worst possible fundamental frequency for flicker generated by the sixth-order
+torque ripple. This is a coincidence of the application, not a property of the
+machine, and it is the single most important conclusion of this section: the
+same drive at \SI{25}{\hertz} ($f_{beat}=\SI{50}{\hertz}$) or at
+\SI{10}{\hertz} ($f_{beat}=\SI{40}{\hertz}$) would produce the same DC-link
+ripple and the same interharmonic current, with no flicker at all.
+
+\paragraph{Second-order mechanism: intermodulation with a real 100 Hz ripple.}
+If the grid voltage is unbalanced, or the AFE current sensing is unbalanced, the
+front end already produces a genuine power and DC-link ripple at
+$2f_{g}=\SI{100}{\hertz}$. This component coexists with the \SI{93.6}{\hertz}
+component from the motor. The superposition is linear in the capacitor voltage,
+but the modulators multiply their duty cycles by $V_{dc}$, so the two ripples
+\emph{intermodulate}: a component at $|2f_{g}-6f_{e}|=\SI{6.4}{\hertz}$ appears
+directly in the applied voltages, producing a \emph{symmetric} sideband pair at
+$f_{g}\pm\SI{6.4}{\hertz}=\SI{43.6}{}$ and \SI{56.4}{\hertz}. A symmetric pair
+is pure amplitude modulation of the fundamental and is the most efficient
+possible flicker source. Its amplitude is proportional to the \emph{product} of
+the two relative DC-link ripples, hence second order and normally smaller than
+the mechanism above, but it grows as $1/C_{dc}^{2}$ and therefore becomes
+relevant exactly in the light-DC-link case considered here. A fast, unfiltered
+$V_{dc}$ feedforward in both modulators removes this path; a slow or heavily
+filtered one leaves it open.
+
+\subsection{Why 15.6 Hz is an unfavourable operating point}
+
+Three independent reasons make this particular fundamental frequency critical.
+
+\paragraph{(a) The beat falls in the flicker band.} As shown in Section
+\ref{sec:flicker}, the sixth-order ripple produces a per-phase power and voltage
+fluctuation at $|2f_{g}-6f_{e}|=\SI{6.4}{\hertz}$, essentially at the minimum of
+the IEC 61000-4-15 perceptibility curve. Writing $a=V_{ih}/V_{1}$, the relative
+voltage fluctuation seen by the flickermeter is $\Delta V/V \approx 2a$, and
+\begin{equation}
+a \approx \frac{I_{ih}}{I_{n}}\cdot\frac{S_{n}}{S_{sc}}\cdot\frac{f_{ih}}{f_{g}}
+\end{equation}
+for a predominantly inductive grid impedance. For Table \ref{tab:case}:
+$a\approx\SI{0.021}{\percent}$, hence $\Delta V/V\approx\SI{0.042}{\percent}$ and,
+against a threshold of roughly \SI{0.33}{\percent} for $P_{st}=1$ at that beat
+frequency, $P_{st}$ of the order of \num{0.1}. The scaling law is what matters
+in practice:
+\begin{equation}
+P_{st}\;\propto\;\frac{\tilde{T}_{6}}{T_{n}}\cdot\frac{S_{n}}{S_{sc}} ,
+\end{equation}
+so the same drive on a weak grid ($S_{sc}/S_{n}=5$) with \SI{6}{\percent} torque
+ripple reaches $P_{st}\approx1$, i.e.\ the planning level. Note that this
+mechanism is absent on a \SI{60}{\hertz} grid at the same speed, where the
+lower sideband would fall at \SI{33.6}{\hertz} and beat at \SI{26.4}{\hertz},
+well outside the sensitive band.
+
+\paragraph{(b) Proximity to the unbalance-rejection frequency.} At
+$f_{e}=f_{g}/3=\SI{16.67}{\hertz}$ the sixth-order ripple would sit exactly at
+$2f_{g}=\SI{100}{\hertz}$, and the lower sideband would land exactly on
+\SI{50}{\hertz} with negative sequence, i.e.\ it would be indistinguishable from
+grid voltage unbalance and would be actively fought by the AFE negative-sequence
+controller. The operating point of \SI{15.6}{\hertz} is only \SI{1.1}{\hertz}
+away from this singular condition, so the emission falls in the transition band
+of the notch filters or DSC/DDSRF prefilters that are usually tuned at
+\SI{100}{\hertz}: they neither pass it cleanly nor reject it, and the resulting
+partial, phase-shifted response can degrade the AFE current-loop damping. A
+second singular point is $f_{e}=f_{g}/6=\SI{8.33}{\hertz}$, where the lower
+sideband collapses to DC and the drive injects a DC current component into the
+grid, with the associated transformer-saturation risk.
+
+\paragraph{(c) Low ripple frequency relative to the DC-voltage loop.} As shown
+above, at \SI{93.6}{\hertz} the DC-voltage loop is not yet fully rolled off, so a
+substantial fraction of the pulsating power is deliberately pushed onto the
+grid by the controller itself.
+
+\subsection{Secondary effects of a light DC link}
+
+\begin{itemize}
+\item \textbf{Loss of voltage headroom.} A \SI{3.6}{\percent} DC-link ripple
+      reduces the voltage available to the motor-side modulator at every trough.
+      If the drive operates near the modulation limit, the inverter enters
+      overmodulation periodically at \SI{93.6}{\hertz}, generating additional
+      low-order current harmonics which in turn increase the torque ripple: a
+      positive-feedback path that does not exist with a stiff DC link.
+\item \textbf{Direct modulation path.} Even with a very slow DC-voltage loop,
+      the ripple reaches the grid current through the modulator: both converters
+      normalise their duty cycles by $V_{dc}$, and any delay or filtering in
+      that feedforward leaves a residual voltage error at \SI{93.6}{\hertz}
+      which the current loops must reject. This path is independent of $T_{v}$
+      and becomes dominant as $C_{dc}$ is reduced.
+\item \textbf{Constant-power-load interaction.} At frequencies below its
+      bandwidth the motor drive behaves as a constant-power load with negative
+      incremental resistance $-V_{dc}^{2}/P$. With a light DC link the AFE
+      closed-loop output impedance is larger and less damped in the
+      \SIrange{50}{200}{\hertz} region, exactly where the \SI{93.6}{\hertz}
+      excitation lies; the ripple can therefore be amplified rather than
+      attenuated, and the impedance-ratio stability margin should be verified at
+      that frequency rather than assumed.
+\item \textbf{Capacitor stress.} The RMS current in a film capacitor of
+      \SI{200}{\micro\farad} is dominated by the switching-frequency component,
+      but the \SI{93.6}{\hertz} component adds a low-frequency thermal cycle;
+      more importantly, the voltage ripple must be included in the derating and
+      lifetime calculation.
+\item \textbf{Measurement.} IEC 61000-4-7 uses \SI{200}{\milli\second} windows
+      with \SI{5}{\hertz} resolution. The \SI{43.6}{\hertz} component falls
+      between spectral lines and close to the fundamental, so leakage from the
+      \SI{50}{\hertz} component can mask it; interharmonic subgroup evaluation
+      and windowing must be used, otherwise the emission is simply not seen in a
+      standard harmonic report.
+\end{itemize}
+
+\subsection{Summary of the propagation chain}
+
+\begin{equation*}
+\tilde{T}_{6}\;\rightarrow\;\tilde{p}=\tilde{T}_{6}\omega_{m}\;\rightarrow\;
+\Big[\text{capacitor: }\Delta V_{dc}\Big]\;\Big\|\;\Big[\text{AFE: }\tilde{p}_{grid}\Big]
+\;\rightarrow\; f_{g}\pm 6f_{e} \;\rightarrow\; \text{flicker, interharmonics}
+\end{equation*}
+
+With a light DC link and no motor-side compensation there is no way to make the
+pulsation disappear: the design choice is only \emph{where to put it}. Either it
+is absorbed by the capacitor, and then the DC-link voltage ripple and the
+associated headroom loss must be budgeted, or it is passed to the grid, and then
+the interharmonic emission and flicker must be assessed against IEC 61000-2-2 /
+IEC 61000-3-x compatibility levels, EN 61800-3 and, where applicable,
+IEEE 519. Reducing the ripple at the source on the motor side is the only option
+that avoids both.
+
+\section{Mitigation}
+
+\subsection{Machine design}
+
+\begin{itemize}
+\item Slot/pole combination with large $\operatorname{lcm}(Q,2p)$ and small
+      $\gcd(Q,2p)$.
+\item Continuous or step skewing of stator slots or rotor magnets.
+\item Magnet shaping: pole-arc ratio optimisation, eccentric or sinusoidally
+      profiled magnet surface, magnet segmentation and pole shifting.
+\item Semi-closed slots, reduced slot opening, magnetic slot wedges, dummy
+      slots or tooth notches to increase the effective slotting frequency.
+\item Winding layout (fractional-slot concentrated versus distributed) chosen
+      considering that it changes both the back-EMF harmonic content and the
+      cogging periodicity.
+\end{itemize}
+
+Skewing reduces cogging and back-EMF harmonics but slightly reduces the
+fundamental torque and complicates manufacturing; the design is a compromise
+between ripple, torque density and cost.
+
+\subsection{Control}
+
+Control-side compensation acts on the current reference or on the voltage
+command:
+
+\begin{itemize}
+\item \textbf{Harmonic current injection (feedforward).} The reference is
+      augmented with the harmonics that cancel the measured ripple:
+      \begin{equation}
+      i_{q}^{*}(\thetae)=i_{q0}^{*}+\sum_{n}A_{n}\cos(6n\thetae+\phi_{n}),
+      \end{equation}
+      with $A_{n}$, $\phi_{n}$ identified offline and stored in a
+      speed/load-indexed lookup table.
+\item \textbf{Resonant (PR / vector resonant) controllers} added in parallel to
+      the synchronous-frame PI at the ripple frequencies,
+      \begin{equation}
+      G_{r}(s)=\frac{2k_{r}\,\omega_{c}\,s}{s^{2}+2\omega_{c}s+(6n\omega_{e})^{2}},
+      \end{equation}
+      providing high loop gain at $6n\omega_{e}$ without affecting the DC
+      behaviour.
+\item \textbf{Repetitive control} in the position domain, whose internal model
+      covers all harmonics of the mechanical or electrical period at once; it is
+      the natural choice when the disturbance is position-periodic (cogging)
+      rather than time-periodic.
+\item \textbf{Iterative learning control} for repetitive operating cycles.
+\item \textbf{Disturbance observers} estimating the periodic load torque from
+      the speed signal, with the estimate fed forward to the current reference.
+\item \textbf{Dead-time and voltage-error compensation}, plus current-sensor
+      offset and gain self-calibration, which remove the $1^{\text{st}}$,
+      $2^{\text{nd}}$ and part of the $6^{\text{th}}$ order without any
+      additional dynamics.
+\end{itemize}
+
+Two limits apply to all active methods. First, they require loop bandwidth at
+$6n\omega_{e}$, which becomes the binding constraint at high speed; multiple
+synchronous frames or position-domain formulations relieve, but do not remove,
+this constraint. Second, cancelling torque ripple means deliberately injecting
+current harmonics: this costs additional copper and iron losses and voltage
+headroom, and the benefit must be weighed against those costs, particularly in
+the flux-weakening region.
+
+\subsection{Grid-side and DC-link measures}
+
+When the motor-side ripple cannot be removed, the emission can still be shaped:
+
+\begin{itemize}
+\item \textbf{Notch in the DC-voltage loop} at $6f_{e}$ (and $12f_{e}$), tuned
+      adaptively on the measured motor frequency. The AFE then presents a high
+      impedance at the ripple frequency and stops re-exporting the pulsation to
+      the grid; the price is a larger DC-link voltage ripple, which must fit in
+      the modulation headroom of both converters.
+\item \textbf{Deliberate capacitor sizing.} From \eqref{eq:dcripple}, the
+      capacitance needed for a given ripple budget is
+      $C_{dc}\geq \tilde{T}_{n}/(n\,p\,V_{dc}\,\Delta \hat{V}_{dc})$, which is
+      independent of speed and therefore a hard sizing constraint rather than a
+      worst-speed calculation.
+\item \textbf{Active power decoupling} on a small auxiliary branch, which
+      buffers the $6f_{e}$ energy without oversizing the main DC-link capacitor.
+\item \textbf{Speed operating-point selection.} From \eqref{eq:fbeat}, keeping
+      $f_{e}$ outside \SIrange{12.5}{20.8}{\hertz} (for $f_{g}=\SI{50}{\hertz}$)
+      moves the sixth-order beat out of the flicker band entirely, and avoiding
+      $f_{e}$ near $f_{g}/6$ and $f_{g}/3$ removes the DC-injection and
+      apparent-unbalance conditions. Where the process allows a different gear
+      ratio or a different pole count, this is by far the cheapest measure: it
+      costs nothing and removes the dominant mechanism rather than attenuating
+      it.
+\item \textbf{DC-link voltage feedforward} with adequate bandwidth in both
+      modulators, so that the ripple does not translate into an applied-voltage
+      error.
+\item \textbf{Impedance-based stability check} of the AFE output impedance
+      against the motor-drive input impedance in the \SIrange{50}{200}{\hertz}
+      range, which is the frequency band excited by the torque ripple at this
+      operating point.
+\end{itemize}
+
+\end{document}

@@ -1,0 +1,1390 @@
+%\documentclass[12pt,a4paper]{article}
+%\documentclass[12pt,a4paper]{scrartcl}
+\documentclass[11pt,a4paper,oneside]{book}
+\input{../../AAA_template_latex_settings/settings}
+\setlength{\emergencystretch}{3em}
+%\newcommand{\ohm}{\,\Omega}
+\newcommand{\ud}{\,\mathrm{d}}
+\newcommand{\Zmat}{\bm{Z}}
+\newcommand{\Ymat}{\bm{Y}}
+\newcommand{\Rmat}{\bm{R}}
+\newcommand{\Lmat}{\bm{L}}
+\newcommand{\Cmat}{\bm{C}}
+\newcommand{\Gmat}{\bm{G}}
+\newcommand{\Vvec}{\bm{V}}
+\newcommand{\Ivec}{\bm{I}}
+
+% =============================================================
+%  
+% =============================================================
+
+\newcommand{\DocCategory}{Technical Research Report}
+\newcommand{\DocField}{Power Electronics and Control Systems}
+
+\newcommand{\DocTitle}{%
+	{\fontsize{20}{24}\selectfont\bfseries Long Power Cable Effects:} \\[16pt]
+	{\fontsize{16}{20}\selectfont\bfseries in electrical drives.}
+}
+
+\newcommand{\DocSubtitle}{%
+	Investigation of shielded power cable and its impact on electrical drive performances. 
+}
+
+\newcommand{\DocAuthor}{Davide Bagnara}
+\newcommand{\DocDate}{July 2026}
+
+\newcommand{\DocAbstract}{%
+	This report investigates the acoustic emission radiated by the long shielded three-phase cable connecting the inverter to the machine. A specific installation is examined in which the cable run produces audible noise under PWM operation: the emission shows a tonal component at the converter switching frequency, spreads into broadband noise when random PWM is applied, and is present on the 120 m section while absent on the 40 m one.
+	A consistent model is developed that links the differential (positive-sequence) PWM ripple current to the inter-conductor electromagnetic (Ampère) forces, the resulting transverse vibration of the cable spans, and the radiated sound. The analysis indicates that the audible excitation arises from the product of the fundamental current and the switching-frequency ripple, so it is governed by the differential mode rather than the common mode, and that the length dependence follows from a resonant coupling between the force harmonics and the mechanical modes of the cable spans. Experimental and simulation results are included to support the proposed explanation.
+}
+
+
+% Tre righe metadati in fondo (label small caps + valore)
+\newcommand{\MetaLabelA}{Project Repository}
+\newcommand{\MetaValueA}{https://github.com/pwr-control/modelization-and-control.git}
+\newcommand{\MetaValueAUrl}{https://github.com/pwr-control/modelization-and-control.git}
+\newcommand{\MetaValueALabel}{modelization-and-control.git}
+
+
+\newcommand{\MetaLabelB}{Framework}
+\newcommand{\MetaValueB}{MATLAB/Simulink/Simscape}
+
+\newcommand{\MetaLabelC}{Architecture}
+\newcommand{\MetaValueC}{SiC, EiceDRIVER, Customized Power Supplies}
+
+% =============================================================
+%  FRONTESPIZIO
+% =============================================================
+\begin{document}
+	\titlepage
+	% ---- Intestazione centrata ----
+	\begin{center}
+		{\Large\scshape \DocCategory}\\[8pt]
+		{\large\scshape \DocField}
+	\end{center}
+	
+	\vspace{36pt}
+	\noindent\rule{\linewidth}{0.8pt}
+	
+	% ---- Titolo ----
+	\vspace{16pt}
+	\begin{center}
+		\DocTitle
+	\end{center}
+	
+	\vspace{4pt}
+	\noindent\rule{\linewidth}{2.2pt}
+	
+	% ---- Sottotitolo ----
+	%\vspace{14pt}
+	\begin{center}
+		\begin{onehalfspace}
+			{\large\itshape \DocSubtitle}
+		\end{onehalfspace}
+	\end{center}
+	
+	% ---- Spazio prima di Autore/Data ----
+	\vspace{18pt}
+	
+	% ---- Author / Date su due colonne ----
+	\begin{minipage}{0.92\linewidth}
+		\noindent
+		\begin{minipage}[t]{0.48\linewidth}
+			\textbf{Author:}\\[2pt]
+			\DocAuthor
+		\end{minipage}%
+		\hfill
+		\begin{minipage}[t]{0.48\linewidth}
+			\raggedleft
+			\textbf{Date:}\\[2pt]
+			\DocDate
+		\end{minipage}
+	\end{minipage}
+	% ---- Spazio prima dell'abstract ----
+	\vspace{36pt}
+	
+	% ---- Abstract indentato ----
+	\begin{center}
+		\begin{minipage}{0.85\linewidth}
+			%    \small
+			\footnotesize 
+			\begin{onehalfspace}
+				\textbf{Abstract:} \DocAbstract
+			\end{onehalfspace}
+		\end{minipage}
+	\end{center}
+	
+	% ---- Spazio prima dei metadati ----
+	\vfill
+	
+	% ---- Metadati in fondo ----
+	\noindent
+	\begin{tabular}{@{} r @{\quad} l @{}}
+%		\textsc{\MetaLabelA:} & {\url{\MetaValueA}} \\[3pt]
+		\textsc{\MetaLabelA:} & {\href{\MetaValueAUrl}{\MetaValueALabel}} \\[3pt]
+		\textsc{\MetaLabelB:} & {\MetaValueB}       \\[3pt]
+		%		\textsc{\small\MetaLabelC:} & {\small\MetaValueC}       \\
+	\end{tabular}
+	
+	% =============================================================
+	%  Fine frontespizio
+	% =============================================================
+	\newpage
+	\pagenumbering{arabic}
+	\setcounter{page}{1}
+	\tableofcontents
+	\listoffigures	
+	\listoftables
+	\newpage
+	
+
+\section*{Abbreviations}
+\begin{description}
+	\item[ASE] audible sound emission.
+	\item[PSM] permanent magnet synchronous machine.
+	\item[Differential mode] quantity which flows through two different phases.
+	\item[Common mode (or zero sequence)] quantity which flows through one (or more phases) and ground.
+	\item[XLPE] cross-linked polyethylene.	
+	\item[PWM] pulse-width modulation (fixed-frequency carrier-based).
+	\item[RPWM] random pulse-width modulation (random-frequency carrier-based).
+	\item[$I_z^{\mathrm{inv}}$] zero sequence current measured at the output of the inverter side electrical drive.
+	\item[$I_z^{\mathrm{m}}$] zero sequence current measured at the input of a PSM winding system.
+	\item[$\hat{\tilde\imath}_{sw}$] switching current ripple magnitude. The magnitude is function of the switching frequency and machine side synchronous inductance. 
+	\item[p.u.l.] per unit length. All distributed cable parameters marked
+	with a prime ($'$) are expressed per unit length, e.g.
+	$R'$~[$\Omega/\mathrm{m}$], $L'$~[H/m], $C'$~[F/m], $G'$~[S/m].
+	\item[p.u.] per unit, dimensionless quantity.
+\end{description}
+
+\begin{onehalfspace}
+\chapter{Power Cable Sound Emission --- Conclusions from On-Site Measurements}
+\label{sec:onsite_summary}
+
+\textit{This chapter summarizes the main results of the on-site investigation of the acoustic whistling noise emitted by the power cables of the installation.}
+
+\section{Description of the problem:}
+\begin{itemize}
+	\item[--] The Les Arcs ropeway plant comprises two drive sections, each
+	consisting of a PSM (motor) and four electrical drives connected,
+	respectively, to eight galvanically isolated three-phase systems.
+	\item[--] Each machine system is connected to its electrical drive by a
+	shielded three-phase power cable with a symmetrical inner ground
+	conductor, as shown in Figure~\ref{electrical_power_cable}.
+	\item[--] The motor power cable of section~1 is \SI{40}{\meter} long.
+	\item[--] The motor power cable of section~2 is \SI{120}{\meter} long.
+	\item[--] The \SI{120}{\meter} section exhibits audible sound emission from
+	the cables themselves; the \SI{40}{\meter} section does not.
+\end{itemize}
+
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{0.5\textwidth}
+		\centering
+		\includegraphics[width = 250pt, angle = 0, 
+		keepaspectratio]{figures/power_cable/three_phase_shielded_power_cable_1.pdf}
+		\captionsetup{width=0.5\textwidth, font=footnotesize}	
+		\caption{Power cable representation.}
+		\label{electrical_power_cable_1}
+	\end{subfigure}%
+	\begin{subfigure}{.5\textwidth}
+		\centering
+		\includegraphics[width = 250pt, angle = 0, 
+		keepaspectratio]{figures/power_cable/three_phase_shielded_power_cable_2.pdf}
+		\captionsetup{width=0.5\textwidth, font=footnotesize}	
+		\caption{Equivalent per phase-shield per-unit length model.}
+		\label{electrical_power_cable_2}
+	\end{subfigure}
+	\captionsetup{width=0.65\textwidth, font=small}	
+	\caption{Shielded three phase power cable and per-unit length model.}
+	\label{electrical_power_cable}
+\end{figure}
+Figure~\ref{whole_system} shows the whole connection layout:
+\begin{itemize}
+	\item[--] the permanent magnet synchronous motor (PSM) consists of eight galvanically isolated three-phase winding systems;
+	\item[--] each electrical drive supplies two of these winding systems at a time;
+	\item[--] the winding systems are spatially arranged so as to minimize torque ripple at the shaft.
+\end{itemize}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width = 600pt, angle = 90, 
+	keepaspectratio]{figures/power_cable/whole_system.pdf}
+	\captionsetup{width=0.75\textwidth, font=small}	
+	\caption{Whole system connection for the \SI{120}{\meter} section.}
+	\label{whole_system}
+\end{figure}
+
+\section{On-site measurement}
+The on-site inspection yielded the following results:
+\begin{itemize}
+	\item[--] the magnitude of the audible sound emission (ASE) is proportional to
+	the plant load;
+	\item[--] the tone of the ASE is correlated to the inverter PWM switching frequency;
+	\item[--] enabling a constant carrier frequency at the inverter side (\textbf{PWM}), the
+	audible emission is narrow-band, centered on a single tone;
+	\item[--] enabling random carrier frequency at the inverter side (\textbf{RPWM}), the sound emission becomes
+	broadband (spread-spectrum), and the resulting sound is subjectively more acceptable;
+	\item[--] the measured common-mode (zero-sequence) current was
+	$I_z^{\mathrm{inv}}=\SI{8}{\ampere}$ rms at the drive output and
+	$I_z^{\mathrm{m}}=\SI{2.5}{\ampere}$ rms at the machine system input; 
+\end{itemize}
+
+\paragraph{Remark -} From the first point of the list, it follows that the ASE is correlated with the differential-mode current flowing through the power cable.
+
+\paragraph{Remark -} From the last point of the list it follows that most of the common-mode current returns through the cable shield rather than through the machine, so the fraction flowing through the bearings is further reduced. This is beneficial for the bearing lifetime.
+	
+\paragraph{Remark -} The analysis of the common-mode current path. see also Figure~\ref{one_system} and its magnitude relates to bearing-current stress and belongs to the domain of electromagnetic compatibility (EMC). It is therefore distinct from the acoustic mechanism, which is a differential-mode effect.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width = 600pt, angle = 90, 
+	keepaspectratio]{figures/power_cable/total_system_one_drive.pdf}
+	\captionsetup{width=0.75\textwidth, font=small}	
+	\caption{Per system equivalent circuit: input transformer - drive - machine system - shielded power cable and common mode current path.}
+	\label{one_system}
+\end{figure}
+
+\section{Results of the Analysis}
+
+\paragraph{The analysis of the sound emission is based on the following mechanisms:}
+\begin{itemize}
+	\item[--] the audible sound emission (ASE) spectrum is centered around \SI{4}{\kilo\hertz} which is the same of the PWM carrier frequency;
+	\item[--] the ASE is correlated with the internal forces of the power cable generated by the differential-mode currents;
+	\item[--] the ASE results from the interaction between these differential-mode forces and the resonances of the cable, modeled as an equivalent string-beam system;
+\end{itemize}
+
+\paragraph{Based on the above points, the following conclusions were reached (see the next chapters for further analysis).}
+\begin{itemize}
+	\item[--] The power cable on both sections experiences internal inter-phase
+	forces proportional to the product of the fundamental phase current $I_1$
+	and the switching-frequency current ripple of the adjacent phase
+	$\hat{\tilde\imath}_{sw}$:
+	\begin{equation}
+		\boxed{\;\hat F_{sw}\approx\frac{\mu_0}{2\pi d}\,\hat I_1\,\hat{\tilde\imath}_{sw}\;}
+		\label{differential_force}
+	\end{equation}
+	acting at a frequency $\approx f_{sw}$ with $\pm f_1$ sidebands.
+	\item[--] The force generated by \eqref{differential_force} is distributed
+	along the whole cable length.
+	\item[--] The power cable can be modelled as a mixed string--beam system,
+	described by the partial differential equation
+	\begin{equation}
+		\rho_A\frac{\partial^2 w}{\partial t^2}
+		+EI\frac{\partial^4 w}{\partial z^4}
+		-T\frac{\partial^2 w}{\partial z^2}
+		=f(z,t).
+		\label{string_beam_model}
+	\end{equation}
+	\item[--] The per-unit-length electromagnetic force is approximately equal
+	on both plant sections (\SI{120}{\meter} and  \SI{40}{\meter} respectively), under the assumption of the same fundamental current
+	$I_1$, conductor spacing\footnote{distance between cables, see  Figure~\ref{fig:forces}} $d$, and switching ripple
+	$\hat{\tilde\imath}_{sw}$. The difference in emission therefore does not
+	originate in the excitation, \textbf{but in the mechanical--acoustic response of
+	the two runs}.
+	\item[--] The string--beam system~\eqref{string_beam_model} has a dense
+	spectrum of span resonances whose modal density scales with cable length.
+	On the \SI{120}{\meter} run a force harmonic at $f_{sw}\pm m f_1$ is far
+	more likely to coincide with a lightly damped span resonance and be
+	resonantly amplified; on the \SI{40}{\meter} run the sparser resonances can
+	fall between the force lines, leaving the response near the non-resonant
+	level. \textbf{This resonant coincidence is the dominant reason why the
+	\SI{120}{\meter} section emits audible sound while the \SI{40}{\meter}
+	section does not.}
+	\item[--] The larger radiating length of the \SI{120}{\meter} cable adds a
+	secondary contribution of about $10\log_{10}(120/40)\approx\SI{4.8}{\decibel}$
+	for equal surface velocity, but this alone cannot account for the
+	audible/inaudible contrast between the two sections.
+	\item[--] The resonant-coupling hypothesis remains the most likely scenario. It can be further investigated by shifting the resonance frequency of the power cable, i.e., by changing the stiffness of the mechanical installation.
+   \end{itemize}
+
+\section{Ageing Consideration} Three points:
+\begin{itemize}[leftmargin=*]
+	\item[--] \textbf{The acoustic emission is not a damage indicator.} The audible
+	tone is a comfort problem, not a sign of fatigue. In fact, the $2f_1$
+	($\SI{100}{\hertz}$) force is about seven times larger than the
+	switching-frequency force, yet it is inaudible. If vibration-induced fatigue
+	were a real risk, it would come from this larger force acting on the most
+	flexible mode, whether audible or not. Therefore, the noise must not be used
+	as a proxy for damage.
+	\item[--] \textbf{The service life is set by other mechanisms.} The
+	\num{50}-year life is determined by thermal ageing of the insulation
+	(Arrhenius law, IEC~60216), by electrical ageing (partial discharge, water
+	treeing in the XLPE), and by thermo-mechanical fatigue at the cleats. The
+	latter is driven by the \emph{load cycle} (daily and seasonal expansion, a few
+	cycles per day), not by the kilohertz vibration. Compared to these mechanisms,
+	the PWM-induced resonance is negligible.
+	\item[--] \textbf{The only vibration-related item to monitor} is a possible
+	progressive loosening or fretting of cleats, terminations and clamps. However,
+	with a displacement amplitude on the order of \SI{1}{\nano\meter}, the motion
+	is far below the micrometer-level slip threshold required for fretting. This
+	is therefore an item for periodic inspection, not a life limit.
+\end{itemize}
+
+\section{Conclusions}
+Audible noise emission arises from the resonant coupling between the harmonics of the differential-mode electromagnetic forces and the natural frequencies of the cable: it is the coincidence of a force component at  $ f_{sw} \pm m f_1 $ with a cable span mode that raises the emission above the audibility threshold. However, the audible noise gives no contribution to the overall ageing of the power cable.
+
+\begin{appendices}
+
+\chapter{Shielded Power Cable High-Frequency Model}
+\textit{This chapter develops the mathematical model required to implement a shielded
+	three-phase power cable in Simscape (MATLAB) as a lumped RLC network. The
+	multi-conductor transmission-line (MTL) formulation is reduced to per-unit-length
+	(p.u.l.) series and shunt matrices, then mapped onto single- and multi-section
+	$\pi$ models. A complete numerical dimensioning is carried out for the reference
+	case of a copper cable with $95\ \mathrm{mm^2}$ per phase, collectively shielded,
+	of length $120\ \mathrm{m}$. The section-count criterion for the cascaded $\pi$
+	model is derived from the propagation velocity and the target bandwidth, and the
+	shield/common-mode representation is included so that the same model serves both
+	fundamental-frequency studies and high-frequency phenomena (reflected-wave
+	over-voltage, common-mode current). References follow IEEE practice.}
+%======================================================================
+\section{Scope and modeling objectives}
+%======================================================================
+The objective is a circuit-equivalent cable model suitable for time-domain
+simulation in Matlab / Simscape. Three
+requirements drive the formulation:
+
+\begin{enumerate}[leftmargin=*]
+	\item \textbf{Fidelity at the fundamental and low harmonics} for steady-state and
+	power-quality studies (voltage drop, charging current, losses).
+	\item \textbf{Representation of the metallic shield} as an explicit conductor, so
+	that phase-to-shield capacitance and shield bonding can be analyzed, which is the
+	prerequisite for common-mode and EMC studies.
+	\item \textbf{Controlled bandwidth} through a cascaded $\pi$ structure whose number
+	of sections is chosen for the highest frequency of interest, allowing the same
+	topology to capture cable resonances and reflected-wave behaviour at PWM-converter
+	output.
+\end{enumerate}
+
+The cable is treated as a uniform, laterally homogeneous line. End effects,
+joints and terminations are excluded; they are added as separate lumped elements
+when needed.
+
+%======================================================================
+\section{Cable construction and reference data}
+%======================================================================
+The reference cable is a three-core copper construction with a collective metallic
+shield, representative of a $0.6/1\ \mathrm{kV}$ EMC drive cable. The assumed
+geometry is summarized in Table~\ref{tab:geom}. 
+
+\begin{table}[h]
+	\centering
+	\caption{Reference geometry and material data.}
+	\label{tab:geom}
+	\begin{tabular}{@{}lll@{}}
+		\toprule
+		Quantity & Symbol & Value \\
+		\midrule
+		Phase conductor cross-section & $A_c$ & $95\ \mathrm{mm^2}$ (Cu, stranded) \\
+		Effective conductor radius & $r_c$ & $5.5\ \mathrm{mm}$ \\
+		Geometric mean radius & $\mathrm{GMR}$ & $0.78\,r_c \approx 4.3\ \mathrm{mm}$ \\
+		Insulation (XLPE) rel. permittivity & $\varepsilon_r$ & $2.5$ \\
+		Insulation loss tangent & $\tan\delta$ & $4\times10^{-3}$ \\
+		Radius over core insulation & $r_i$ & $8.0\ \mathrm{mm}$ \\
+		Core lay-up & --- & trefoil, touching \\
+		Center-to-center spacing & $S$ & $16\ \mathrm{mm}$ \\
+		Shield inner radius & $R_s$ & $18\ \mathrm{mm}$ \\
+		Shield cross-section (Cu) & $A_s$ & $16\ \mathrm{mm^2}$ \\
+		Cable length & $\ell$ & $120\ \mathrm{m}$ \\
+		Copper resistivity ($20\,^\circ\mathrm{C}$) & $\rho_{20}$ & $1.724\times10^{-8}\ \Omega\,\mathrm{m}$ \\
+		Temperature coefficient & $\alpha$ & $3.93\times10^{-3}\ \mathrm{K^{-1}}$ \\
+		\bottomrule
+	\end{tabular}
+\end{table}
+\paragraph{Remark -} Power losses from insulation-loss-tangent: {$P_{loss}^\varepsilon = \sum_{n} U_u^2 \omega_h C \tan \delta$}.
+%======================================================================
+\section{Distributed-parameter formulation}
+%======================================================================
+With phase conductors $a,b,c$ and shield $s$, the cable is a four-conductor MTL.
+In the frequency domain the telegrapher equations are
+\begin{equation}
+	-\frac{\ud \Vvec}{\ud x}=\Zmat\,\Ivec,
+	\qquad
+	-\frac{\ud \Ivec}{\ud x}=\Ymat\,\Vvec,
+	\label{eq:telegraph}
+\end{equation}
+with the p.u.l. series impedance and shunt admittance matrices
+\begin{equation}
+	\Zmat=\Rmat+j\omega\Lmat,
+	\qquad
+	\Ymat=\Gmat+j\omega\Cmat .
+	\label{eq:ZY}
+\end{equation}
+$\Vvec$ collects conductor-to-reference voltages and $\Ivec$ the conductor
+currents. For a symmetric three-phase cable the $3\times3$ phase blocks have the
+balanced structure
+\begin{equation}
+	\Zmat_{abc}=
+	\begin{bmatrix}
+		Z_s & Z_m & Z_m\\
+		Z_m & Z_s & Z_m\\
+		Z_m & Z_m & Z_s
+	\end{bmatrix},
+	\qquad
+	\Ymat_{abc}=
+	\begin{bmatrix}
+		Y_s & Y_m & Y_m\\
+		Y_m & Y_s & Y_m\\
+		Y_m & Y_m & Y_s
+	\end{bmatrix}.
+	\label{eq:balanced}
+\end{equation}
+
+\paragraph{Shield elimination (Kron reduction).}
+When the shield is bonded to ground at both ends, its voltage is constrained and
+the four-conductor system reduces to an effective $3\times3$ phase model:
+\begin{equation}
+	\Zmat_{abc}^{\,\mathrm{eff}}
+	=\Zmat_{pp}-\Zmat_{ps}\,Z_{ss}^{-1}\,\Zmat_{sp},
+	\label{eq:kron}
+\end{equation}
+where $pp$, $ps$, $sp$, $ss$ are the phase, phase-shield, shield-phase and shield
+partitions of the full $4\times4$ matrix. Single-point bonding suppresses the
+shield circulating current and is treated by keeping the shield as an explicit
+floating conductor instead of applying \eqref{eq:kron}. The lumped model below
+retains the shield explicitly so that either bonding scheme can be imposed in
+Simscape.
+
+\paragraph{Modal / sequence decomposition.}
+The balanced structure \eqref{eq:balanced} is diagonalized by the symmetrical-component
+(or, in real arithmetic, Clarke) transform, giving decoupled positive/negative
+and zero modes
+\begin{equation}
+	Z_1=Z_s-Z_m,\qquad Z_0=Z_s+2Z_m,
+	\qquad
+	Y_1=Y_s-Y_m,\qquad Y_0=Y_s+2Y_m .
+	\label{eq:seq}
+\end{equation}
+Equation~\eqref{eq:seq} is the bridge between the physical p.u.l. quantities and
+the positive-/zero-sequence parameters used by the Simscape three-phase line
+block.
+
+%======================================================================
+\section{Per-unit-length parameters}\label{sec:pul}
+%======================================================================
+
+\subsection{Series resistance}
+The DC resistance of one conductor is
+\begin{equation}
+	R'_{\mathrm{dc}}(\theta)=\frac{\rho_{20}}{A_c}\bigl[1+\alpha(\theta-20)\bigr].
+	\label{eq:rdc}
+\end{equation}
+The AC resistance adds skin ($y_s$) and proximity ($y_p$) corrections following
+IEC~60287 / IEEE cable-loss practice:
+\begin{equation}
+	R'_{\mathrm{ac}}=R'_{\mathrm{dc}}\,(1+y_s+y_p),
+	\qquad
+	y_s=\frac{x_s^4}{192+0.8\,x_s^4},
+	\qquad
+	x_s^2=\frac{8\pi f}{R'_{\mathrm{dc}}}\,10^{-7}\,k_s,
+	\label{eq:rac}
+\end{equation}
+with $k_s\approx1$ for round stranded conductors. At $50\ \mathrm{Hz}$ the
+correction is a few percent for $95\ \mathrm{mm^2}$; at the kHz range relevant to
+converter harmonics it grows and is captured by re-evaluating \eqref{eq:rac} at the
+dominant harmonic, or by a Foster (R--L ladder) branch when broadband fidelity is
+required.
+
+\subsection{Series inductance}
+The positive-sequence (loop) inductance per phase is
+\begin{equation}
+	L_1'=\frac{\mu_0}{2\pi}\ln\!\frac{\mathrm{GMD}}{\mathrm{GMR}},
+	\qquad \mathrm{GMD}=\sqrt[3]{S_{ab}S_{bc}S_{ca}}=S \;\;(\text{trefoil}).
+	\label{eq:l1}
+\end{equation}
+The zero-sequence inductance depends on the common-mode return path. With the
+shield as the dominant return at radius $R_s$,
+\begin{equation}
+	L_0'\approx\frac{\mu_0}{2\pi}\ln\!\frac{R_s}{\mathrm{GMR}}
+	\;+\;\Delta L_{\mathrm{earth}},
+	\label{eq:l0}
+\end{equation}
+where $\Delta L_{\mathrm{earth}}$ accounts for the earth-return contribution
+(Carson/Pollaczek) when the shield is grounded at both ends. $L_0'$ is therefore
+bonding-dependent and must be re-evaluated for the actual installation.
+
+\subsection{Shunt capacitance}
+Two physical capacitances describe the shielded cable: the core-to-shield
+capacitance $C_g'$ and the core-to-core capacitance $C_m'$. For an individually
+screened core the former is the coaxial value
+\begin{equation}
+	C_g'=\frac{2\pi\varepsilon_0\varepsilon_r}{\ln(r_i/r_c)} ,
+	\label{eq:cg}
+\end{equation}
+while for a collective shield $C_g'$ and $C_m'$ are obtained from the Maxwell
+potential-coefficient matrix $\bm{P}=\Cmat^{-1}/(2\pi\varepsilon)$ of the
+core/shield geometry. The sequence capacitances follow from \eqref{eq:seq}:
+\begin{equation}
+	C_1'=C_g'+3\,C_m', \qquad C_0'=C_g'.
+	\label{eq:cseq}
+\end{equation}
+$C_1'$ is the operating (line) capacitance that sets the charging current; $C_0'$
+is the capacitance seen by the common mode.
+
+\subsection{Shunt conductance}
+Dielectric losses give
+\begin{equation}
+	G'=\omega\,C'\tan\delta,
+	\label{eq:g}
+\end{equation}
+negligible at $50\ \mathrm{Hz}$ but retained as a small parallel conductance to
+damp the high-frequency $\pi$-network resonances and avoid undamped numerical
+oscillation.
+
+\subsection{Shield parameters}
+The shield DC resistance is $R_s'=\rho_{20}/A_s$; at high frequency the braid
+contributes a transfer impedance, but for the lumped model the shield is
+represented by its series $R_s'$, its self-inductance, and the $C_g'$ coupling to
+each core.
+
+%======================================================================
+\section{Numerical dimensioning of the reference cable}\label{sec:numbers}
+%======================================================================
+Applying \eqref{eq:rdc}--\eqref{eq:g} to Table~\ref{tab:geom} gives the p.u.l.
+values in Table~\ref{tab:pul}. The conductor AC resistance is reported at the
+$90\,^\circ\mathrm{C}$ rated temperature with a $50\ \mathrm{Hz}$ skin/proximity
+correction of about $2\%$.
+
+\begin{table}[h]
+	\centering
+	\caption{Computed per-unit-length parameters of the reference cable.}
+	\label{tab:pul}
+	\begin{tabular}{@{}lcrl@{}}
+		\toprule
+		Parameter & Symbol & Value & Unit \\
+		\midrule
+		Conductor resistance, DC $20\,^\circ\mathrm{C}$ & $R'_{\mathrm{dc}}$ & $0.192$ & $\Omega/\mathrm{km}$ \\
+		Conductor resistance, AC $90\,^\circ\mathrm{C}$, $50\,\mathrm{Hz}$ & $R'_{\mathrm{ac}}$ & $0.248$ & $\Omega/\mathrm{km}$ \\
+		Shield resistance, DC $20\,^\circ\mathrm{C}$ & $R'_{s}$ & $1.08$ & $\Omega/\mathrm{km}$ \\
+		Positive-sequence inductance & $L_1'$ & $0.25$ & $\mathrm{mH/km}$ \\
+		Zero-sequence inductance (both-end bonding) & $L_0'$ & $0.27$ & $\mathrm{mH/km}$ \\
+		Core-to-shield capacitance & $C_g'$ & $0.30$ & $\mu\mathrm{F/km}$ \\
+		Core-to-core capacitance & $C_m'$ & $0.10$ & $\mu\mathrm{F/km}$ \\
+		Positive-sequence capacitance & $C_1'=C_g'+3C_m'$ & $0.60$ & $\mu\mathrm{F/km}$ \\
+		Zero-sequence capacitance & $C_0'=C_g'$ & $0.30$ & $\mu\mathrm{F/km}$ \\
+		Shunt conductance ($50\,\mathrm{Hz}$) & $G_1'$ & $0.75$ & $\mu\mathrm{S/km}$ \\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+\paragraph{Lumped totals for $\ell=120\ \mathrm{m}$.}
+Multiplying by $\ell$ gives the total elements of the equivalent network:
+\begin{align*}
+	R &= R'_{\mathrm{ac}}\,\ell = 0.248\times0.120 = 29.8\ \mathrm{m}\Omega \ \text{per phase},\\
+	L_1 &= L_1'\,\ell = 30.0\ \mu\mathrm{H} \ \text{per phase},\qquad
+	L_0 = 32.4\ \mu\mathrm{H},\\
+	C_1 &= C_1'\,\ell = 72\ \mathrm{nF} \ \text{(operating, line)},\qquad
+	C_g = C_g'\,\ell = 36\ \mathrm{nF} \ \text{per phase to shield},\\
+	R_s &= R_s'\,\ell = 130\ \mathrm{m}\Omega \ \text{(shield)}.
+\end{align*}
+
+\paragraph{Derived line quantities.}
+The propagation velocity, characteristic impedance and one-way delay of the
+positive mode are
+\begin{equation}
+	v=\frac{1}{\sqrt{L_1'C_1'}}=8.2\times10^{7}\ \mathrm{m/s},
+	\qquad
+	Z_0=\sqrt{\frac{L_1'}{C_1'}}\approx20\ \Omega,
+	\qquad
+	\tau=\frac{\ell}{v}=1.47\ \mu\mathrm{s}.
+	\label{eq:derived}
+\end{equation}
+The first open-end (quarter-wave) resonance of the $120\ \mathrm{m}$ cable is
+\begin{equation}
+	f_{\lambda/4}=\frac{v}{4\ell}\approx170\ \mathrm{kHz},
+	\label{eq:fres}
+\end{equation}
+which sets the bandwidth the lumped model must reach to reproduce the first
+resonance and the reflected-wave behavior at a converter output.
+
+%======================================================================
+\section{Lumped RLC model}\label{sec:lumped}
+%======================================================================
+
+\subsection{Single $\pi$ section}
+For each phase the elementary nominal-$\pi$ cell places the total series branch
+$R+j\omega L$ between two halves of the total shunt branch, $Y/2$ at each end.
+Including the shield explicitly, the shunt branch is split into the core-to-shield
+capacitance $C_g$ and the core-to-core capacitance $C_m$, and the shield node
+carries $R_s,L_s$ to its bonding point. The single-$\pi$ cell is accurate while the
+cable is electrically short, i.e. $\ell \ll \lambda/10$. From \eqref{eq:derived}
+this holds up to
+\begin{equation}
+	f_{\max}^{(1\pi)}=\frac{v}{10\,\ell}\approx 68\ \mathrm{kHz},
+\end{equation}
+adequate for fundamental and low-harmonic studies but not for the resonance in
+\eqref{eq:fres}.
+
+\subsection{Cascaded $N$-section $\pi$ model}
+For broadband fidelity the cable is split into $N$ identical $\pi$ cells, each
+representing a length $\ell/N$ with element values $R/N$, $L/N$, $C/N$, $G/N$. The
+number of cells is set by the highest frequency of interest $f_{\max}$ using a
+``cells-per-wavelength'' rule. Requiring $k$ cells per shortest wavelength
+$\lambda_{\min}=v/f_{\max}$,
+\begin{equation}
+	\boxed{\,N \ge k\,\frac{\ell\,f_{\max}}{v}\,},\qquad k\approx 8 .
+	\label{eq:Ncriterion}
+\end{equation}
+For the reference cable, Table~\ref{tab:N} lists the resulting section count.
+
+\begin{table}[h]
+	\centering
+	\caption{Required number of $\pi$ sections for the $120\ \mathrm{m}$ reference cable
+		($k=8$).}
+	\label{tab:N}
+	\begin{tabular}{@{}lcc@{}}
+		\toprule
+		Target bandwidth $f_{\max}$ & $\lambda_{\min}=v/f_{\max}$ & $N$ \\
+		\midrule
+		$10\ \mathrm{kHz}$  & $8.2\ \mathrm{km}$  & $1$ \\
+		$100\ \mathrm{kHz}$ & $820\ \mathrm{m}$   & $2$ \\
+		$500\ \mathrm{kHz}$ & $164\ \mathrm{m}$   & $6$ \\
+		$1\ \mathrm{MHz}$   & $82\ \mathrm{m}$    & $12$ \\
+		$3\ \mathrm{MHz}$   & $27\ \mathrm{m}$    & $35$ \\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+\noindent
+A practical choice for PWM-drive studies (reflected wave, $dv/dt$ stress) is
+$N=20$--$40$, since the relevant edge spectra extend into the low-MHz range. The
+trade-off is computational: each added section introduces one more $L$--$C$ state
+pair and lowers the simulation step required for stability.
+
+\subsection{Phase-domain versus sequence-domain realization}
+Two equivalent realizations of each cell are possible:
+\begin{itemize}[leftmargin=*]
+	\item \textbf{Sequence-domain:} use $R_1,L_1,C_1$ and $R_0,L_0,C_0$ from
+	Table~\ref{tab:pul}. Valid for the balanced, transposed assumption and directly
+	accepted by the Simscape three-phase $\pi$-line block.
+	\item \textbf{Phase-domain:} populate the $3\times3$ (or $4\times4$ with shield)
+	$\Rmat,\Lmat,\Cmat$ matrices from \eqref{eq:balanced}. This retains explicit
+	inter-phase and phase-shield coupling and is preferred for unbalanced or
+	common-mode studies.
+\end{itemize}
+
+\subsection{Shield and common-mode representation}
+The common-mode loop is the three phases in parallel returning through the shield
+(and earth). Its lumped parameters are obtained from the zero-sequence quantities:
+the equivalent CM inductance is $L_0/3$ in series with the shield $R_s,L_s$, and
+the CM capacitance is $3C_g$. Retaining the shield node with selectable bonding
+(both-end, single-end, or floating) lets the same model reproduce shield
+circulating current and the high-frequency CM path that governs bearing current
+and conducted EMI in drive applications.
+
+%======================================================================
+\section{Simscape implementation}\label{sec:simscape}
+%======================================================================
+The model maps directly onto Simscape Electrical components.
+
+\begin{enumerate}[leftmargin=*]
+	\item \textbf{Ready-made block.} The \emph{Three-Phase PI Section Line} (Specialized
+	Power Systems) accepts the positive- and zero-sequence $R_1,R_0$
+	($\Omega/\mathrm{km}$), $L_1,L_0$ ($\mathrm{H/km}$), $C_1,C_0$
+	($\mathrm{F/km}$), the length, and the number of sections $N$. Enter the values
+	of Table~\ref{tab:pul}, $\ell=0.12\ \mathrm{km}$, and $N$ from
+	Table~\ref{tab:N}. This is the fastest route when an explicit shield node is not
+	needed.
+	\item \textbf{Explicit shield / custom cell.} When the shield must be accessible,
+	build one $\pi$ cell from foundation components --- \emph{Resistor},
+	\emph{Inductor} (or mutual-inductor / \emph{Three-Phase Mutual Inductance Z1-Z0}
+	for coupling), and \emph{Capacitor} --- with the per-cell values $R/N$, $L/N$,
+	$C_g/N$, $C_m/N$, $G/N$, and a dedicated shield node carrying $R_s/N$, $L_s/N$.
+	Cascade $N$ cells and expose the shield terminal for bonding.
+	\item \textbf{Numerical settings.} The cascaded $\pi$ network is stiff; use a
+	variable-step stiff solver (\texttt{ode23t}/\texttt{ode15s}) or a fixed-step
+	discrete solver with $T_s \lesssim 1/(20 f_{\max})$. The small dielectric
+	conductance $G$ from \eqref{eq:g} damps the inter-cell resonances and improves
+	conditioning.
+	\item \textbf{Parameterization.} Drive the block masks from a MATLAB script that
+	computes Table~\ref{tab:pul} from the geometry of Table~\ref{tab:geom}, so the same
+	model regenerates for any length or cross-section.
+\end{enumerate}
+
+%======================================================================
+\section{Validation}
+%======================================================================
+The lumped model is validated against the closed-form distributed line over the
+intended bandwidth:
+\begin{enumerate}[leftmargin=*]
+	\item \textbf{Input impedance.} Compare the open- and short-circuit driving-point
+	impedance of the $N$-cell network with the exact
+	$Z_{\mathrm{in}}=Z_0\coth(\gamma\ell)$ and $Z_0\tanh(\gamma\ell)$, where
+	$\gamma=\sqrt{\Zmat\Ymat}$. The first resonance must match \eqref{eq:fres} within a
+	few percent.
+	\item \textbf{Charging current.} At $50\ \mathrm{Hz}$, the no-load current
+	$I_c=\omega C_1 \ell\, U_{\mathrm{ph}}$ must equal the analytic value.
+	\item \textbf{Step / reflected wave.} For a fast voltage edge at the sending end,
+	the receiving-end overshoot and its rise must approach the lossless prediction set
+	by $\tau$ and the terminal reflection coefficient
+	$\Gamma=(Z_L-Z_0)/(Z_L+Z_0)$ as $N$ increases.
+\end{enumerate}
+Convergence of these three indicators with increasing $N$ confirms that the chosen
+section count is sufficient.
+%======================================================================
+\section{Simulation results}
+%======================================================================
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{0.5\textwidth}
+		\centering
+		\includegraphics[width = 225pt, angle = 0, 
+		keepaspectratio]{figures/sim_results/sim_results_fig_1.pdf}
+		\captionsetup{width=0.5\textwidth, font=footnotesize}	
+		\caption{Simulation results: zero sequence current.}
+		\label{sim_results_fig_1}
+	\end{subfigure}%
+	\begin{subfigure}{.5\textwidth}
+		\centering
+		\includegraphics[width = 225pt, angle = 0, 
+		keepaspectratio]{figures/sim_results/trace_15_b.pdf}
+		\captionsetup{width=0.5\textwidth, font=footnotesize}	
+		\caption{Experimental measure: zero sequence current.}
+		\label{trace_15_b}
+	\end{subfigure}
+	\captionsetup{width=0.65\textwidth, font=small}	
+	\caption{Simulation results versus on-site measurements.}
+	\label{}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{0.5\textwidth}
+		\centering
+		\includegraphics[width = 225pt, angle = 0, 
+		keepaspectratio]{figures/sim_results/sim_results_fig_2.pdf}
+		\captionsetup{width=0.5\textwidth, font=footnotesize}	
+		\caption{Simulation results: DClink positive pole and ground voltage.}
+		\label{sim_results_fig_2}
+	\end{subfigure}%
+	\begin{subfigure}{.5\textwidth}
+		\centering
+		\includegraphics[width = 225pt, angle = 0, 
+		keepaspectratio]{figures/sim_results/trace_35_b.pdf}
+		\captionsetup{width=0.5\textwidth, font=footnotesize}	
+		\caption{Experimental measure: DClink positive pole and ground voltage.}
+		\label{trace_35_b}
+	\end{subfigure}
+	\captionsetup{width=0.65\textwidth, font=small}	
+	\caption{Simulation results versus on-site measurements.}
+	\label{}
+\end{figure}
+
+%======================================================================
+\section{Application notes}
+%======================================================================
+The same parameters quantify two phenomena common in converter-fed installations:
+
+\paragraph{Reflected-wave overvoltage.} With $Z_0\approx20\ \Omega$ and a motor
+input impedance of hundreds of ohms, $\Gamma\to1$ and the receiving-end voltage can
+approach twice the DC-link-derived pulse. The critical cable length above which
+full doubling occurs is $\ell_c=v\,t_r/2$, with $t_r$ the converter edge rise
+time; for $t_r=100\ \mathrm{ns}$, $\ell_c\approx4\ \mathrm{m}$, so the
+$120\ \mathrm{m}$ reference cable is firmly in the long-cable regime.
+
+\paragraph{Common-mode current.} The $3C_g=108\ \mathrm{nF}$ shield path, excited
+by the converter common-mode voltage, sets the magnitude and spectrum of the
+common-mode current returning through the shield bonds. Single-point versus
+both-point bonding is studied directly by changing the shield termination in the
+model.
+
+
+%======================================================================
+\section{Parameter summary for Simscape}
+%======================================================================
+\begin{table}[h]
+	\centering
+	\caption{Direct entries for the Simscape three-phase $\pi$-line block
+		($\ell=0.12\ \mathrm{km}$).}
+	\begin{tabular}{@{}lcc@{}}
+		\toprule
+		Field & Positive sequence & Zero sequence \\
+		\midrule
+		$R$ ($\Omega/\mathrm{km}$) & $0.248$ & $0.248 + 3R_s' = 3.49$\,\footnotemark \\
+		$L$ ($\mathrm{mH/km}$) & $0.25$ & $0.27$ \\
+		$C$ ($\mu\mathrm{F/km}$) & $0.60$ & $0.30$ \\
+		Length (km) & \multicolumn{2}{c}{$0.12$} \\
+		Sections $N$ & \multicolumn{2}{c}{from Table~\ref{tab:N}} \\
+		\bottomrule
+	\end{tabular}
+\end{table}
+\footnotetext{The zero-sequence resistance includes the shield/earth return
+	contribution; the exact value depends on the bonding scheme and is finalized after
+	the Kron reduction \eqref{eq:kron} for the chosen installation.}
+
+\chapter{Model of Sound Emission}
+%======================================================================
+\section{Scope and physical hypothesis}
+%======================================================================
+The site evidence is the following:
+\begin{enumerate}[leftmargin=*,nosep]
+	\item the sound tracks the inverter PWM; with random (spread-spectrum) PWM the
+	tonal structure disappears and the emission becomes broadband, perceptually like
+	flowing water;
+	\item the $120\ \mathrm{m}$ cable section emits, the $40\ \mathrm{m}$ section does
+	not;
+	\item a tonal line coincides with the fixed converter switching frequency.
+\end{enumerate}
+The working hypothesis, examined and confirmed below, is that the excitation is the
+\emph{differential} PWM current ripple acting through inter-conductor Amp\`ere
+forces, and that the length dependence arises from the mechanical/acoustic
+response, not from the electromagnetic source itself.
+
+The arrangement modeled is three \emph{separate} single-core copper cables,
+$95\ \mathrm{mm^2}$ each, length $\ell=120\ \mathrm{m}$. Separate single cores are
+essential to the mechanism: unlike the bound conductors of a single three-core
+cable, each single core is mechanically free to vibrate between its supports, so
+the inter-conductor force does work on a movable structure. The per-unit-length
+electrical parameters are taken unchanged from the companion document
+(in particular $C_g=20\ \mathrm{nF}$ retained as requested, although the
+common-mode capacitance does not enter the force).
+
+\begin{figure}[h]
+	\centering
+	\begin{tikzpicture}[>=Latex]
+		\def\R{0.32}
+		\coordinate (A) at (-3.0,0);
+		\coordinate (B) at (0,0);
+		\coordinate (C) at (3.0,0);
+		\foreach \p/\n in {A/$i_a$,B/$i_b$,C/$i_c$}{
+			\draw[thick] (\p) circle (\R);
+			\fill (\p) circle (1.2pt);
+		}
+		\node at (-2.0,0.75) {$i_a$};
+		\node at (0,0.75) {$i_b$};
+		\node at (2.0,0.75) {$i_c$};
+		% forces on b
+		\draw[->,thick,black] (B) -- ($(B)+(-1.5,0)$) node[below]{$f_{ba}$};
+		\draw[->,thick,black] (B) -- ($(B)+(1.5,0)$) node[below]{$f_{bc}$};
+		\draw[<->,dashed] (-3.0,-1) -- (0,-1) node[midway,below]{$d$};
+		\draw[<->,dashed] (0,-1) -- (3.0,-1) node[midway,below]{$d$};
+		\node[align=left] at (6,0) {\small force $\propto i_a i_b$\\ \small (quadratic)};
+	\end{tikzpicture}
+	\caption{Transverse Amp\`ere forces on a single core from its two neighbors. The
+		force on each conductor is the vector sum of two contributions, each proportional
+		to the product of conductor currents.}
+	\label{fig:forces}
+\end{figure}
+
+%======================================================================
+\section{From currents to forces}
+%======================================================================
+Two long parallel conductors $j,k$ at separation $d_{jk}$, carrying currents
+$i_j,i_k$, exert on each other the transverse force per unit length
+\begin{equation}
+	f_{jk}(t)=\frac{\mu_0}{2\pi\,d_{jk}}\,i_j(t)\,i_k(t),
+	\label{eq:ampere}
+\end{equation}
+attractive for like signs. This is the same magnetostatic law used for
+short-circuit force calculations (IEC~60865). The net transverse force per unit
+length on conductor $a$ is the vector sum from its neighbors,
+\begin{equation}
+	\bm{f}_a(t)=\frac{\mu_0}{2\pi}\left[
+	\frac{i_a i_b}{d_{ab}}\,\hat{\bm{u}}_{ab}
+	+\frac{i_a i_c}{d_{ac}}\,\hat{\bm{u}}_{ac}\right],
+	\label{eq:fnet}
+\end{equation}
+with $\hat{\bm{u}}$ the unit vectors in the conductor cross-section
+(Fig.~\ref{fig:forces}). The essential feature is the \emph{quadratic} dependence
+on current: the force spectrum is the autocorrelation of the current spectrum, so
+it contains sums and differences of all current frequency components.
+
+%======================================================================
+\section{Force spectrum and the dominance of the differential mode}
+%======================================================================
+Write each phase current as a fundamental term plus PWM ripple,
+\begin{equation}
+	i_k(t)=\hat I_1\cos(\omega_1 t-\varphi_k)+\tilde\imath_k(t),
+	\qquad \varphi_k\in\{0,\tfrac{2\pi}{3},\tfrac{4\pi}{3}\},
+\end{equation}
+where $\tilde\imath_k$ has its spectral energy concentrated at the carrier
+$f_{sw}$ and its multiples, with sidebands at $\pm m f_1$ (double-Fourier PWM
+spectrum). Expanding the product in \eqref{eq:ampere},
+\begin{equation}
+	i_a i_b=
+	\underbrace{\hat I_1^2\cos(\omega_1 t)\cos(\omega_1 t-\tfrac{2\pi}{3})}_{\text{(I) DC}+2f_1}
+	+\underbrace{\hat I_1\!\left[\cos(\omega_1 t)\,\tilde\imath_b+\cos(\omega_1 t-\tfrac{2\pi}{3})\,\tilde\imath_a\right]}_{\text{(II) fundamental}\times\text{ripple}}
+	+\underbrace{\tilde\imath_a\tilde\imath_b}_{\text{(III) ripple}^2}.
+	\label{eq:expand}
+\end{equation}
+The three groups give three force bands:
+\begin{itemize}[leftmargin=*,nosep]
+	\item[(I)] a DC offset and a $2f_1$ component ($100\ \mathrm{Hz}$) --- the
+	classical conductor ``hum''. It is the largest in amplitude but radiates poorly
+	(see Sec.~\ref{sec:acou}) and lies below the perceptually critical band.
+	\item[(II)] components at $f_{sw}\pm m f_1$, i.e.\ \emph{centered on the switching
+		frequency}, of amplitude $\propto \hat I_1\,\hat{\tilde\imath}_{sw}$. This is the
+	audible tonal excitation.
+	\item[(III)] components at $2f_{sw}$, DC, and difference frequencies, of amplitude
+	$\propto \hat{\tilde\imath}_{sw}^2$, smaller because the ripple is small compared
+	with the fundamental.
+\end{itemize}
+The dominant audible force is therefore band~(II), whose amplitude per unit length
+is
+\begin{equation}
+	\boxed{\;\hat F_{sw}\approx\frac{\mu_0}{2\pi d}\,\hat I_1\,\hat{\tilde\imath}_{sw}\;}
+	\label{eq:Fsw}
+\end{equation}
+at frequency $\approx f_{sw}$ with $\pm f_1$ sidebands.
+
+\paragraph{Differential vs.\ common mode.}
+Equation~\eqref{eq:Fsw} settles the field intuition. The force is the product of a
+\emph{large} differential fundamental current $\hat I_1$ (hundreds of amperes) and
+the differential ripple $\hat{\tilde\imath}_{sw}$. The common-mode current is
+small --- it is limited by the high common-mode impedance of the shield/earth loop
+--- and, being squared or multiplied by itself in \eqref{eq:expand}, contributes a
+force smaller by the ratio $(\hat I_{cm}/\hat I_1)^2$ or $(\hat I_{cm}/\hat I_1)$.
+The audible mechanical excitation is thus governed by the positive/negative-sequence
+(differential) currents; the common mode matters for the shield/EMC path of the
+companion document, not for the acoustic force.
+
+%======================================================================
+\section{Coupling to the electrical cable model}
+%======================================================================
+The ripple amplitude $\hat{\tilde\imath}_{sw}$ entering \eqref{eq:Fsw} is set by the
+volt-seconds the converter applies across the total per-phase series inductance
+during a switching subinterval,
+\begin{equation}
+	\hat{\tilde\imath}_{sw}\sim\frac{V_{dc}}{8\,L_\sigma\,f_{sw}},
+	\qquad L_\sigma=L_{\text{cable}}+L_{\text{load}},
+	\label{eq:ripple}
+\end{equation}
+plus any resonant amplification from the cable shunt capacitance. With the
+companion-document value $L_{\text{cable}}=L_1'\ell=30\ \mu\mathrm{H}$ at
+$120\ \mathrm{m}$ (and $10\ \mu\mathrm{H}$ at $40\ \mathrm{m}$), the cable
+inductance is a minor addition to the motor leakage; the \emph{source} ripple is
+nearly the same on both sections. The length dependence of the \emph{sound} must
+therefore originate downstream, in the mechanical and acoustic response
+(Secs.~\ref{sec:mech}--\ref{sec:length}), not in the electromagnetic forcing.
+
+A secondary electrical effect is the differential resonance between $L_\sigma$ and
+the cable capacitance $C_1=C_1'\ell$, at
+$f_{0}=1/(2\pi\sqrt{L_\sigma C_1})$. For the reference values this lies in the tens
+of kilohertz (well above $f_{sw}=3.8\ \mathrm{kHz}$) and is not the primary audible
+mechanism, but it should be checked against the actual $L_\sigma$ because it scales
+as $\ell^{-1/2}$ and moves downward with length.
+
+%======================================================================
+\section{Mechanical model of the cable span}\label{sec:mech}
+%======================================================================
+Each single core between two supports (cleats, span $L_s$) responds to the
+distributed transverse force $f(z,t)$ as a beam under tension,
+\begin{equation}
+	\rho_A\frac{\partial^2 w}{\partial t^2}
+	+EI\frac{\partial^4 w}{\partial z^4}
+	-T\frac{\partial^2 w}{\partial z^2}
+	=f(z,t),
+	\label{eq:beam}
+\end{equation}
+with $w$ the transverse displacement, $\rho_A$ the mass per unit length, $EI$ the
+(low, because stranded) bending stiffness and $T$ the mechanical tension. The
+undamped natural frequencies are, in the two limits,
+\begin{equation}
+	\text{string: } f_n=\frac{n}{2L_s}\sqrt{\frac{T}{\rho_A}},
+	\qquad
+	\text{beam: } f_n=\frac{(\beta_n L_s)^2}{2\pi L_s^2}\sqrt{\frac{EI}{\rho_A}},
+	\label{eq:fn}
+\end{equation}
+with $\beta_nL_s=\{4.73,7.85,\dots\}$ for clamped ends. Resonant amplification of
+the displacement occurs when a force harmonic $f_{sw}\pm m f_1$ coincides with an
+$f_n$; the modal velocity at resonance is
+\begin{equation}
+	\hat v_{\text{res}}\approx\frac{\hat F_{sw}}{\rho_A\,\omega_{sw}}\,Q,
+	\label{eq:vres}
+\end{equation}
+$Q$ being the mechanical quality factor of the span ($Q\!\sim\!10$--$50$ for a
+lightly damped cleated conductor). Off resonance the same expression holds with
+$Q\!\to\!1$.
+
+\paragraph{Modal density.}
+For a one-dimensional waveguide of total length $\ell$, the number of modes per
+unit frequency scales with length,
+\begin{equation}
+	\frac{\ud N}{\ud f}\propto \ell
+	\qquad\Longrightarrow\qquad
+	N_{120}\approx 3\,N_{40}.
+	\label{eq:moddensity}
+\end{equation}
+This is the key length-dependent quantity (Sec.~\ref{sec:length}).
+
+%======================================================================
+\section{Acoustic radiation}\label{sec:acou}
+%======================================================================
+A conductor of radius $a$ vibrating transversely is, acoustically, a line of
+dipoles. The radiated sound power from a length $L$ is
+\begin{equation}
+	W_{ac}=\rho_0 c\,\sigma_{\text{rad}}\,S\,\overline{v^2},
+	\qquad S=2\pi a L,\qquad \overline{v^2}=\tfrac12\hat v^2,
+	\label{eq:Wac}
+\end{equation}
+with $\rho_0 c=415\ \mathrm{Pa\,s/m}$ and $\sigma_{\text{rad}}$ the radiation
+efficiency. For transverse (dipole) motion $\sigma_{\text{rad}}$ rises with the
+compactness ratio $ka=2\pi f a/c$. At $f_{sw}=3.8\ \mathrm{kHz}$ and
+$a=9\ \mathrm{mm}$, $ka\approx0.63$, giving an order-of-unity, moderately efficient
+radiator ($\sigma_{\text{rad}}\sim0.2$); the $100\ \mathrm{Hz}$ hum, by contrast,
+has $ka\approx0.017$ and is an extremely poor radiator, which is why the audible
+emission is the switching tone and not the (larger) $100\ \mathrm{Hz}$ force. The
+sound power level is $L_W=10\log_{10}(W_{ac}/10^{-12})\ \mathrm{dB}$.
+
+%======================================================================
+\section{Numerical estimate}\label{}
+%======================================================================
+Representative site values (to be replaced by measured data) are listed in
+Table~\ref{tab:par}.
+
+\begin{table}[h]
+	\centering
+	\caption{Representative parameters for the estimate.}
+	\label{tab:par}
+	\begin{tabular}{@{}lll@{}}
+		\toprule
+		Quantity & Symbol & Value \\
+		\midrule
+		Fundamental current (peak) & $\hat I_1$ & $283\ \mathrm{A}$ ($200\ \mathrm{A}$ rms) \\
+		Carrier-harmonic ripple (amp.) & $\hat{\tilde\imath}_{sw}$ & $20\ \mathrm{A}$ \\
+		Conductor separation & $d$ & $40\ \mathrm{mm}$ \\
+		Fundamental / switching freq. & $f_1,f_{sw}$ & $50\ \mathrm{Hz}$, $3.8\ \mathrm{kHz}$ \\
+		Cable mass per length & $\rho_A$ & $1.3\ \mathrm{kg/m}$ \\
+		Conductor outer radius & $a$ & $9\ \mathrm{mm}$ \\
+		Mechanical quality factor & $Q$ & $1$ (off-res.) / $30$ (res.) \\
+		Radiation efficiency & $\sigma_{\text{rad}}$ & $0.2$ \\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+\paragraph{Forces.}
+From \eqref{eq:Fsw} and the $2f_1$ part of \eqref{eq:expand}, with
+$\mu_0/(2\pi d)=5\times10^{-6}\ \mathrm{N/A^2}$:
+\[
+\hat F_{2f_1}=\frac{\mu_0}{2\pi d}\frac{\hat I_1^2}{2}=0.20\ \mathrm{N/m}
+\quad(100\ \mathrm{Hz}),
+\qquad
+\hat F_{sw}=\frac{\mu_0}{2\pi d}\hat I_1\hat{\tilde\imath}_{sw}=0.028\ \mathrm{N/m}
+\quad(\approx f_{sw}).
+\]
+
+\paragraph{Velocity.}
+From \eqref{eq:vres}, $\hat v=0.9\ \mu\mathrm{m/s}$ off resonance ($Q=1$) and
+$27\ \mu\mathrm{m/s}$ at resonance ($Q=30$).
+
+\paragraph{Sound.}
+From \eqref{eq:Wac}, Table~\ref{tab:spl} compares the two sections. The model
+predicts an audible tone ($\sim 42\ \mathrm{dB}$ at $1\ \mathrm{m}$) on the
+$120\ \mathrm{m}$ section when a span mode is excited, and an inaudible level
+($\sim 8\ \mathrm{dB}$) on the non-resonant $40\ \mathrm{m}$ section.
+
+\begin{table}[h]
+	\centering
+	\caption{Predicted radiated levels (SPL at $1\ \mathrm{m}$, point-source
+		approximation).}
+	\label{tab:spl}
+	\begin{tabular}{@{}lcccc@{}}
+		\toprule
+		Section & State & $\hat v$ & $L_W$ & SPL@1\,m \\
+		\midrule
+		$120\ \mathrm{m}$ & resonant ($Q{=}30$)    & $27\ \mu\mathrm{m/s}$  & $53\ \mathrm{dB}$ & $\approx 42\ \mathrm{dB}$ \\
+		$40\ \mathrm{m}$  & off-resonance ($Q{=}1$)& $0.9\ \mu\mathrm{m/s}$ & $19\ \mathrm{dB}$ & $\approx 8\ \mathrm{dB}$ \\
+		$40\ \mathrm{m}$  & (if resonant)          & $27\ \mu\mathrm{m/s}$  & $49\ \mathrm{dB}$ & $\approx 38\ \mathrm{dB}$ \\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+%======================================================================
+\section{Explanation of the field observations}\label{sec:length}
+%======================================================================
+\paragraph{Why $120\ \mathrm{m}$ emits and $40\ \mathrm{m}$ is silent.}
+The per-unit-length force is the same on both sections (same currents, separation
+and carrier). Three length-dependent factors act downstream:
+\begin{enumerate}[leftmargin=*,nosep]
+	\item \textbf{Modal coincidence (dominant).} By \eqref{eq:moddensity} the long run
+	has three times the modal density. Under \emph{fixed} (narrow-band) PWM the tonal
+	force is far more likely to coincide with a lightly damped span mode of the
+	$120\ \mathrm{m}$ run; the sparser modes of the $40\ \mathrm{m}$ run can fall in a
+	gap, leaving it near the off-resonance level. The resonant/non-resonant contrast
+	in Table~\ref{tab:spl} is a $34\ \mathrm{dB}$ difference.
+	\item \textbf{Radiating area.} For equal surface velocity the longer cable radiates
+	$\,10\log_{10}(120/40)\approx4.8\ \mathrm{dB}$ more.
+	\item \textbf{Installation/damping.} Longer free spans or lower clamping damping on
+	the $120\ \mathrm{m}$ run lower $f_n$ and raise $Q$, both increasing emission.
+\end{enumerate}
+
+\paragraph{Why random PWM gives a ``water'' sound.}
+Random/spread-spectrum PWM replaces the discrete carrier line with a broadband
+spectrum. By \eqref{eq:expand}, band~(II) of the force is correspondingly spread
+across frequency, so instead of driving one resonant mode it distributes energy
+over many modes at low spectral density. The radiated field loses its tonal
+character and becomes broadband noise --- perceptually the observed flowing-water
+sound --- and, crucially, the peak modal excitation drops, which is the same
+mechanism by which random PWM is used to reduce acoustic noise in drives.
+
+%======================================================================
+\section{Confirmation and mitigation}
+%======================================================================
+\paragraph{To confirm the model.}
+\begin{itemize}[leftmargin=*,nosep]
+	\item Measure the acoustic spectrum and check the tonal line moves with $f_{sw}$
+	and its sidebands sit at $f_{sw}\pm m f_1$.
+	\item A simple bump/impact test on a $120\ \mathrm{m}$ span identifies the span
+	natural frequencies; coincidence of one $f_n$ with $f_{sw}\pm m f_1$ confirms the
+	mechanism.
+	\item Verify the level scales with $\hat I_1\,\hat{\tilde\imath}_{sw}$ (load and
+	$f_{sw}$ dependence) as predicted by \eqref{eq:Fsw}.
+\end{itemize}
+
+\paragraph{Mitigation levers (from the model).}
+\begin{itemize}[leftmargin=*,nosep]
+	\item Move $f_{sw}$ off the coincident span mode, or adopt random/spread-spectrum
+	PWM (spreads band~(II); lowers peak excitation).
+	\item Detune the mechanical resonance: change cleat spacing $L_s$ (shifts $f_n$ in
+	\eqref{eq:fn}) or add damped clamps (raises losses, lowers $Q$).
+	\item Reduce the force: increase conductor separation $d$ (\eqref{eq:Fsw} scales as
+	$1/d$), or reduce $\hat{\tilde\imath}_{sw}$ with a higher $f_{sw}$ or an output
+	$\mathrm{d}v/\mathrm{d}t$/sine filter.
+\end{itemize}
+
+%======================================================================
+\section{Signal chain}
+%======================================================================
+\begin{center}
+	\begin{tikzpicture}[>=Latex,node distance=12mm and 16mm,
+		block/.style={draw,rounded corners,minimum height=12mm,minimum width=24mm,align=center,font=\small}]
+		\node[block] (a) {PWM\\ripple $\tilde\imath$};
+		\node[block,right=of a] (b) {Amp\`ere\\force $\hat F_{sw}$};
+		\node[block,right=of b] (c) {span\\vibration $\hat v$};
+		\node[block,right=of c] (d) {acoustic\\radiation $W_{ac}$};
+		\draw[->] (a)--(b) node[midway,above,font=\small]{$\times\hat I_1$};
+		\draw[->] (b)--(c) node[midway,above,font=\small]{$Q/\rho_A\omega$};
+		\draw[->] (c)--(d) node[midway,above,font=\small]{$\sigma_{\text{rad}}$};
+	\end{tikzpicture}
+\end{center}
+\noindent
+The four transfer factors are: the differential fundamental current $\hat I_1$
+(force generation, Eq.~\eqref{eq:Fsw}); the mechanical mobility $Q/(\rho_A\omega)$
+(Eq.~\eqref{eq:vres}); and the radiation efficiency $\sigma_{\text{rad}}$
+(Eq.~\eqref{eq:Wac}). The length $\ell$ enters through the modal density
+\eqref{eq:moddensity} (probability of resonance) and the radiating area
+\eqref{eq:Wac}.
+
+
+
+
+\section{Aging Assessment: Vibration-Induced Fatigue}
+\label{sec:aging}
+
+A natural question is whether the section subject to resonance ages faster than
+the non-resonant one. The answer must separate the \emph{relative} effect of the
+resonance from the \emph{absolute} stress level, and must keep the acoustic
+vibration distinct from the mechanisms that actually govern the cable service
+life.
+
+\paragraph{Relative effect.}
+Fatigue damage is driven by the amplitude of the cyclic stress. Resonance amplifies
+the vibration amplitude, and therefore the bending stress at the cleats, by the
+mechanical quality factor $Q$ (typically $10$--$50$). Since the fatigue life follows
+a Basquin law
+\begin{equation}
+	N_f = N_{\mathrm{ref}}\left(\frac{\sigma_{\mathrm{ref}}}{\sigma_a}\right)^{k},
+	\qquad k\approx 5\text{--}10,
+	\label{eq:basquin}
+\end{equation}
+a factor $Q$ on the stress becomes a factor $Q^{k}$ on the damage rate. On this
+basis the resonant section is, in relative terms, far more stressed than the
+non-resonant one. This is the origin of the concern, and the reason the absolute
+level must also be evaluated.
+
+\paragraph{Absolute stress level.}
+The decisive quantity is the actual vibration amplitude. The audible emission
+estimated in Section~\ref{sec:onsite_summary} corresponds to a surface velocity of
+about $\hat v \approx \SI{27}{\micro\meter\per\second}$ at resonance, i.e.\ a
+transverse displacement amplitude
+\begin{equation}
+	w_0 = \frac{\hat v}{\omega_{sw}} \approx \SI{1}{\nano\meter}.
+\end{equation}
+The corresponding surface bending strain, with conductor radius $a$ and bending
+wavenumber $k_B=2\pi/\lambda_B$, is
+\begin{equation}
+	\varepsilon_a \approx a\,k_B^{2}\,w_0 \sim 10^{-8},
+	\label{eq:strain}
+\end{equation}
+giving a cyclic stress $\sigma_a = E\varepsilon_a$ of the order of a few
+kilopascal, even including a cleat stress-concentration factor of $3$--$5$. The
+copper fatigue strength in the very-high-cycle regime is of the order of tens of
+megapascal; the applied stress is therefore three to four orders of magnitude
+below the fatigue strength. Table~\ref{tab:fatigue} collects the estimate.
+
+\begin{table}[h]
+	\centering
+	\caption{Order-of-magnitude estimate of the vibration-induced fatigue (rated load,
+		constant PWM, resonant span).}
+	\label{tab:fatigue}
+	\begin{tabular}{@{}lcl@{}}
+		\toprule
+		Quantity & Symbol & Value \\
+		\midrule
+		Displacement amplitude & $w_0$ & $\sim\SI{1}{\nano\meter}$ \\
+		Cyclic bending strain & $\varepsilon_a$ & $\sim 10^{-8}$ \\
+		Cyclic stress (incl.\ SCF) & $\sigma_a$ & $\sim\SI{5}{\kilo\pascal}$ \\
+		Copper fatigue strength (VHCF) & $\sigma_f$ & $\sim\SI{50}{\mega\pascal}$ \\
+		Stress margin & $\sigma_f/\sigma_a$ & $\sim 10^{4}$ \\
+		Cycles per year (50\% load) & $\dot n$ & $\sim\num{6e10}\ \mathrm{yr^{-1}}$ \\
+		Cycles to failure~\eqref{eq:basquin} ($k=7$) & $N_f$ & $\sim 10^{37}$ \\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+\paragraph{Cycle count and accumulated damage.}
+At $f_{sw}=\SI{3.8}{\kilo\hertz}$ with a $50\%$ load duty, the excitation delivers
+$\dot n\approx\num{6e10}$ cycles per year, i.e.\ about $\num{3e12}$ cycles over the
+\num{50}-year design life --- a very-high-cycle regime. The Palmgren--Miner damage
+accumulated over the design life $T_d$ is
+\begin{equation}
+	D = \frac{\dot n\,T_d}{N_f} \sim \frac{\num{3e12}}{10^{37}} \sim 10^{-25},
+	\label{eq:miner}
+\end{equation}
+which is negligible by an enormous margin. The equivalent fatigue life imposed by
+the acoustic vibration alone exceeds $10^{15}$ years and is not a service-life
+constraint.
+
+\paragraph{Aging threshold.}
+To make the criterion explicit, define the fatigue life that the vibration
+\emph{alone} would impose, $L_{\mathrm{fat}}=N_f/\dot n$, and the resulting aging
+fraction over the design life,
+\begin{equation}
+	\varphi = \frac{T_d}{L_{\mathrm{fat}}} = D.
+\end{equation}
+The following bands are adopted:
+\begin{equation}
+	\boxed{\;
+		\begin{aligned}
+			&\varphi < 0.02 \;\;(\text{1 yr in 50}) && \Rightarrow\;\; \text{negligible},\\
+			&0.02 \le \varphi \le 0.20 && \Rightarrow\;\; \text{monitor},\\
+			&\varphi > 0.20 \;\;(\text{10 yr in 50}) && \Rightarrow\;\; \text{significant}.
+		\end{aligned}
+		\;}
+\end{equation}
+The present estimate, $\varphi\sim10^{-25}$, falls in the negligible band with a
+margin of many orders of magnitude.
+
+\paragraph{Qualifications.}
+Three points must accompany this result in order not to misread it:
+\begin{itemize}[leftmargin=*]
+	\item[--] \textbf{Acoustic emission is not a damage indicator.} The audible tone
+	is a comfort/acceptability issue, not a measure of fatigue. In fact the
+	$2f_1$ ($\SI{100}{\hertz}$) force is about seven times larger than the
+	switching-frequency force yet is inaudible: if a fatigue driver ever existed,
+	it would be the largest force acting on the most compliant mode, independent of
+	its audibility. The noise must not be used as a proxy for damage.
+	\item[--] \textbf{The service life is governed by other mechanisms.} The
+	\num{50}-year life is set by thermal aging of the insulation
+	(Arrhenius law, IEC~60216), by electrical aging (partial discharge, water
+	treeing in the XLPE), and by thermo-mechanical fatigue at the cleats driven by
+	the \emph{load cycle} (daily/seasonal expansion, a few cycles per day --- not
+	the kilohertz vibration). The PWM-induced resonance is negligible relative to
+	these.
+	\item[--] \textbf{The only vibration-related watch item} is the possible
+	progressive loosening or fretting of cleats, terminations and clamps. At a
+	displacement amplitude of order \SI{1}{\nano\meter} the motion is well below the
+	micrometre slip threshold of fretting, so this is a periodic-inspection item,
+	not a life limit.
+\end{itemize}
+
+\paragraph{Confirmation by measurement.}
+Because the fatigue damage scales as $Q^{k}$, the absolute figure is sensitive to
+the true strain at the cleat, which has here been inferred acoustically. A direct
+measurement closes the question:
+\begin{enumerate}[leftmargin=*]
+	\item Instrument a \SI{120}{\meter} span at the point of maximum curvature (at a
+	cleat) with a strain gauge, or with an accelerometer converted to strain through
+	the local mode shape.
+	\item Record under rated load with constant PWM (the worst, tonal case), and
+	extract the cyclic strain amplitude $\varepsilon_a$ at $f_{sw}\pm m f_1$.
+	\item Repeat off resonance to bound $Q$.
+	\item Insert the measured $\varepsilon_a$ into \eqref{eq:basquin}--\eqref{eq:miner}
+	with the cable-material S--N data and compare $\varphi$ against the threshold.
+\end{enumerate}
+This converts the assessment from an estimate into a verified result.
+
+\end{appendices}
+
+\end{onehalfspace}
+%======================================================================
+%\section*{References}
+\addcontentsline{toc}{section}{References}
+%======================================================================
+\newpage
+\begin{thebibliography}{99}
+	
+	\bibitem{paul} C.~R.~Paul, \emph{Analysis of Multiconductor Transmission Lines},
+	2nd ed. Hoboken, NJ: Wiley--IEEE Press, 2008.
+	
+	\bibitem{marti} J.~R.~Mart\'i, ``Accurate modelling of frequency-dependent
+	transmission lines in electromagnetic transient simulations,'' \emph{IEEE Trans.
+		Power App. Syst.}, vol.~PAS-101, no.~1, pp.~147--157, Jan.~1982.
+	
+	\bibitem{gustavsen} B.~Gustavsen and A.~Semlyen, ``Rational approximation of
+	frequency domain responses by vector fitting,'' \emph{IEEE Trans. Power Del.},
+	vol.~14, no.~3, pp.~1052--1061, Jul.~1999.
+	
+	\bibitem{vonjouanne} A.~von Jouanne and P.~N.~Enjeti, ``Design considerations for
+	an inverter output filter to mitigate the effects of long motor leads in ASD
+	applications,'' \emph{IEEE Trans. Ind. Appl.}, vol.~33, no.~5, pp.~1138--1145,
+	Sep./Oct.~1997.
+	
+	\bibitem{moreira} A.~F.~Moreira, T.~A.~Lipo, G.~Venkataramanan, and S.~Bernet,
+	``High-frequency modeling for cable and induction motor overvoltage studies in
+	long cable drives,'' \emph{IEEE Trans. Ind. Appl.}, vol.~38, no.~5,
+	pp.~1297--1306, Sep./Oct.~2002.
+	
+	\bibitem{wang} L.~Wang, C.~N.~M.~Ho, F.~Canales, and J.~Jatskevich,
+	``High-frequency modeling of the long-cable-fed induction motor drive system using
+	TLM approach,'' \emph{IEEE Trans. Power Electron.}, vol.~25, no.~10,
+	pp.~2653--2664, Oct.~2010.
+	
+	\bibitem{skibinski} G.~L.~Skibinski, R.~J.~Kerkman, and D.~Schlegel, ``EMI emissions
+	of modern PWM AC drives,'' \emph{IEEE Ind. Appl. Mag.}, vol.~5, no.~6,
+	pp.~47--80, Nov./Dec.~1999.
+	
+	\bibitem{ieee575} \emph{IEEE Guide for Bonding Shields and Sheaths of
+		Single-Conductor Power Cables Rated 5~kV through 500~kV}, IEEE Std~575-2014, 2014.
+	
+	\bibitem{iec60287} \emph{Electric Cables --- Calculation of the Current Rating ---
+		Part 1-1: Current Rating Equations (100\,\% Load Factor) and Calculation of
+		Losses}, IEC~60287-1-1, 2014.
+	
+	\bibitem{holmes} D.~G.~Holmes and T.~A.~Lipo, \emph{Pulse Width Modulation for
+		Power Converters: Principles and Practice}. Hoboken, NJ: Wiley--IEEE Press, 2003.
+	
+	\bibitem{habetler} T.~G.~Habetler and D.~M.~Divan, ``Acoustic noise reduction in
+	sinusoidal PWM drives using a randomly modulated carrier,'' \emph{IEEE Trans. Power
+		Electron.}, vol.~6, no.~3, pp.~356--363, Jul.~1991.
+	
+	\bibitem{iec60865} \emph{Short-Circuit Currents --- Calculation of Effects ---
+		Part~1: Definitions and Calculation Methods}, IEC~60865-1, 2011.
+	
+	\bibitem{paul} C.~R.~Paul, \emph{Analysis of Multiconductor Transmission Lines},
+	2nd ed. Hoboken, NJ: Wiley--IEEE Press, 2008.
+	
+	\bibitem{fahy} F.~Fahy and P.~Gardonio, \emph{Sound and Structural Vibration:
+		Radiation, Transmission and Response}, 2nd ed. Oxford, U.K.: Academic Press, 2007.
+	
+	\bibitem{junger} M.~C.~Junger and D.~Feit, \emph{Sound, Structures, and Their
+		Interaction}, 2nd ed. Cambridge, MA: MIT Press, 1986.
+	
+	\bibitem{cremer} L.~Cremer, M.~Heckl, and B.~A.~T.~Petersson,
+	\emph{Structure-Borne Sound}, 3rd ed. Berlin, Germany: Springer, 2005.
+	
+	\bibitem{vonjouanne} A.~von Jouanne and P.~N.~Enjeti, ``Design considerations for
+	an inverter output filter to mitigate the effects of long motor leads in ASD
+	applications,'' \emph{IEEE Trans. Ind. Appl.}, vol.~33, no.~5, pp.~1138--1145,
+	Sep./Oct.~1997.
+	
+	
+\end{thebibliography}
+
+%*********************************************************
+% Print bibliography (If bibliography is empty nothing happens)
+%*********************************************************
+%\newpage
+%\printbibliography[heading=bibintoc]
+
+\end{document}

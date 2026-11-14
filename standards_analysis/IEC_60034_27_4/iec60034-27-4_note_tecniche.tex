@@ -1,0 +1,435 @@
+% ============================================================
+%  Note Tecniche — IEC 60034-27-4
+%  Prove di isolamento su macchine elettriche rotanti
+%  Autore: Davide Bagnara
+%  Data: maggio 2026
+% ============================================================
+\documentclass[a4paper,11pt]{article}
+
+% --- Encoding & lingua ---
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[italian]{babel}
+
+% --- Layout ---
+\usepackage[
+  top=25mm, bottom=25mm,
+  left=25mm, right=25mm
+]{geometry}
+
+% --- Matematica ---
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+% --- Tabelle ---
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{multirow}
+
+% --- Grafica e colori ---
+\usepackage[table,xcdraw]{xcolor}
+\definecolor{docblue}{RGB}{0,84,166}
+\definecolor{lightgray}{RGB}{245,245,245}
+\definecolor{warningyellow}{RGB}{255,243,205}
+
+% --- Hyperlink ---
+\usepackage[
+  colorlinks=true,
+  linkcolor=docblue,
+  urlcolor=docblue,
+  citecolor=docblue
+]{hyperref}
+
+% --- Intestazioni ---
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textcolor{docblue}{\textbf{IEC 60034-27-4}} — Note tecniche}
+\fancyhead[R]{\small Davide Bagnara}
+\fancyfoot[C]{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% --- Box colorati ---
+\usepackage{tcolorbox}
+\tcbuselibrary{skins, breakable}
+
+\newtcolorbox{notabox}[1][]{
+  colback=warningyellow,
+  colframe=orange!70!black,
+  fonttitle=\bfseries,
+  title=Nota operativa,
+  #1
+}
+
+\newtcolorbox{infobox}[1][]{
+  colback=lightgray,
+  colframe=docblue,
+  fonttitle=\bfseries,
+  #1
+}
+
+% --- Spaziatura paragrafi ---
+\setlength{\parskip}{4pt}
+\setlength{\parindent}{0pt}
+
+% ============================================================
+\begin{document}
+
+% --- Titolo ---
+\begin{center}
+  {\LARGE\bfseries\color{docblue}
+    Note tecniche sulla IEC 60034-27-4}\\[6pt]
+  {\large Prove di isolamento su macchine elettriche rotanti:\\
+  Resistenza di isolamento, Polarization Index, DAR e HiPot}\\[10pt]
+  {\normalsize Davide Bagnara \quad|\quad maggio 2026}
+\end{center}
+
+\vspace{4mm}
+\hrule height 1pt
+\vspace{6mm}
+
+% --- Indice ---
+\tableofcontents
+\vspace{6mm}
+\hrule height 0.4pt
+\vspace{4mm}
+
+% ============================================================
+\section{Inquadramento normativo}
+
+La \textbf{IEC 60034-27-4:2018} (\emph{Rotating Electrical Machines -- Part 27-4: Measurement of insulation resistance and polarization index of winding insulation of rotating electrical machines}), prima edizione pubblicata nel gennaio 2018, fa parte della serie IEC 60034 dedicata alle macchine elettriche rotanti. Lo standard è pubblicato anche come EN IEC 60034-27-4 e BS EN IEC 60034-27-4.
+
+\subsection{Campo di applicazione}
+
+Lo standard fornisce procedure di misura raccomandate per la \textbf{resistenza di isolamento} (IR, \emph{Insulation Resistance}) e l'\textbf{indice di polarizzazione} (PI, \emph{Polarization Index}) degli avvolgimenti di statore e rotore di macchine elettriche rotanti, con potenza nominale $\geq 750\,\text{W}$. Sono incluse macchine AC e DC, a bassa e ad alta tensione, sia con avvolgimenti a bassa tensione (\emph{random-wound}) che con bobine preformate (\emph{form-wound}).
+
+Il documento non copre la misura delle scariche parziali offline (trattate dalla IEC 60034-27-1) né le prove di tenuta dielettrica (HiPot), che ricadono sotto la IEC 60034-1.
+
+\subsection{Standards correlati}
+
+\begin{center}
+\begin{tabularx}{\linewidth}{lX}
+\toprule
+\textbf{Standard} & \textbf{Contenuto} \\
+\midrule
+IEC 60034-27-4:2018 & IR e PI — oggetto del presente documento \\
+IEC 60034-27-1:2017 & Misura scariche parziali offline (statore) \\
+IEC 60034-1:2022 & Rating, prestazioni e prove di tenuta (HiPot) \\
+IEEE 43-2013       & Riferimento parallelo IEEE per IR e PI (macchine rotanti) \\
+IEEE 95            & HiPot DC per macchine AC $\geq 2300\,\text{V}$ \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+% ============================================================
+\section{Grandezze fondamentali e modello equivalente}
+
+\subsection{Componenti di corrente nel modello DC}
+
+Quando si applica una tensione DC all'isolamento di un avvolgimento, la corrente totale $I_T$ è la somma di cinque contributi fisicamente distinti:
+
+\begin{equation}
+  I_T(t) = I_C(t) + I_P(t) + I_G + I_L + I_S
+\end{equation}
+
+\begin{center}
+\begin{tabularx}{\linewidth}{llX}
+\toprule
+\textbf{Simbolo} & \textbf{Nome} & \textbf{Caratteristica} \\
+\midrule
+$I_C$ & Corrente capacitiva       & Transitorio rapido ($<1\,\text{s}$), decade esponenzialmente \\
+$I_P$ & Corrente di polarizzazione & Decade lentamente da 0 a 10 min (corrente di assorbimento) \\
+$I_G$ & Corrente di conduzione     & Ohmica, costante nel bulk dell'isolante \\
+$I_L$ & Corrente di perdita superficiale & Ohmica, sulle testate; dipende da umidità e contaminanti \\
+$I_S$ & Corrente stress-control coating & Ohmica, nel rivestimento di controllo del campo elettrico sulle testate \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+Il circuito equivalente è una rete RC multi-ramo in parallelo (modello di Davidson): i rami RC modellano $I_P$, la resistanza $R_V$ modella $I_G$, e $R_L$, $R_S$ modellano $I_L$ e $I_S$ rispettivamente.
+
+\subsection{Resistenza di isolamento (IR)}
+
+\begin{equation}
+  R_{it} = \frac{U_0}{I_T(t)}
+\end{equation}
+
+dove $U_0$ è la tensione DC applicata e $t$ è il tempo dall'inizio dell'applicazione. I tempi standard sono:
+
+\begin{itemize}
+  \item $R_{i1}$ — lettura a $t = 1\,\text{min}$ (spot test)
+  \item $R_{i10}$ — lettura a $t = 10\,\text{min}$ (per il PI)
+\end{itemize}
+
+\subsection{Indice di polarizzazione (PI)}
+
+\begin{equation}
+  \boxed{PI = \frac{R_{i10}}{R_{i1}}}
+\end{equation}
+
+Il PI descrive la variazione della IR tra 1 e 10 minuti e indica la presenza di umidità o contaminanti. \textbf{Non} rileva vuoti interni per cattiva impregnazione né deterioramento termico dell'isolante.
+
+\begin{notabox}
+Il PI \textbf{non è valido} quando $R_{i1} > 5\,\text{G}\Omega$: la corrente di perdita è nell'ordine dei microampere e troppi fattori esterni influenzano la misura. In tal caso si utilizza solo lo spot test assoluto.
+\end{notabox}
+
+\subsection{DAR — Dielectric Absorption Ratio}
+
+\begin{equation}
+  DAR = \frac{R_{60\text{s}}}{R_{30\text{s}}}
+\end{equation}
+
+Il DAR è un'alternativa rapida al PI, utile per macchine piccole dove la corrente di polarizzazione decade velocemente. Si esegue alla stessa tensione del PI, con letture a 30 s e 60 s.
+
+% ============================================================
+\section{Fattori di influenza e correzione termica}
+
+\subsection{Temperatura}
+
+La IR dipende fortemente dalla temperatura dell'avvolgimento. La relazione è approssimata da:
+
+\begin{equation}
+  K_T = 0{,}5^{\,(T - 40)\,/\,X}
+\end{equation}
+
+\begin{equation}
+  R_{ic} = R_{iT} \cdot K_T
+\end{equation}
+
+dove $R_{ic}$ è la IR corretta alla temperatura di riferimento di 40 °C, $R_{iT}$ è la misura a temperatura $T$, e $X$ è il parametro di pendenza caratteristico del sistema isolante.
+
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Tipo di sistema isolante} & \textbf{Parametro $X$ (K)} & \textbf{Intervallo (°C)} \\
+\midrule
+Shellac / asfalto          & 10 & 10 – 60 \\
+Resina sintetica (epossidica, poliesteri, \ldots) & nessuna correzione ($K_T = 1$) & 10 – 40 \\
+Resina sintetica           & 17 & 40 – 60 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+La formula implica che la IR si dimezza ogni $X$ Kelvin di aumento di temperatura. La correzione non si applica se $R_{i1} > 5\,\text{G}\Omega$ o se la macchina ha isolamento a resina sintetica misurata sotto i 40 °C.
+
+Per il PI la correzione termica non è necessaria, purché la temperatura dell'avvolgimento rimanga costante tra la lettura a 1 min e quella a 10 min.
+
+\subsection{Umidità}
+
+L'umidità relativa dell'aria influenza la corrente superficiale $I_L$ e non è stimabile analiticamente. Per questo è raccomandato eseguire le misure con la temperatura dell'avvolgimento superiore al punto di rugiada, per evitare condensa sulle testate.
+
+% ============================================================
+\section{Procedura di misura}
+
+\subsection{Strumentazione}
+
+\begin{itemize}
+  \item \textbf{Megohmmeter} con uscita DC stabile; deve raggiungere la tensione di prova in $\leq 5\,\text{s}$.
+  \item Per $R_{i1} < 5000\,\text{M}\Omega$: strumento digitale con almeno 3 digit e accuratezza $\pm5\%$ della lettura $\pm5$ digit.
+  \item Per valori elevati di IR è raccomandato un ingresso di guardia (\emph{guard}), per eliminare le correnti di perdita sulla cabletteria.
+\end{itemize}
+
+\subsection{Circuiti di misura per statore trifase}
+
+\begin{itemize}
+  \item \textbf{Intero avvolgimento verso terra}: tutte e tre le fasi cortocircuitate insieme, applicate al polo positivo del megohmmeter; corpo macchina connesso al polo negativo/terra.
+  \item \textbf{Misura per fase}: fasi non in prova connesse a terra per evitare correnti di equalizzazione e induzione AC nel circuito di misura.
+\end{itemize}
+
+\subsection{Scarica dopo la prova}
+
+Dopo la rimozione della tensione di prova, l'avvolgimento deve essere cortocircuitato verso terra per un tempo almeno pari a \textbf{quattro volte} la durata del test (es. 4 min dopo uno spot test di 1 min, 40 min dopo un PI di 10 min).
+
+% ============================================================
+\section{Tensioni di prova}
+
+\subsection{IR, DAR e PI — tensione del megohmmeter}
+
+La IEC 60034-27-4 (Tabella 2) e la IEEE 43-2013 (Tabella 3) concordano sulle seguenti fasce:
+
+\begin{center}
+\rowcolors{2}{lightgray}{white}
+\begin{tabular}{cc}
+\toprule
+\textbf{Tensione nominale avvolgimento} & \textbf{Tensione DC di misura raccomandata} \\
+\midrule
+$< 1\,\text{kV}$       & $500\,\text{V DC}$     \\
+$1\,\text{--}\,2{,}5\,\text{kV}$ & $1000\,\text{V DC}$ \\
+$2{,}5\,\text{--}\,5\,\text{kV}$ & $2500\,\text{V DC}$ \\
+$5\,\text{--}\,12\,\text{kV}$    & $5000\,\text{V DC}$ \\
+$> 12\,\text{kV}$      & $10\,000\,\text{V DC}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{HiPot — prova di tenuta dielettrica (IEC 60034-1)}
+
+Il HiPot è una prova di qualificazione (\emph{pass/fail}), non diagnostica. La IEC 60034-1 prescrive la prova preferibilmente in AC a frequenza industriale; il DC è ammesso per accordo, con un fattore moltiplicativo $\times 1{,}7$ (valore di picco della sinusoide).
+
+\begin{center}
+\rowcolors{2}{lightgray}{white}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Scenario} & \textbf{Tensione AC (IEC 60034-1)} & \textbf{Equivalente DC} \\
+\midrule
+Macchina nuova (collaudo tipo/routine) & $2U_N + 1\,\text{kV}$ & $(2U_N + 1\,\text{kV}) \times 1{,}7$ \\
+Dopo revisione completa (overhaul)     & $1{,}5 \cdot U_N$     & $1{,}5 \cdot U_N \times 1{,}7$     \\
+Dopo riavvolgimento parziale           & $0{,}75 \times (2U_N + 1\,\text{kV})$ & stessa $\times 1{,}7$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+dove $U_N$ è la tensione di linea nominale della macchina. La durata della tenuta è \textbf{1 minuto}.
+
+\begin{notabox}
+Non sottoporre a HiPot macchine che abbiano mostrato valori bassi di IR alla misura megohmmeter. Il rischio è innescare un cedimento su isolamento già compromesso (IEEE 43-2013 e ANSI/EASA AR100).
+\end{notabox}
+
+% ============================================================
+\section{Valori limite raccomandati}
+
+\subsection{Resistenza di isolamento minima (IEC 60034-27-4, Tab. 3 — IEEE 43-2013)}
+
+I valori si riferiscono a temperatura di riferimento 40 °C.
+
+\begin{center}
+\rowcolors{2}{lightgray}{white}
+\begin{tabular}{lc}
+\toprule
+\textbf{Tipo di avvolgimento} & \textbf{IR minima a 40 °C} \\
+\midrule
+Macchine ad alta tensione, \emph{form-wound}, post-1970 & $100\,\text{M}\Omega$ \\
+Avvolgimenti random-wound o \emph{form-wound} $< 1\,\text{kV}$ & $5\,\text{M}\Omega$ \\
+Macchine storiche (pre-1970, qualsiasi tipo) & $(U_N[\text{kV}] + 1)\,\text{M}\Omega$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Criteri PI (IEEE 43-2013)}
+
+\begin{center}
+\rowcolors{2}{lightgray}{white}
+\begin{tabular}{cc}
+\toprule
+\textbf{Valore PI} & \textbf{Giudizio} \\
+\midrule
+$< 1{,}0$             & Inaccettabile — rischio scarica imminente \\
+$1{,}0\,\text{--}\,2{,}0$ & Dubbio — probabile umidità o contaminazione \\
+$2{,}0\,\text{--}\,4{,}0$ & Buono \\
+$> 4{,}0$             & Eccellente \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Criteri DAR}
+
+\begin{center}
+\begin{tabular}{cc}
+\toprule
+\textbf{Valore DAR} & \textbf{Giudizio} \\
+\midrule
+$< 1{,}25$ & Scarso \\
+$1{,}25\,\text{--}\,1{,}60$ & Accettabile \\
+$> 1{,}60$ & Buono \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% ============================================================
+\section{Interpretazione e limitazioni}
+
+La IEC 60034-27-4 individua quattro criteri interpretativi principali:
+
+\begin{enumerate}
+  \item \textbf{Idoneità all'esercizio o alla prova}: confronto con i valori minimi assoluti delle Tabelle 3 e 4 dello standard.
+  \item \textbf{Trending}: monitoraggio periodico nel tempo (mensile, annuale, a ogni revisione). Il trend è lo strumento diagnostico più potente — un calo progressivo della IR a parità di temperatura segnala degrado in atto.
+  \item \textbf{Confronto tra macchine o tra fasi}: utile per rilevare asimmetrie che indicano difetti localizzati.
+  \item \textbf{Effetti a valori molto elevati}: per $R_i > 5\,\text{G}\Omega$ la misura PI non è significativa; anche la misura assoluta può essere distorta da capacità parassite della cabletteria di misura.
+\end{enumerate}
+
+\begin{notabox}[title=Limitazioni fondamentali]
+La misura IR/PI:
+\begin{itemize}
+  \item \textbf{Non individua punti deboli locali} nell'isolamento (cracks, delaminazioni, vuoti per cattiva impregnazione) — per questo servono le scariche parziali (IEC 60034-27-1).
+  \item \textbf{Non permette di prevedere il tempo a guasto} — il trend indica degrado, non vita residua.
+  \item È fortemente influenzata da umidità, contaminanti e temperatura — le misure vanno sempre accompagnate dal registro della temperatura d'avvolgimento.
+\end{itemize}
+\end{notabox}
+
+% ============================================================
+\section{Prove supplementari (Annex E — informativo)}
+
+\begin{center}
+\begin{tabularx}{\linewidth}{lX}
+\toprule
+\textbf{Prova} & \textbf{Descrizione} \\
+\midrule
+DAR                    & Rapporto $R_{60\text{s}}/R_{30\text{s}}$ — alternativa rapida al PI per macchine piccole \\
+Monitoraggio carica/scarica & Analisi dei transienti di corrente dopo applicazione e rimozione della tensione \\
+DC HiPot a gradini uniformi & Tensione incrementata in gradini uguali; si registra la corrente a fine di ogni gradino \\
+DC HiPot a gradini temporizzati & Gradini con durata variabile \\
+DC HiPot a rampa       & Tensione crescente linearmente; utile per macchine invecchiate ad alta potenza \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+% ============================================================
+\section{Esempio pratico — motore PMSM 690 V}
+
+A titolo di riferimento per una macchina tipica (690 V, classe di isolamento F/H, avvolgimento \emph{form-wound} con rivestimento stress-control):
+
+\begin{center}
+\rowcolors{2}{lightgray}{white}
+\begin{tabular}{lccl}
+\toprule
+\textbf{Prova} & \textbf{Tensione DC} & \textbf{Durata} & \textbf{Criterio} \\
+\midrule
+IR spot test  & $1000\,\text{V DC}$ & $1\,\text{min}$  & $R_{i1} \geq 100\,\text{M}\Omega$ a 40 °C \\
+PI            & $1000\,\text{V DC}$ & $10\,\text{min}$ & $PI = R_{i10}/R_{i1} \geq 2{,}0$ \\
+DAR           & $1000\,\text{V DC}$ & $1\,\text{min}$  & $DAR = R_{60\text{s}}/R_{30\text{s}} \geq 1{,}25$ \\
+HiPot AC (nuovo) & $2480\,\text{V AC}$ & $1\,\text{min}$ & pass/fail \\
+HiPot DC equiv.  & $\approx 4200\,\text{V DC}$ & $1\,\text{min}$ & pass/fail \\
+HiPot AC (overhaul) & $1035\,\text{V AC}$ & $1\,\text{min}$ & pass/fail \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Calcoli:
+\begin{align}
+  \text{HiPot AC nuovo} &= 2 \times 690 + 1000 = 2380\,\text{V AC} \approx 2{,}4\,\text{kV AC} \\
+  \text{HiPot DC equiv.} &= 2380 \times 1{,}7 \approx 4046\,\text{V DC} \approx 4{,}0\,\text{kV DC} \\
+  \text{HiPot AC overhaul} &= 1{,}5 \times 690 = 1035\,\text{V AC} \approx 1{,}0\,\text{kV AC}
+\end{align}
+
+% ============================================================
+\section{Note per macchine alimentate da inverter}
+
+Le macchine PMSM e i motori asincroni controllati da drive PWM sono soggetti a uno stress dielettrico supplementare rispetto alle macchine a rete diretta:
+
+\begin{itemize}
+  \item Il \textbf{dV/dt} ai morsetti (tipicamente $1\,\text{--}\,10\,\text{kV/}\mu\text{s}$ per drive SiC) accelera il degrado dell'isolamento per scariche parziali inter-spira, specialmente nelle prime spire dell'avvolgimento.
+  \item La \textbf{tensione di modo comune} genera correnti parassite attraverso i cuscinetti (\emph{bearing currents}), con rischio di erosione elettrolitica.
+  \item I valori di IR e PI rimangono indicatori validi di degrado globale dell'isolamento verso terra, ma non rilevano il deterioramento inter-spira (per questo occorrono prove impulsive o misura di scariche parziali online).
+  \item Il monitoraggio IR periodico è particolarmente raccomandato per macchine ad alta frequenza di commutazione ($f_{sw} \geq 8\,\text{kHz}$) o con tensione del bus DC $\geq 1000\,\text{V}$.
+\end{itemize}
+
+% ============================================================
+\section*{Riferimenti normativi}
+
+\begin{itemize}
+  \item IEC 60034-27-4:2018 — \emph{Rotating electrical machines -- Part 27-4: Measurement of insulation resistance and polarization index of winding insulation of rotating electrical machines}, Ed. 1.0, IEC, Ginevra, 2018.
+  \item IEC 60034-1:2022 — \emph{Rotating electrical machines -- Part 1: Rating and performance}, Ed. 14.0.
+  \item IEC 60034-27-1:2017 — \emph{Rotating electrical machines -- Part 27-1: Off-line partial discharge measurements on the stator winding insulation}.
+  \item IEEE Std 43-2013 — \emph{IEEE Recommended Practice for Testing Insulation Resistance of Electric Machinery}, IEEE Power and Energy Society, 2013.
+  \item IEEE Std 95 — \emph{IEEE Recommended Practice for Insulation Testing of AC Electric Machinery with High Direct Voltage}.
+  \item ANSI/EASA AR100-2015 — \emph{Recommended Practice for the Repair of Rotating Electrical Apparatus}.
+\end{itemize}
+
+\vspace{8mm}
+\hrule height 0.4pt
+\vspace{3mm}
+{\small\textit{Documento a uso interno. Elaborato da Davide Bagnara, maggio 2026.
+I valori riportati sono tratti dagli standard citati; verificare sempre con l'edizione in vigore e con le prescrizioni del costruttore della macchina.}}
+
+\end{document}

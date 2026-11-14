@@ -1,0 +1,659 @@
+\documentclass[11pt,a4paper]{article}
+
+% ─── Pacchetti ────────────────────────────────────────────────────────────────
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[italian]{babel}
+\usepackage{microtype}
+\usepackage{geometry}
+\geometry{a4paper, top=25mm, bottom=25mm, left=25mm, right=25mm}
+
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{bm}          % bold math
+\usepackage{physics}     % \dv, \pdv, \norm, ecc.
+\usepackage{siunitx}
+\sisetup{
+  per-mode        = symbol,
+  detect-all,
+  exponent-product = \cdot,
+  output-decimal-marker = {.}
+}
+
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks = true,
+  linkcolor  = blue!60!black,
+  citecolor  = green!40!black,
+  urlcolor   = blue!70!black
+}
+
+% TikZ
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usetikzlibrary{
+  arrows.meta,
+  decorations.pathreplacing,
+  patterns,
+  positioning,
+  calc,
+  shapes.geometric,
+  fit
+}
+
+\usepackage{listings}
+\lstset{
+  basicstyle   = \ttfamily\small,
+  keywordstyle = \color{blue!70!black}\bfseries,
+  commentstyle = \color{green!50!black}\itshape,
+  stringstyle  = \color{red!60!black},
+  breaklines   = true,
+  frame        = single,
+  numbers      = left,
+  numberstyle  = \tiny\color{gray}
+}
+
+% ─── Nuovi comandi ────────────────────────────────────────────────────────────
+\newcommand{\tens}[1]{\bm{#1}}
+\newcommand{\epdot}{\dot{\varepsilon}^{p}}
+\newcommand{\sdot}{\dot{s}}
+\newcommand{\sstar}{s^{*}}
+\newcommand{\sac}{SAC305}
+\newcommand{\comsol}{\textsc{Comsol}\,Multiphysics}
+
+% ─── Intestazione ─────────────────────────────────────────────────────────────
+\title{%
+  \textbf{Modello Viscoplastico di Anand per lo Strato di Solder \sac{}}\\[4pt]
+  \large Teoria, Parametri e Implementazione in \comsol{}\\
+  \large per Moduli di Potenza SiC a Media Tensione (SSCB 1--10\,kV)
+}
+\author{Davide Bagnara\\
+  \small Power Electronics \& Control Systems
+}
+\date{\today}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\begin{document}
+\maketitle
+\tableofcontents
+\bigskip
+\hrule
+\bigskip
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Introduzione e Contesto}
+% ══════════════════════════════════════════════════════════════════════════════
+
+Nei moduli di potenza a base SiC destinati ad applicazioni SSCB (\emph{Solid-State
+Circuit Breaker}) a media tensione (1--10\,kV, $<$\,1\,kA), lo strato di solder
+\sac{} (Sn\,96.5 / Ag\,3 / Cu\,0.5) costituisce l'interfaccia meccanica e termica
+tra il die semiconduttore e il substrato DBC (\emph{Direct Bonded Copper}).
+
+Durante un evento di fault, la corrente raggiunge valori di picco di 2--3$\times
+I_{\mathrm{nom}}$ in un tempo $t_{\mathrm{open}} = \SI{2}{\micro\second}$--\SI{5}{\micro\second},
+generando impulsi termici rapidi e ciclici nel die SiC. Il differenziale di CTE
+tra il die ($\alpha_{\mathrm{SiC}} \approx 4\;\mu\mathrm{m/(m\cdot K)}$) e il solder
+($\alpha_{\mathrm{SAC}} \approx 21\;\mu\mathrm{m/(m\cdot K)}$) produce deformazioni
+inelastiche accumulate che determinano la vita a fatica del modulo.
+
+Il modello costitutivo di \textbf{Anand} \cite{Anand1985} è quello più utilizzato
+per descrivere il comportamento viscoplastico del solder a temperatura: esso
+incorpora creep e plasticità in un'unica formulazione e non richiede la separazione
+dei meccanismi di deformazione.
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Decomposizione della Deformazione}
+% ══════════════════════════════════════════════════════════════════════════════
+
+La deformazione totale $\tens{\varepsilon}_{\mathrm{tot}}$ si decompone in tre
+contributi additivi (ipotesi di piccole deformazioni):
+%
+\begin{equation}
+  \tens{\varepsilon}_{\mathrm{tot}}
+  = \tens{\varepsilon}^{\mathrm{el}}
+  + \tens{\varepsilon}^{\mathrm{th}}
+  + \tens{\varepsilon}^{vp}
+  \label{eq:decomp}
+\end{equation}
+%
+con:
+\begin{align}
+  \tens{\varepsilon}^{\mathrm{el}} &= \mathbf{C}^{-1} : \tens{\sigma}
+  \quad \text{(elastica, legge di Hooke)} \label{eq:el}\\
+  \tens{\varepsilon}^{\mathrm{th}} &= \alpha_{\mathrm{CTE}}(T-T_{\mathrm{ref}})\,\mathbf{I}
+  \quad \text{(termica, isotropa)} \label{eq:th}\\
+  \tens{\varepsilon}^{vp} &= \int_0^t \dot{\tens{\varepsilon}}^{vp}\,\dd t'
+  \quad \text{(viscoplastica, Anand)} \label{eq:vp}
+\end{align}
+
+Il tensore di rigidezza $\mathbf{C}$ dipende da $E(T)$ e $\nu$
+(v.~Sezione~\ref{sec:props}).
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Equazioni Costitutive del Modello di Anand}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\subsection{Variabili di stato}
+
+Il modello di Anand è \textbf{unificato}: non distingue plasticità istantanea
+da creep. Le variabili di stato sono:
+\begin{itemize}
+  \item $\sigma$ -- tensione equivalente di von Mises [\si{\pascal}]
+  \item $s$ -- \emph{deformation resistance}, variabile interna scalare [\si{\pascal}]
+  \item $T$ -- temperatura assoluta [\si{\kelvin}]
+  \item $\epdot$ -- velocità di deformazione plastica equivalente [\si{\per\second}]
+\end{itemize}
+
+\subsection{Legge di flusso plastico}
+
+\begin{equation}
+  \boxed{
+    \epdot = A\,\exp\!\left(-\frac{Q}{RT}\right)
+    \left[\sinh\!\left(\xi\,\frac{\sigma}{s}\right)\right]^{1/m}
+  }
+  \label{eq:flow}
+\end{equation}
+
+\begin{table}[H]
+  \centering
+  \caption{Parametri della legge di flusso (Eq.~\ref{eq:flow})}
+  \begin{tabular}{clll}
+    \toprule
+    Simbolo & Significato & Unità & Nota \\
+    \midrule
+    $A$     & Costante pre-esponenziale & \si{\per\second} & fattore di frequenza \\
+    $Q$     & Energia di attivazione & \si{\joule\per\mol} & termine Arrhenius \\
+    $R$     & Costante dei gas & \SI{8.314}{\joule\per\mol\per\kelvin} & costante \\
+    $\xi$   & Stress multiplier & -- & sensitività alla tensione \\
+    $m$     & Strain rate sensitivity & -- & $0 < m \leq 1$ \\
+    $s$     & Resistenza corrente & \si{\pascal} & evolve con Eq.~\ref{eq:sdot} \\
+    \bottomrule
+  \end{tabular}
+  \label{tab:flow_params}
+\end{table}
+
+Il termine $\sinh(\xi\,\sigma/s)$ descrive tre regimi:
+\begin{align}
+  \xi\,\frac{\sigma}{s} \ll 1 &\implies \epdot \propto \left(\frac{\sigma}{s}\right)^{1/m}
+  \quad \text{(regime Norton)} \label{eq:norton}\\
+  \xi\,\frac{\sigma}{s} \gg 1 &\implies \epdot \propto \exp\!\left(\frac{\xi\sigma}{ms}\right)
+  \quad \text{(regime esponenziale)} \label{eq:exp}
+\end{align}
+
+\subsection{Evoluzione della variabile interna \texorpdfstring{$s$}{s}}
+
+\begin{equation}
+  \boxed{
+    \sdot = h_0\,\left|1 - \frac{s}{\sstar}\right|^{a}
+    \operatorname{sign}\!\left(1 - \frac{s}{\sstar}\right)\cdot\epdot
+  }
+  \label{eq:sdot}
+\end{equation}
+
+con la resistenza di saturazione dipendente da $T$ e $\epdot$:
+\begin{equation}
+  \boxed{
+    \sstar = \hat{s}\left[\frac{\epdot}{A}\,\exp\!\left(\frac{Q}{RT}\right)\right]^{n}
+  }
+  \label{eq:sstar}
+\end{equation}
+
+\begin{table}[H]
+  \centering
+  \caption{Parametri dell'equazione di evoluzione (Eq.~\ref{eq:sdot}--\ref{eq:sstar})}
+  \begin{tabular}{clll}
+    \toprule
+    Simbolo & Significato & Unità & Nota \\
+    \midrule
+    $h_0$   & Modulo di incrudimento iniziale & \si{\pascal} & $h_0 \gg s$ tipicamente \\
+    $a$     & Sensitività incrudimento & -- & $a > 1$ \\
+    $\hat{s}$ & Resistenza di saturazione di riferimento & \si{\pascal} & \\
+    $n$     & Sensitività $\sstar$ a $\epdot$ & -- & piccolo ($\sim 10^{-2}$) \\
+    $s_0$   & Condizione iniziale $s(t=0)$ & \si{\pascal} & \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Interpretazione fisica}
+
+\begin{itemize}
+  \item $s < \sstar$: incrudimento ($\sdot > 0$) --- regime di bassa temperatura
+    o alta velocità di deformazione
+  \item $s > \sstar$: ammorbidimento ($\sdot < 0$) --- recovery termico dominante
+  \item $s = \sstar$: stato stazionario --- regime di creep secondario
+\end{itemize}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Proprietà del Materiale \sac{}}
+\label{sec:props}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\subsection{Parametri Anand per \sac{} (SAC305)}
+
+\begin{table}[H]
+  \centering
+  \caption{Parametri Anand per \sac{} -- valori consolidati in letteratura
+    \cite{Wiese2010,Darveaux2000,JEDEC}}
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{clSl}
+    \toprule
+    Simbolo & Significato & {Valore} & Unità \\
+    \midrule
+    $A$       & Costante pre-esponenziale & 4.0e4    & \si{\per\second} \\
+    $Q/R$     & Temperatura di attivazione & 5765     & \si{\kelvin} \\
+    $\xi$     & Stress multiplier & 4.0      & -- \\
+    $m$       & Strain rate sensitivity & 0.303    & -- \\
+    $h_0$     & Modulo di incrudimento & 3.35e9   & \si{\pascal} \\
+    $\hat{s}$ & Resistenza saturazione rif. & 3.24e7   & \si{\pascal} \\
+    $a$       & Sensitività incrudimento & 1.65     & -- \\
+    $n$       & Sensitività $\sstar$ & 0.0074   & -- \\
+    $s_0$     & Resistenza iniziale & 2.0e7    & \si{\pascal} \\
+    \bottomrule
+  \end{tabular}
+  \label{tab:anand_params}
+\end{table}
+
+\subsection{Proprietà elastiche, termiche e meccaniche}
+
+\begin{table}[H]
+  \centering
+  \caption{Proprietà fisiche del solder \sac{} (bulk, 25\,°C)}
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{lSll}
+    \toprule
+    Proprietà & {Valore} & Unità & Note \\
+    \midrule
+    Modulo di Young $E(25\,°\text{C})$ & 50    & \si{\giga\pascal} & decresce con $T$ \\
+    Coefficiente di Poisson $\nu$      & 0.35  & --       & \\
+    CTE $\alpha$                       & 21    & $\mu$m/(m$\cdot$K) & isotropo \\
+    Densità $\rho$                     & 7380  & \si{\kg\per\m\cubed} & \\
+    Conducibilità termica $k$          & 57    & \si{\W\per\m\per\kelvin} & \\
+    Calore specifico $c_p$             & 220   & \si{\J\per\kg\per\kelvin} & \\
+    Temperatura solidus $T_s$          & 490   & \si{\kelvin} & 217\,°C \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsubsection{Dipendenza da temperatura del modulo di Young}
+
+\begin{equation}
+  E(T) = E_0 - C\cdot T
+  = \SI{55e9}{\pascal} - \SI{6.5e7}{\pascal\per\kelvin}\cdot T
+  \label{eq:ET}
+\end{equation}
+
+valida per $T \in [200, 490]\,\si{\kelvin}$ (al di sotto del solidus).
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Figure TikZ}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\subsection{Comportamento di \texorpdfstring{$s(t)$}{s(t)} e \texorpdfstring{$s^*$}{s*}}
+
+\begin{figure}[H]
+  \centering
+  \begin{tikzpicture}
+    \begin{axis}[
+      width  = 0.80\textwidth,
+      height = 6.5cm,
+      xlabel = {Deformazione plastica cumulata $\varepsilon^{vp}_{acc}$},
+      ylabel = {Resistenza $s$ [\si{\mega\pascal}]},
+      xmin   = 0, xmax = 1,
+      ymin   = 0, ymax = 55,
+      grid   = major,
+      grid style = {dashed, gray!40},
+      legend pos = south east,
+      tick label style = {font=\small},
+      label style      = {font=\small},
+    ]
+      % s* (saturazione) -- orizzontale tratteggiata
+      \addplot[dashed, thick, red!70!black, domain=0:1]
+        {38} node[right, pos=1, font=\small] {$s^*$};
+
+      % Curva incrudimento (s0 < s*)
+      \addplot[thick, blue!70!black, domain=0:1, samples=100]
+        {38 - 18*exp(-5*x)};
+      \addlegendentry{$s(t)$, incrudimento ($s_0 < s^*$)};
+
+      % Curva ammorbidimento (s0 > s*)
+      \addplot[thick, orange!80!black, domain=0:1, samples=100]
+        {38 + 10*exp(-6*x)};
+      \addlegendentry{$s(t)$, ammorbidimento ($s_0 > s^*$)};
+
+      % Condizioni iniziali
+      \node[circle, fill=blue!70!black, inner sep=2pt] at (axis cs:0,20) {};
+      \node[left, font=\small] at (axis cs:0,20) {$s_0 = \SI{20}{\mega\pascal}$};
+
+      \node[circle, fill=orange!80!black, inner sep=2pt] at (axis cs:0,48) {};
+      \node[left, font=\small] at (axis cs:0,48) {$s_0 = \SI{48}{\mega\pascal}$};
+    \end{axis}
+  \end{tikzpicture}
+  \caption{Evoluzione della variabile interna $s$ verso la saturazione $s^*$.
+    Il materiale si incrudisce se $s_0 < s^*$ e si ammorbidisce se $s_0 > s^*$.}
+  \label{fig:s_evolution}
+\end{figure}
+
+\subsection{Struttura a strati del modulo SiC}
+
+\begin{figure}[H]
+  \centering
+  \begin{tikzpicture}[
+    layer/.style = {draw, rectangle, minimum width=7cm, minimum height=0.55cm,
+                    font=\small, align=center},
+    every node/.style = {font=\small}
+  ]
+    % Layers (bottom to top)
+    \node[layer, fill=gray!25]   (hs)   at (0,0)   {Heat Sink (Al / Cu) \quad $h_{\mathrm{conv}}$};
+    \node[layer, fill=yellow!20] (tim)  at (0,0.65) {TIM / thermal grease \quad $\delta\approx\SI{100}{\micro\m}$};
+    \node[layer, fill=orange!15] (dbc1) at (0,1.30) {DBC bottom Cu \quad $\SI{300}{\micro\m}$};
+    \node[layer, fill=blue!10]   (al2o3)at (0,1.95) {Al$_2$O$_3$ / AlN substrate \quad $\SI{380}{\micro\m}$};
+    \node[layer, fill=orange!15] (dbc2) at (0,2.60) {DBC top Cu \quad $\SI{300}{\micro\m}$};
+    \node[layer, fill=red!20,
+          minimum height=0.80cm] (sol)  at (0,3.35) {\textbf{Solder \sac{}} \quad $\SI{100}{\micro\m}$
+          \quad \textbf{[Anand model]}};
+    \node[layer, fill=green!15,
+          minimum height=0.90cm] (die)  at (0,4.20) {SiC die (4H-SiC) \quad $\SI{350}{\micro\m}$
+          \quad $\rho(T) = \rho_0(T/T_0)^{2.3}$};
+    \node[layer, fill=cyan!10]   (bond) at (0,4.90) {Bond wire / ribbon (Al/Cu)};
+
+    % Freccia flusso di calore
+    \draw[-{Stealth[length=5pt]}, thick, red!60!black]
+      ($(hs.east)+(0.3,1.5)$) -- ++(0,-1.5)
+      node[right, midway] {$q$ [W/m²]};
+
+    % Freccia corrente
+    \draw[-{Stealth[length=5pt]}, thick, blue!60!black]
+      ($(die.east)+(0.9,0)$) -- ++(0,-4.2)
+      node[right, midway, rotate=-90, anchor=south] {$I_{\mathrm{fault}}(t)$};
+
+    % Annotazioni CTE
+    \draw[decorate, decoration={brace, amplitude=4pt}]
+      ($(sol.north west)+(-0.2,0)$) -- ($(sol.south west)+(-0.2,0)$)
+      node[midway, left=4pt] {$\Delta\alpha$};
+
+    \node[align=left, font=\tiny] at (-3.5,4.2) {$\alpha_{\mathrm{SiC}}=4\;\mu\mathrm{m}/(\mathrm{m\cdot K})$};
+    \node[align=left, font=\tiny] at (-3.5,3.35) {$\alpha_{\mathrm{SAC}}=21\;\mu\mathrm{m}/(\mathrm{m\cdot K})$};
+
+  \end{tikzpicture}
+  \caption{Struttura a strati del modulo di potenza SiC. Il layer di solder \sac{}
+    è la zona critica per l'affidabilità meccanica ed è modellato con la legge di Anand.
+    La freccia a destra indica il flusso di corrente di fault durante l'apertura del SSCB.}
+  \label{fig:stack}
+\end{figure}
+
+\subsection{Ciclo termico per fault ciclici (SSCB)}
+
+\begin{figure}[H]
+  \centering
+  \begin{tikzpicture}
+    \begin{axis}[
+      width  = 0.80\textwidth,
+      height = 5.5cm,
+      xlabel = {Tempo [\si{\second}]},
+      ylabel = {Temperatura $T_j$ [\si{\celsius}]},
+      xmin   = 0, xmax = 4,
+      ymin   = 20, ymax = 170,
+      grid   = major,
+      grid style = {dashed, gray!40},
+      xtick  = {0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4},
+      xticklabels = {0, , 1, , 2, , 3, , 4},
+      tick label style = {font=\small},
+      label style      = {font=\small},
+    ]
+      % Ciclo termico: fault ogni 1 s, picco a 150 °C, recupero a 65 °C
+      \addplot[thick, blue!70!black, domain=0:4, samples=400] {
+        65
+        + 85*exp(-10*mod(x,1))*( (mod(x,1) < 0.5) )
+        + 85*exp(-10*mod(x+0.5,1))*( (mod(x+0.5,1) < 0.5) )*0
+      };
+
+      % Approssimazione manuale con coordinate
+      \addplot[thick, blue!70!black] coordinates {
+        (0.00, 65) (0.02, 150) (0.10, 120) (0.20,  95) (0.40,  75) (0.60, 70)
+        (1.00, 65) (1.02, 150) (1.10, 120) (1.20,  95) (1.40,  75) (1.60, 70)
+        (2.00, 65) (2.02, 150) (2.10, 120) (2.20,  95) (2.40,  75) (2.60, 70)
+        (3.00, 65) (3.02, 150) (3.10, 120) (3.20,  95) (3.40,  75) (3.60, 70)
+        (4.00, 65)
+      };
+
+      % Linee di riferimento
+      \addplot[dashed, red!60!black, domain=0:4] {150}
+        node[right, pos=0.02, font=\tiny] {$T_{j,\max}=\SI{150}{\celsius}$};
+      \addplot[dashed, gray,           domain=0:4] {65}
+        node[right, pos=0.02, font=\tiny] {$T_{\mathrm{cool}}=\SI{65}{\celsius}$};
+
+      % Annotazione ΔT
+      \draw[{Stealth[length=4pt]}-{Stealth[length=4pt]}, thick]
+        (axis cs:0.5, 65) -- (axis cs:0.5, 150)
+        node[midway, right, font=\small] {$\Delta T = \SI{85}{\kelvin}$};
+
+    \end{axis}
+  \end{tikzpicture}
+  \caption{Profilo termico di giunzione $T_j(t)$ durante fault ciclici del SSCB
+    (frequenza \SI{1}{\hertz}, $\Delta T = \SI{85}{\kelvin}$).
+    Ogni impulso corrisponde a un evento di interruzione con corrente di fault
+    $I_f \approx 2\text{--}3\times I_{\mathrm{nom}}$.}
+  \label{fig:thermal_cycle}
+\end{figure}
+
+\subsection{Curva \texorpdfstring{$\dot{\varepsilon}^p$}{ε̇p} vs.\ \texorpdfstring{$\sigma/s$}{σ/s}}
+
+\begin{figure}[H]
+  \centering
+  \begin{tikzpicture}
+    \begin{axis}[
+      width  = 0.75\textwidth,
+      height = 6cm,
+      xlabel = {$\sigma / s$ (normalized stress)},
+      ylabel = {$\dot{\varepsilon}^p / A\,e^{-Q/RT}$ (normalized strain rate)},
+      xmin   = 0, xmax = 2.5,
+      ymin   = 0, ymax = 12,
+      restrict y to domain = 0:12,
+      grid   = major,
+      grid style = {dashed, gray!40},
+      legend pos = north west,
+      tick label style = {font=\small},
+      label style      = {font=\small},
+    ]
+      % xi = 4, m = 0.303  -- clip to ymax
+      \addplot[thick, blue!70!black, domain=0.01:1.5, samples=150]
+        { (sinh(4*x))^(1/0.303) };
+      \addlegendentry{$[\sinh(\xi\,\sigma/s)]^{1/m}$, $\xi=4$, $m=0.303$};
+
+      % Regime Norton (approssimazione bassa tensione)
+      \addplot[dashed, red!60!black, domain=0.01:0.6, samples=50]
+        { (4*x)^(1/0.303) };
+      \addlegendentry{Regime Norton: $(\xi\sigma/s)^{1/m}$};
+
+      % Regime esponenziale (alta tensione) -- fortemente scalato per visualizzazione
+      \addplot[dotted, green!50!black, thick, domain=0.8:2.5, samples=80]
+        { exp(4*x/0.303) / 1e4 };
+      \addlegendentry{Regime espon.: $e^{\xi\sigma/(ms)}$ (scalato $\times10^{-4}$)};
+
+      % Linea verticale transizione
+      \draw[gray, dashed] (axis cs:0.8, 0) -- (axis cs:0.8, 12)
+        node[above, font=\tiny] {transizione};
+
+    \end{axis}
+  \end{tikzpicture}
+  \caption{Legge di flusso di Anand normalizzata. Il termine $\sinh$ copre
+    uniformemente i regimi di Norton (basse tensioni) e esponenziale (alte tensioni).}
+  \label{fig:flow_law}
+\end{figure}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Implementazione in \comsol{}}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\subsection{Percorso nel modello \comsol{}}
+
+\begin{lstlisting}[language={}, caption={Configurazione materiale Anand in COMSOL (v6.x)}]
+Materials > SAC305 Solder
+  Mechanical
+    Elasticity: Linear Elastic
+      E:   55e9 - 6.5e7*T   [Pa]     % Eq. (8)
+      nu:  0.35
+    Inelastic Strain: Anand Viscoplastic
+      A:     4e4    [1/s]
+      Q_R:   5765   [K]               % Q/R
+      xi:    4.0
+      m:     0.303
+      h0:    3.35e9 [Pa]
+      shat:  3.24e7 [Pa]
+      a:     1.65
+      n:     0.0074
+      s0:    2.0e7  [Pa]
+  Thermal Expansion
+      alpha: 21e-6  [1/K]
+  Heat Transfer
+      k:     57     [W/(m*K)]
+      Cp:    220    [J/(kg*K)]
+      rho:   7380   [kg/m^3]
+\end{lstlisting}
+
+\subsection{Setup dello studio accoppiato}
+
+\begin{lstlisting}[language={}, caption={Configurazione studio Time Dependent --- multifisica segregata}]
+Study: Time Dependent
+  Solver: BDF (Backward Differentiation Formula)
+    Relative tolerance: 1e-4
+    Max order: 2 (stiff problems)
+  Nonlinear solver: Newton
+    Max iterations: 25
+    Damping: automatic (constant 1.0 -> backtracking)
+  Segregated steps:
+    Step 1: Electric Currents
+      Variables: V (electric potential)
+    Step 2: Heat Transfer
+      Variables: T (temperature)
+      Source:    Joule heating = J.E [W/m^3]
+    Step 3: Solid Mechanics (Anand)
+      Variables: u (displacement)
+      Load:      thermal strain from step 2
+\end{lstlisting}
+
+\subsection{Variabili di post-processing chiave}
+
+\begin{table}[H]
+  \centering
+  \caption{Variabili COMSOL per analisi di affidabilità del solder}
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{lll}
+    \toprule
+    Variabile COMSOL & Descrizione & Utilizzo \\
+    \midrule
+    \texttt{solid.epe}   & Equivalent plastic strain acc.\ $\varepsilon^{vp}_{acc}$ & Coffin-Manson \\
+    \texttt{solid.Ws}    & Inelastic strain energy density $\Delta W$ & Darveaux \\
+    \texttt{solid.mises} & Tensione equivalente $\sigma_{vM}$ & verifica yield \\
+    \texttt{solid.s}     & Variabile interna $s$ & debug modello \\
+    \texttt{T}           & Temperatura & accoppiamento \\
+    \texttt{ht.Qh}       & Joule heat source & sorgente termica \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Criteri di Vita a Fatica}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\subsection{Criterio di Coffin--Manson modificato (Engelmaier)}
+
+\begin{equation}
+  N_f = \frac{1}{2}
+  \left(\frac{\Delta\varepsilon^{vp}_{acc}}{2\varepsilon'_f}\right)^{1/c}
+  \label{eq:coffin}
+\end{equation}
+
+con:
+\begin{align}
+  c &= -0.442 - 6\times10^{-4}\,T_{\mathrm{mean}}[\si{\celsius}]
+       + 1.74\times10^{-2}\,\ln(1 + f)
+  \label{eq:c_coeff} \\
+  \varepsilon'_f &= 0.325 \quad \text{(ductility coefficient per \sac{})}
+\end{align}
+
+\subsection{Criterio energetico di Darveaux}
+
+La densità di energia anelastica per ciclo (integrata su un ciclo stabilizzato):
+\begin{equation}
+  \Delta W = \oint \sigma\,\dd\varepsilon^{vp} \qquad [\si{\joule\per\m\cubed\per\text{ciclo}}]
+  \label{eq:darveaux_W}
+\end{equation}
+
+La vita a fatica e la velocità di propagazione della cricca:
+\begin{align}
+  N_f        &= K_1 \cdot \Delta W^{K_2} \label{eq:Nf_darveaux} \\
+  \frac{da}{dN} &= K_3 \cdot \Delta W^{K_4} \label{eq:crack_darveaux}
+\end{align}
+
+\begin{table}[H]
+  \centering
+  \caption{Costanti di Darveaux per \sac{} \cite{Darveaux2000}}
+  \begin{tabular}{cSl}
+    \toprule
+    Costante & {Valore} & Unità \\
+    \midrule
+    $K_1$ & 22.4    & cicli/(J/m³)$^{K_2}$ \\
+    $K_2$ & -1.02   & -- \\
+    $K_3$ & 2.28e-7 & m/ciclo/(J/m³)$^{K_4}$ \\
+    $K_4$ & 1.02    & -- \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Conclusioni}
+% ══════════════════════════════════════════════════════════════════════════════
+
+Il modello di Anand fornisce una descrizione fisicamente consistente del comportamento
+viscoplastico del solder \sac{} nei moduli SiC per SSCB a media tensione.
+I punti chiave sono:
+
+\begin{enumerate}
+  \item La formulazione unificata (Eq.~\ref{eq:flow}--\ref{eq:sstar}) copre sia
+    il creep primario che secondario, eliminando la necessità di separare i meccanismi.
+  \item I 9 parametri di Tabella~\ref{tab:anand_params} sono disponibili in letteratura
+    per \sac{} e possono essere calibrati su dati di creep sperimentali tramite
+    regressione non lineare (es.\ algoritmo di Levenberg-Marquardt in MATLAB).
+  \item L'implementazione in \comsol{} (v5.4+) è \emph{built-in} nel modulo
+    Nonlinear Structural Materials; il coupling con Joule Heating e Heat Transfer
+    è gestito nativamente dal framework multiphysics.
+  \item I criteri di Coffin-Manson (Eq.~\ref{eq:coffin}) e Darveaux
+    (Eq.~\ref{eq:Nf_darveaux}) permettono di stimare la vita a fatica del giunto
+    a partire dai risultati FEM.
+\end{enumerate}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\begin{thebibliography}{9}
+
+\bibitem{Anand1985}
+  L.~Anand,
+  ``Constitutive equations for hot-working of metals,''
+  \textit{Int.\ J.\ Plasticity}, vol.~1, no.~3, pp.~213--231, 1985.
+
+\bibitem{Wiese2010}
+  S.~Wiese and K.-J.~Wolter,
+  ``Microstructure and creep behaviour of eutectic SnAg and SnAgCu solders,''
+  \textit{Microelectronics Reliability}, vol.~44, pp.~1923--1931, 2004.
+
+\bibitem{Darveaux2000}
+  R.~Darveaux,
+  ``Effect of simulation methodology on solder joint crack growth correlation,''
+  \textit{Proc.\ ECTC}, Las Vegas, NV, 2000, pp.~1048--1058.
+
+\bibitem{JEDEC}
+  JEDEC Standard JESD22-A104,
+  ``Temperature Cycling,''
+  JEDEC Solid State Technology Association, 2005.
+
+\end{thebibliography}
+
+\end{document}

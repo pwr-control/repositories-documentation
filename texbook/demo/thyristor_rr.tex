@@ -1,0 +1,23 @@
+\documentclass[11pt]{article}
+\usepackage{amsmath}
+\usepackage[margin=20mm]{geometry}
+\usepackage{siunitx}
+\usepackage{tikz}
+\usetikzlibrary{calc,arrows.meta}
+\newcommand{\dif}{\mathrm{d}}
+\newcommand{\Vf}{V_{TM}}
+\title{Thyristor model with Lauritzen-Ma reverse recovery}
+\begin{document}
+\maketitle
+\section{Structure}
+\label{sec:struct}
+See \ref{sec:struct} and \cite{lauritzen1991,courtay1995}.
+\chapter{Validation}
+Parameters $\tau=\SI{100}{\micro\second}$.
+\appendix
+\section{Extra}
+\begin{thebibliography}{9}
+\bibitem{lauritzen1991} P. O. Lauritzen and C. L. Ma, "A simple diode model with reverse recovery," IEEE Trans. Power Electron., 1991.
+\bibitem{courtay1995} A. Courtay, "MAST power diode and thyristor models," 1995.
+\end{thebibliography}
+\end{document}

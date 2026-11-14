@@ -1,0 +1,129 @@
+% ---------------------------------------------------------------------------
+% gantt.tex - Diagramma di Gantt per allegato di offerta
+% Compilare con:  pdflatex gantt.tex     (oppure: make)
+% ---------------------------------------------------------------------------
+\documentclass[a4paper,landscape,11pt]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\IfFileExists{lmodern.sty}{\usepackage{lmodern}}{}
+\usepackage[margin=15mm]{geometry}
+\usepackage{xcolor}
+\usepackage{pgfgantt}
+
+\pagestyle{empty}
+
+% --- Palette (sostituire con i colori aziendali) ----------------------------
+\definecolor{cGroup}{RGB}{ 31, 63,102}   % barre di gruppo
+\definecolor{cBar}  {RGB}{ 60,120,180}   % attivita'
+\definecolor{cMile} {RGB}{200,120,  0}   % milestone di progetto
+\definecolor{cCust} {RGB}{170, 40, 40}   % milestone a carico del cliente
+\definecolor{cGrid} {RGB}{200,200,200}
+
+% --- Stile globale del diagramma -------------------------------------------
+\ganttset{%
+  y unit title=0.55cm,
+  y unit chart=0.54cm,
+  x unit=0.62cm,
+  title label font=\scriptsize,
+  bar label font=\small,
+  group label font=\small\bfseries,
+  milestone label font=\small\itshape,
+  bar/.append style        ={fill=cBar,  draw=cBar!60!black, rounded corners=1pt},
+  group/.append style      ={fill=cGroup,draw=cGroup},
+  milestone/.append style  ={fill=cMile, draw=cMile!60!black},
+  link/.style              ={->, thick, gray},
+  progress label text={\pgfmathprintnumber{#1}\,\%},
+}
+
+% Scorciatoia per le milestone a carico del cliente
+\newcommand{\custmilestone}[2]{%
+  \ganttmilestone[milestone/.append style={fill=cCust,draw=cCust!60!black}]{#1}{#2}}
+
+% --- Parametri di progetto --------------------------------------------------
+\newcommand{\Weeks}{32}          % durata totale in settimane
+\newcommand{\ProjTitle}{Project schedule -- 250\,kW grid-tied converter}
+\newcommand{\ProjRef}{Proposal no. XXXX -- rev. 0}
+
+\begin{document}
+
+\begin{center}
+  {\large\bfseries \ProjTitle}\\[2pt]
+  {\small \ProjRef\ -- all durations are indicative and expressed in weeks
+   from receipt of purchase order (W0).}
+\end{center}
+\vspace{2mm}
+
+\begin{center}
+\begin{ganttchart}[
+    hgrid={draw=cGrid},
+    vgrid={*1{draw=cGrid}},
+    canvas/.append style={fill=none, draw=black!40, line width=0.4pt}
+  ]{1}{\Weeks}
+
+  % --- Intestazione: mesi e settimane ---------------------------------------
+  \gantttitle{M1}{4} \gantttitle{M2}{4} \gantttitle{M3}{4} \gantttitle{M4}{4}
+  \gantttitle{M5}{4} \gantttitle{M6}{4} \gantttitle{M7}{4} \gantttitle{M8}{4} \\
+  \gantttitlelist{1,...,32}{1} \\
+
+  % --- 1. Engineering --------------------------------------------------------
+  \ganttgroup{1. Engineering}{1}{12} \\
+  \ganttbar[name=kick]{Kick-off and specification review}{1}{2} \\
+  \custmilestone{Requirements freeze (customer)}{2} \\
+  \ganttbar[name=sim]{Topology sizing and simulation}{3}{6} \\
+  \ganttbar[name=pcb]{Schematic, PCB and mechanical design}{5}{10} \\
+  \custmilestone{Drawing approval (customer)}{10} \\
+  \ganttbar[name=fw]{Control and firmware development}{7}{12} \\
+
+  % --- 2. Procurement --------------------------------------------------------
+  \ganttgroup{2. Procurement}{6}{16} \\
+  \ganttbar[name=proc]{Long-lead items (semiconductors, magnetics)}{6}{16} \\
+  \ganttmilestone{Parts on site}{16} \\
+
+  % --- 3. Prototype ----------------------------------------------------------
+  \ganttgroup{3. Prototype}{17}{24} \\
+  \ganttbar[name=asm]{Assembly and wiring}{17}{19} \\
+  \ganttbar[name=comm]{Commissioning and functional tests}{20}{22} \\
+  \ganttbar[name=emc]{EMC pre-compliance}{23}{24} \\
+
+  % --- 4. Validation and delivery --------------------------------------------
+  \ganttgroup{4. Validation and delivery}{25}{32} \\
+  \ganttbar[name=doc]{Design freeze and documentation}{25}{28} \\
+  \custmilestone{Test load available (customer)}{28} \\
+  \ganttbar[name=fat]{Factory acceptance test}{29}{30} \\
+  \ganttmilestone{FAT passed}{30} \\
+  \ganttbar[name=ship]{Packing and shipment}{31}{32} \\
+  \ganttmilestone{Delivery}{32}
+
+  % --- Dipendenze ------------------------------------------------------------
+  \ganttlink{kick}{sim}
+  \ganttlink{sim}{pcb}
+  \ganttlink{pcb}{proc}
+  \ganttlink{proc}{asm}
+  \ganttlink{asm}{comm}
+  \ganttlink{comm}{emc}
+  \ganttlink{doc}{fat}
+  \ganttlink{fat}{ship}
+
+\end{ganttchart}
+\end{center}
+
+\vspace{2mm}
+
+% --- Legenda ----------------------------------------------------------------
+\begin{center}\small
+  \tikz\draw[fill=cGroup,draw=cGroup] (0,0) rectangle (0.45,0.20);~Phase \quad
+  \tikz\draw[fill=cBar,draw=cBar!60!black] (0,0) rectangle (0.45,0.20);~Activity \quad
+  \tikz\draw[fill=cMile,draw=cMile!60!black] (0,0) -- (0.12,0.12) -- (0.24,0) -- (0.12,-0.12) -- cycle;~Milestone \quad
+  \tikz\draw[fill=cCust,draw=cCust!60!black] (0,0) -- (0.12,0.12) -- (0.24,0) -- (0.12,-0.12) -- cycle;~Customer deliverable
+\end{center}
+
+\vspace{1mm}
+{\footnotesize\noindent
+\textbf{Notes.} The schedule is indicative and becomes contractually binding
+only after the kick-off meeting, when the detailed baseline plan is issued.
+Any delay in the customer deliverables marked in the legend shifts the
+subsequent activities by the same amount. Lead times of long-lead items are
+those confirmed by the suppliers at the date of this proposal.}
+
+\end{document}

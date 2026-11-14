@@ -1,0 +1,32 @@
+LINEAR CHECKS (same as private/vienna_design.m)
+1. operating point: 229.0 kW at 1070 V (R = 5.0 Ohm); E = 569.2 V peak (secondary, no load); capacitor 563.5 V (1.000 pu); converter current 271.4 A peak (0.826 pu); grid current 273.8 A, power factor 0.992
+   converter voltage 564.0 V = 0.913 pu of udc/sqrt(3) (margin 8.7 %), delta = 4.34 deg
+2. LCL: L1 501.0 uH, Cf 200 uF, Rc 50 mOhm, L2 76.6 uH: resonance 1381 Hz against fs/6 = 1333 Hz, passive damping 5.9 %
+3. current loop kp 0.25, ki 35.0: pole radius 0.9843; positive sequence crossover 134.7 Hz, PM 69.6 deg, GM 16.3 dB; negative sequence crossover 131.2 Hz, PM 77.6 deg, GM 16.3 dB
+   LCL mode with the loop 1390 Hz, damping 5.8 %; slowest pole in dq -126.3 +63.7j rad/s (7.9 ms); unstable from kp = 1.67
+4. udc loop kp 4.0, ki 45.0: C 7.2 mF, plant 33.6 1/s per pu, load pole 55.6 rad/s: crossover 21.1 Hz, PM 97.5 deg, GM 29.0 dB
+5. Vienna constraint: misaligned 8.60 deg per period with the min-max zero sequence, 2.20 deg with the zero sequence on the current sign (feasible 98 %); i_np third harmonic 33.0 A, vC2 - vC1 ripple 5.4 V p-p
+6. DDSRF-PLL kp 0.32, ki 8.0: wn 50.1 rad/s, damping 1.00 without the filter; with the filter crossover 15.7 Hz, PM 58.3 deg, poles -138.6+46.0j, -138.6-46.0j, -37.0+0.0j
+7. start: diode level 986 V (0.921 pu); R C = 36 ms; udc PI with the reference from 0: error -1.00 pu, output at the limit -1.65 pu, stored state +2.35 pu, output positive from an error of -0.59 pu (udc still above its reference)
+
+SWITCHED MODEL (vienna_sim.py, 1.25 s, step 0.625 us)
+case                                          ipk/A  at/ms udc max   min  2% at  lock THD ig    is    h5    h7   h11   h13 unb pp   mis
+as saved: PLL on the negative sequence         1383  119.0    1916   784   1250    no 10.44% 9.92%  8.47  1.07  1.06  0.86  54.45  60.6
+fixed PLL, integrator from 0                   1228   27.9    1513   760    229   112  3.42% 2.80%  2.00  1.64  1.08  0.90   5.42  11.0
+model as fixed (init_model.m)                   752   19.6    1171   758    288    44  3.41% 2.79%  1.99  1.63  1.08  0.92   5.41  11.0
+  no dead time                                  752   19.6    1170   760    288    44  3.00% 2.34%  1.69  1.27  0.91  0.79   5.61  10.5
+  zero sequence on the current sign             751   19.8    1170   758    289    44  2.47% 1.73%  1.20  0.89  0.61  0.59   5.95   2.5
+  load connected at 0.2 s                       318  219.4    1341   913    577    50  3.42% 2.81%  2.02  1.65  1.06  0.92   5.41  11.0
+  load at 0.2 s, feed-forward, ref. 1 pu        318  212.9    1125   906    443    50  3.44% 2.93%  2.05  1.76  1.16  1.00   5.41   9.5
+  udc PI: lower limit 0, cond. integration      456   19.1    1070   767    317    48  3.39% 2.77%  1.95  1.65  1.08  0.91   5.41  11.0
+  udc PI: lower limit 0 only                   1068   16.9    1251   763    338    28  3.41% 2.79%  2.00  1.62  1.08  0.92   5.41  11.0
+  udc PI: cond. integration only                587   25.9    1070   647    346    48  3.42% 2.80%  1.99  1.66  1.08  0.91   5.41  11.0
+  udc reference from 1 pu                       782   16.4    1084   785    263    47  3.42% 2.80%  1.99  1.65  1.08  0.92   5.40  11.0
+  feed-forward, reference from 0                511   23.0    1185   704    307    42  3.42% 2.92%  2.04  1.74  1.16  0.99   5.42   9.5
+  feed-forward, reference from 1 pu             455   17.1    1070   772    235    45  3.43% 2.92%  2.05  1.74  1.15  0.99   5.38   9.5
+  feed-forward, lower limit 0, cond. int.       677   26.6    1070   611    306    48  3.44% 2.94%  2.06  1.77  1.14  0.97   5.40   9.5
+  DC link precharged to 980 V                   724   19.6    1136   701    249    45  3.40% 2.78%  1.99  1.62  1.08  0.92   5.41  11.0
+   ipk: largest converter current (any phase) and when; udc min over the first 0.3 s; 2% at: last time udc is out of 1070 V +-2 %; lock: PLL error below 5 deg from then on; THD ig / is: grid / converter current, last two periods; h5 ... h13: grid current harmonics in % of the fundamental; unb pp: ripple of vC2 - vC1 [V]; mis: degrees per period where the pole reference and the current have opposite signs (phase average)
+   load connected at 0.2 s, before the load step: largest current 217.6 A, udc max 1341 V, power into the DC link over 0.1 ... 0.2 s 0.26 kW
+   load at 0.2 s, feed-forward, ref. 1 pu, before the load step: largest current 27.6 A, udc max 1125 V, power into the DC link over 0.1 ... 0.2 s 1.82 kW
+   model as fixed, steady state: iq -0.000 pu, unbalance mean +0.30 V, open phases 1.24 % of the time, grid current fundamental 275.1 A peak

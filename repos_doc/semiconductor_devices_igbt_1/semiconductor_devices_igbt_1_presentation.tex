@@ -1,0 +1,519 @@
+\documentclass[aspectratio=169, 10pt]{beamer}
+
+% ── Theme ────────────────────────────────────────────────────────────────────
+\usetheme{Madrid}
+\usecolortheme{default}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}[frame number]
+
+% ── Packages ─────────────────────────────────────────────────────────────────
+\usepackage{booktabs}
+\usepackage{siunitx}
+\usepackage{tabularx}
+\usepackage{multirow}
+\usepackage{xcolor}
+\usepackage{colortbl}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+
+% ── Colors ───────────────────────────────────────────────────────────────────
+\definecolor{leitred}{RGB}{180,30,30}
+\definecolor{leitblue}{RGB}{0,70,140}
+\definecolor{leitgray}{RGB}{90,90,90}
+\definecolor{rowgray}{RGB}{235,235,235}
+\definecolor{goodgreen}{RGB}{0,140,60}
+\definecolor{warnred}{RGB}{200,40,40}
+
+\setbeamercolor{frametitle}{bg=leitblue, fg=white}
+\setbeamercolor{title}{fg=white}
+\setbeamercolor{subtitle}{fg=white!80}
+\setbeamercolor{author}{fg=white!90}
+\setbeamercolor{date}{fg=white!80}
+\setbeamercolor{titlelike}{bg=leitblue}
+\setbeamercolor{palette primary}{bg=leitblue, fg=white}
+\setbeamercolor{palette secondary}{bg=leitblue!80, fg=white}
+\setbeamercolor{palette tertiary}{bg=leitblue!60, fg=white}
+\setbeamercolor{block title}{bg=leitblue, fg=white}
+\setbeamercolor{block body}{bg=leitblue!8}
+\setbeamercolor{block title alerted}{bg=leitred, fg=white}
+\setbeamercolor{block body alerted}{bg=leitred!8}
+\setbeamercolor{block title example}{bg=goodgreen, fg=white}
+\setbeamercolor{block body example}{bg=goodgreen!8}
+
+% ── siunitx setup ────────────────────────────────────────────────────────────
+\sisetup{per-mode=symbol}
+
+% ── Helpers ──────────────────────────────────────────────────────────────────
+\newcommand{\good}[1]{\textcolor{goodgreen}{\textbf{#1}}}
+\newcommand{\warn}[1]{\textcolor{warnred}{\textbf{#1}}}
+\newcommand{\neu}[1]{\textcolor{leitgray}{#1}}
+
+% ─────────────────────────────────────────────────────────────────────────────
+%  TITLE
+% ─────────────────────────────────────────────────────────────────────────────
+\title[DPT Results -- 690\,V Electrical DriveDrive]{%
+  \textbf{Feasibility Study for \\[6pt] Electrical Drive 690V new IGBT module}}
+\subtitle{Evaluation of FF1200R17IP5P with DB1.00 and DB1.51}
+\author{\textbf{Davide Bagnara}}
+\date{\today}
+
+
+% ─────────────────────────────────────────────────────────────────────────────
+\begin{document}
+% ─────────────────────────────────────────────────────────────────────────────
+
+% ── Title slide ──────────────────────────────────────────────────────────────
+\begin{frame}
+  \titlepage
+\end{frame}
+
+% ── Outline ──────────────────────────────────────────────────────────────────
+\begin{frame}{Outline}
+  \tableofcontents
+\end{frame}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Motivation}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\begin{frame}{Motivation}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \begin{block}{Original Design Target (Wind)}
+        \begin{itemize}
+          \item $I_\text{nom}^\text{inv} = \SI{370}{\ampere}$
+          \item $f_\text{pwm}^\text{inv} = \SI{2.5}{\kilo\hertz}$
+          \item Overload $\equiv$ wind gust $\Rightarrow$
+                $I_\text{max}^\text{inv} \approx I_\text{nom}^\text{inv}$
+        \end{itemize}
+      \end{block}
+      \vspace{4pt}
+      \begin{alertblock}{New Requirements (Drive Applications)}
+        \begin{itemize}
+          \item $I_\text{max}^\text{inv} = 1.4\times I_\text{nom}^\text{inv}
+                = \SI{518}{\ampere}$
+          \item $f_\text{pwm}^\text{inv} = \SI{4}{\kilo\hertz}$ (hard parallelization)
+        \end{itemize}
+      \end{alertblock}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{block}{Design Constraint}
+        \[
+          T_\text{j}^\text{design}(t)\Big|_\text{max}
+          \;\le\;
+          T_\text{j}^\text{max} - \SI{50}{\celsius}
+        \]
+      \end{block}
+      \vspace{4pt}
+      \begin{exampleblock}{Conclusion}
+        Existing modules (DP650B1700, FF650R17IE4) are no longer adequate.\\[4pt]
+        \textbf{Candidate replacement: FF1200R17IP5P} (Infineon,
+        1200\,A\,/\,1700\,V, $T_\text{j}^\text{max}=\SI{175}{\celsius}$).
+      \end{exampleblock}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Modules and Test Configurations}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\begin{frame}{Modules Under Test}
+  \centering
+  \renewcommand{\arraystretch}{1.5}
+  \begin{tabularx}{0.92\textwidth}{l l c c l}
+    \toprule
+    \textbf{Module} & \textbf{Manufacturer} & $I_\text{nom}$ & $T_\text{j}^\text{max}$ & \textbf{Status} \\
+    \midrule
+    \rowcolor{rowgray}
+    DP650B1700    & Danfoss  & \SI{650}{\ampere} & \SI{150}{\celsius} & Series production \\
+    FF650R17IE4   & Infineon & \SI{650}{\ampere} & \SI{150}{\celsius} & Series production \\
+    \rowcolor{rowgray}
+    FF650R17IE4DB2 & Infineon & \SI{650}{\ampere} & \SI{150}{\celsius} & Series production \\
+    \textbf{FF1200R17IP5P} & \textbf{Infineon} & \textbf{\SI{1200}{\ampere}} & \textbf{\SI{175}{\celsius}} & \good{Candidate} \\
+    \bottomrule
+  \end{tabularx}
+
+  \vspace{10pt}
+  \begin{columns}[T]
+    \begin{column}{0.45\textwidth}
+      \begin{block}{Driver Boards}
+        \begin{itemize}
+          \item \textbf{DB1.00} -- series production
+          \item \textbf{DB1.51} -- candidate (new)
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.45\textwidth}
+      \begin{block}{Gate Resistances}
+        \small
+        \begin{tabular}{l c c}
+          & $R_\text{g}^\text{on}$ & $R_\text{g}^\text{off}$ \\
+          \midrule
+          DB1.00 & \SI{1.24}{\ohm} & \SI{3.6}{\ohm} \\
+          DB1.51 & \SI{1.175}{\ohm} & \SI{1.175}{\ohm} \\
+        \end{tabular}
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{DPT Configurations}
+  \centering
+  \renewcommand{\arraystretch}{1.6}
+  \begin{tabularx}{0.75\textwidth}{c l l l}
+    \toprule
+    \textbf{Test} & \textbf{IGBT Module} & \textbf{Driver Board} & \textbf{Type} \\
+    \midrule
+    \rowcolor{rowgray}
+    DPT\,1 & DP650B1700    & DB1.00 & Baseline (production) \\
+    DPT\,2 & DP650B1700    & DB1.51 & New driver board \\
+    \rowcolor{rowgray}
+    DPT\,3 & FF1200R17IP5P & DB1.00 & New module \\
+    DPT\,4 & FF1200R17IP5P & DB1.51 & \good{Full candidate config.} \\
+    \bottomrule
+  \end{tabularx}
+
+  \vspace{10pt}
+  \begin{block}{DPT Conditions}
+    \centering
+    $I_\text{c} = \SI{620}{\ampere}$,\quad
+    $V_\text{ce} = \SI{630}{\volt}$,\quad
+    $T_\text{case} = \SI{25}{\celsius}$
+  \end{block}
+\end{frame}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Power Loss Analysis}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\begin{frame}{Power Loss Analysis -- Operating Conditions}
+  \centering
+  \renewcommand{\arraystretch}{1.5}
+  \begin{tabularx}{0.75\textwidth}{c c c c c c c}
+    \toprule
+    \textbf{Scenario} & $I_\text{load}^\text{inv}$ & $f_\text{pwm}^\text{inv}$ & $f_\text{load}^\text{inv}$ &
+    $T_\text{hs}^\text{inv}$ & $\cos(\varphi)$ & \textbf{DB} \\
+    \midrule
+    \rowcolor{rowgray}
+    1 & \SI{370}{\ampere} (100\%) & \SI{4}{\kilo\hertz} & \SI{15}{\hertz} & \SI{65}{\celsius} & $+0.8$ (drive) & DB1.00 \\
+    2 & \SI{520}{\ampere} (140\%) & \SI{4}{\kilo\hertz} & \SI{15}{\hertz} & \SI{65}{\celsius} & $+0.8$ (drive) & DB1.00 \\
+    \rowcolor{rowgray}
+    3 & \SI{370}{\ampere} (100\%) & \SI{4}{\kilo\hertz} & \SI{15}{\hertz} & \SI{65}{\celsius} & $+0.8$ (drive) & DB1.51 \\
+    4 & \SI{520}{\ampere} (140\%) & \SI{4}{\kilo\hertz} & \SI{15}{\hertz} & \SI{65}{\celsius} & $+0.8$ (drive) & DB1.51 \\
+    \rowcolor{rowgray}
+    5 & \SI{370}{\ampere} (100\%) & \SI{4}{\kilo\hertz} & \SI{15}{\hertz} & \SI{65}{\celsius} & $-0.8$ (gen.)  & DB1.00 \\
+    6 & \SI{520}{\ampere} (140\%) & \SI{4}{\kilo\hertz} & \SI{15}{\hertz} & \SI{65}{\celsius} & $-0.8$ (gen.)  & DB1.00 \\
+    \rowcolor{rowgray}
+    7 & \SI{370}{\ampere} (100\%) & \SI{4}{\kilo\hertz} & \SI{15}{\hertz} & \SI{65}{\celsius} & $-0.8$ (gen.)  & DB1.51 \\
+    8 & \SI{520}{\ampere} (140\%) & \SI{4}{\kilo\hertz} & \SI{15}{\hertz} & \SI{65}{\celsius} & $-0.8$ (gen.)  & DB1.51 \\
+    \bottomrule
+  \end{tabularx}
+\end{frame}
+
+\begin{frame}{Junction Temperature -- Drive Mode ($\cos\varphi = +0.8$), DB1.00}
+  \small
+  \renewcommand{\arraystretch}{1.45}
+
+  \textbf{Scenario 1} -- $I_\text{load}^\text{inv} = \SI{370}{\ampere}$, DB1.00
+  \begin{center}
+  \begin{tabular}{l c c c c c c c}
+    \toprule
+    & $T_\text{j}^\text{Q}$ & $T_\text{j}^\text{D}$ & $P_\text{c}^\text{Q}$ & $P_\text{c}^\text{D}$ & $P_\text{sw}^\text{Q}$ & $P_\text{sw}^\text{D}$ & $\Delta T_\text{j}$ \\
+    \midrule
+    \rowcolor{rowgray}
+    FF650R17IE4    & \SI{120}{\celsius} & \SI{97}{\celsius}  & \SI{242}{W} & \SI{54}{W}  & \SI{576}{W}  & \SI{175}{W} & \SI{25}{\celsius} \\
+    FF650R17IE4DB2 & \SI{130}{\celsius} & \SI{95}{\celsius}  & \SI{245}{W} & \SI{50}{W}  & \SI{598}{W}  & \SI{196}{W} & \SI{32}{\celsius} \\
+    \rowcolor{rowgray}
+    \textbf{FF1200R17IP5P} & \good{\SI{110}{\celsius}} & \good{\SI{83}{\celsius}}  & \good{\SI{172}{W}} & \good{\SI{42}{W}}  & \SI{705}{W}  & \SI{170}{W} & \good{\SI{18}{\celsius}} \\
+    \bottomrule
+  \end{tabular}
+  \end{center}
+
+  \vspace{4pt}
+  \textbf{Scenario 2} -- $I_\text{load}^\text{inv} = \SI{520}{\ampere}$, DB1.00
+  \begin{center}
+  \begin{tabular}{l c c c c c c c}
+    \toprule
+    & $T_\text{j}^\text{Q}$ & $T_\text{j}^\text{D}$ & $P_\text{c}^\text{Q}$ & $P_\text{c}^\text{D}$ & $P_\text{sw}^\text{Q}$ & $P_\text{sw}^\text{D}$ & $\Delta T_\text{j}$ \\
+    \midrule
+    \rowcolor{rowgray}
+    FF650R17IE4    & \warn{\SI{156}{\celsius}} & \SI{108}{\celsius} & \SI{420}{W} & \SI{85}{W}  & \SI{911}{W}  & \SI{220}{W} & \SI{42}{\celsius} \\
+    FF650R17IE4DB2 & \warn{\SI{170}{\celsius}} & \SI{103}{\celsius} & \SI{430}{W} & \SI{77}{W}  & \SI{950}{W}  & \SI{236}{W} & \SI{50}{\celsius} \\
+    \rowcolor{rowgray}
+    \textbf{FF1200R17IP5P} & \good{\SI{131}{\celsius}} & \good{\SI{89}{\celsius}}  & \good{\SI{280}{W}} & \good{\SI{64}{W}}  & \SI{1000}{W} & \SI{220}{W} & \good{\SI{27}{\celsius}} \\
+    \bottomrule
+  \end{tabular}
+  \end{center}
+\end{frame}
+
+\begin{frame}{Junction Temperature -- Drive Mode ($\cos\varphi = +0.8$), DB1.51}
+  \small
+  \renewcommand{\arraystretch}{1.45}
+
+  \textbf{Scenario 3} -- $I_\text{load}^\text{inv} = \SI{370}{\ampere}$, DB1.51
+  \begin{center}
+  \begin{tabular}{l c c c c c c c}
+    \toprule
+    & $T_\text{j}^\text{Q}$ & $T_\text{j}^\text{D}$ & $P_\text{c}^\text{Q}$ & $P_\text{c}^\text{D}$ & $P_\text{sw}^\text{Q}$ & $P_\text{sw}^\text{D}$ & $\Delta T_\text{j}$ \\
+    \midrule
+    \rowcolor{rowgray}
+    FF650R17IE4    & \SI{121}{\celsius} & \SI{98}{\celsius}  & \SI{242}{W} & \SI{54}{W} & \SI{572}{W} & \SI{175}{W} & \SI{25}{\celsius} \\
+    FF650R17IE4DB2 & \SI{128}{\celsius} & \SI{95}{\celsius}  & \SI{245}{W} & \SI{49}{W} & \SI{585}{W} & \SI{198}{W} & \SI{30}{\celsius} \\
+    \rowcolor{rowgray}
+    \textbf{FF1200R17IP5P} & \good{\SI{107}{\celsius}} & \good{\SI{84}{\celsius}}  & \good{\SI{172}{W}} & \good{\SI{42}{W}} & \SI{644}{W} & \SI{171}{W} & \good{\SI{18}{\celsius}} \\
+    \bottomrule
+  \end{tabular}
+  \end{center}
+
+  \vspace{4pt}
+  \textbf{Scenario 4} -- $I_\text{load}^\text{inv} = \SI{520}{\ampere}$, DB1.51
+  \begin{center}
+  \begin{tabular}{l c c c c c c c}
+    \toprule
+    & $T_\text{j}^\text{Q}$ & $T_\text{j}^\text{D}$ & $P_\text{c}^\text{Q}$ & $P_\text{c}^\text{D}$ & $P_\text{sw}^\text{Q}$ & $P_\text{sw}^\text{D}$ & $\Delta T_\text{j}$ \\
+    \midrule
+    \rowcolor{rowgray}
+    FF650R17IE4    & \warn{\SI{156}{\celsius}} & \SI{110}{\celsius} & \SI{421}{W} & \SI{86}{W} & \SI{905}{W} & \SI{220}{W} & \SI{45}{\celsius} \\
+    FF650R17IE4DB2 & \warn{\SI{169}{\celsius}} & \SI{103}{\celsius} & \SI{431}{W} & \SI{77}{W} & \SI{927}{W} & \SI{240}{W} & \SI{50}{\celsius} \\
+    \rowcolor{rowgray}
+    \textbf{FF1200R17IP5P} & \good{\SI{127}{\celsius}} & \good{\SI{90}{\celsius}}  & \good{\SI{280}{W}} & \good{\SI{65}{W}} & \SI{913}{W} & \SI{222}{W} & \good{\SI{25}{\celsius}} \\
+    \bottomrule
+  \end{tabular}
+  \end{center}
+\end{frame}
+
+\begin{frame}{Junction Temperature -- Generator Mode ($\cos\varphi = -0.8$), DB1.00}
+	\small
+	\renewcommand{\arraystretch}{1.45}
+	
+	\textbf{Scenario 5} -- $I_\text{load}^\text{inv} = \SI{370}{\ampere}$, DB1.00 \quad\textit{(worst case, wind)}
+	\begin{center}
+		\begin{tabular}{l c c c c c c c}
+			\toprule
+			& $T_\text{j}^\text{Q}$ & $T_\text{j}^\text{D}$ & $P_\text{c}^\text{Q}$ & $P_\text{c}^\text{D}$ & $P_\text{sw}^\text{Q}$ & $P_\text{sw}^\text{D}$ & $\Delta T_\text{j}$ \\
+			\midrule
+			\rowcolor{rowgray}
+			FF650R17IE4    & \SI{107}{\celsius} & \warn{\SI{124}{\celsius}} & \SI{62}{W} & \SI{210}{W} & \SI{555}{W} & \SI{220}{W} & \SI{30}{\celsius} \\
+			FF650R17IE4DB2 & \SI{112}{\celsius} & \SI{114}{\celsius} & \SI{62}{W} & \SI{189}{W} & \SI{568}{W} & \SI{215}{W} & \SI{25}{\celsius} \\
+			\rowcolor{rowgray}
+			\textbf{FF1200R17IP5P} & \good{\SI{102}{\celsius}} & \good{\SI{94}{\celsius}} & \good{\SI{45}{W}} & \good{\SI{159}{W}} & \SI{688}{W} & \SI{179}{W} & \good{\SI{13}{\celsius}} \\
+			\bottomrule
+		\end{tabular}
+	\end{center}
+	
+	\vspace{4pt}
+	\textbf{Scenario 6} -- $I_\text{load}^\text{inv} = \SI{520}{\ampere}$, DB1.00 \quad\textit{(worst case, wind)}
+	\begin{center}
+		\begin{tabular}{l c c c c c c c}
+			\toprule
+			& $T_\text{j}^\text{Q}$ & $T_\text{j}^\text{D}$ & $P_\text{c}^\text{Q}$ & $P_\text{c}^\text{D}$ & $P_\text{sw}^\text{Q}$ & $P_\text{sw}^\text{D}$ & $\Delta T_\text{j}$ \\
+			\midrule
+			\rowcolor{rowgray}
+			FF650R17IE4    & \SI{130}{\celsius} & \warn{\SI{155}{\celsius}} & \SI{100}{W} & \SI{343}{W} & \SI{841}{W} & \SI{283}{W} & \SI{50}{\celsius} \\
+			FF650R17IE4DB2 & \SI{137}{\celsius} & \SI{134}{\celsius} & \SI{104}{W} & \SI{299}{W} & \SI{862}{W} & \SI{277}{W} & \SI{35}{\celsius} \\
+			\rowcolor{rowgray}
+			\textbf{FF1200R17IP5P} & \good{\SI{118}{\celsius}} & \good{\SI{107}{\celsius}} & \good{\SI{72}{W}} & \good{\SI{247}{W}} & \SI{964}{W} & \SI{240}{W} & \good{\SI{32}{\celsius}} \\
+			\bottomrule
+		\end{tabular}
+	\end{center}
+\end{frame}
+
+
+
+
+
+
+\begin{frame}{Junction Temperature -- Generator Mode ($\cos\varphi = -0.8$), DB1.51}
+  \small
+  \renewcommand{\arraystretch}{1.45}
+
+  \textbf{Scenario 7} -- $I_\text{load}^\text{inv} = \SI{370}{\ampere}$, DB1.51 \quad\textit{(worst case, wind)}
+  \begin{center}
+  \begin{tabular}{l c c c c c c c}
+    \toprule
+    & $T_\text{j}^\text{Q}$ & $T_\text{j}^\text{D}$ & $P_\text{c}^\text{Q}$ & $P_\text{c}^\text{D}$ & $P_\text{sw}^\text{Q}$ & $P_\text{sw}^\text{D}$ & $\Delta T_\text{j}$ \\
+    \midrule
+    \rowcolor{rowgray}
+    FF650R17IE4    & \SI{106}{\celsius} & \warn{\SI{124}{\celsius}} & \SI{62}{W} & \SI{210}{W} & \SI{548}{W} & \SI{200}{W} & \SI{22.5}{\celsius} \\
+    FF650R17IE4DB2 & \SI{111}{\celsius} & \SI{114}{\celsius} & \SI{62}{W} & \SI{189}{W} & \SI{557}{W} & \SI{219}{W} & \SI{22.5}{\celsius} \\
+    \rowcolor{rowgray}
+    \textbf{FF1200R17IP5P} & \good{\SI{100}{\celsius}} & \good{\SI{94}{\celsius}} & \good{\SI{45}{W}} & \good{\SI{159}{W}} & \SI{629}{W} & \SI{181}{W} & \good{\SI{12}{\celsius}} \\
+    \bottomrule
+  \end{tabular}
+  \end{center}
+
+  \vspace{4pt}
+  \textbf{Scenario 8} -- $I_\text{load}^\text{inv} = \SI{520}{\ampere}$, DB1.51
+  \begin{center}
+  \begin{tabular}{l c c c c c c c}
+    \toprule
+    & $T_\text{j}^\text{Q}$ & $T_\text{j}^\text{D}$ & $P_\text{c}^\text{Q}$ & $P_\text{c}^\text{D}$ & $P_\text{sw}^\text{Q}$ & $P_\text{sw}^\text{D}$ & $\Delta T_\text{j}$ \\
+    \midrule
+    \rowcolor{rowgray}
+    FF650R17IE4    & \SI{129}{\celsius} & \warn{\SI{155}{\celsius}} & \SI{103}{W} & \SI{343}{W} & \SI{836}{W} & \SI{283}{W} & \SI{50}{\celsius} \\
+    FF650R17IE4DB2 & \SI{136}{\celsius} & \SI{135}{\celsius} & \SI{104}{W} & \SI{299}{W} & \SI{843}{W} & \SI{282}{W} & \SI{35}{\celsius} \\
+    \rowcolor{rowgray}
+    \textbf{FF1200R17IP5P} & \good{\SI{114}{\celsius}} & \good{\SI{107}{\celsius}} & \good{\SI{72}{W}} & \good{\SI{247}{W}} & \SI{878}{W} & \SI{243}{W} & \good{\SI{30}{\celsius}} \\
+    \bottomrule
+  \end{tabular}
+  \end{center}
+\end{frame}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{DPT Switching Results}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\begin{frame}{Switching Energy -- Reference vs.\ Measured}
+  \small
+  \renewcommand{\arraystretch}{1.5}
+
+  \begin{block}{Reference Values (from datasheet, scaled to test conditions)}
+    \centering
+    \begin{tabular}{l c c c c c c}
+      \toprule
+      & $T_\text{case}$ & $E_\text{on}^\text{ref}$ & $E_\text{off}^\text{ref}$ & $I_\text{c}$ & $V_\text{ce}$ \\
+      \midrule
+      FF650R17IE4   & \SI{25}{\celsius} & \SI{136}{\milli\joule} & \SI{93}{\milli\joule}  & \SI{620}{\ampere} & \SI{630}{\volt} \\
+      FF1200R17IP5P & \SI{25}{\celsius} & \SI{132}{\milli\joule} & \SI{100}{\milli\joule} & \SI{620}{\ampere} & \SI{630}{\volt} \\
+      \bottomrule
+    \end{tabular}
+  \end{block}
+
+  \vspace{6pt}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \begin{block}{Measured -- DB1.00}
+        \centering
+        \begin{tabular}{l c c}
+          \toprule
+          & $E_\text{on}^\text{m}$ & $E_\text{off}^\text{m}$ \\
+          \midrule
+          FF650R17IE4   & \SI{80}{\milli\joule}  & \SI{90}{\milli\joule}  \\
+          FF1200R17IP5P & \SI{105}{\milli\joule} & \SI{152}{\milli\joule} \\
+          \bottomrule
+        \end{tabular}
+      \end{block}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{block}{Measured -- DB1.51}
+        \centering
+        \begin{tabular}{l c c}
+          \toprule
+          & $E_\text{on}^\text{m}$ & $E_\text{off}^\text{m}$ \\
+          \midrule
+          FF650R17IE4   & \SI{91}{\milli\joule}  & \SI{93}{\milli\joule}  \\
+          FF1200R17IP5P & \SI{107}{\milli\joule} & \SI{130}{\milli\joule} \\
+          \bottomrule
+        \end{tabular}
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{DPT Summary -- Switching Parameters}
+  \centering
+  \renewcommand{\arraystretch}{1.6}
+%  \small
+  \begin{tabularx}{0.85\textwidth}{X c c c c}
+    \toprule
+    & \textbf{Case\,1} & \textbf{Case\,2} & \textbf{Case\,3} & \textbf{Case\,4} \\
+    & DP650 + DB1.00 & DP650 + DB1.51 & FF1200 + DB1.00 & FF1200 + DB1.51 \\
+    \midrule
+    \rowcolor{rowgray}
+    $E_\text{on}\,[\si{\milli\joule}]$         & 80  & 91  & 105 & 107 \\
+    $E_\text{off}\,[\si{\milli\joule}]$        & 90  & 93  & 152 & \good{130} \\
+    \rowcolor{rowgray}
+    $I_\text{rr}\,[\si{\ampere}]$              & 512 & \good{448} & 488 & \good{464} \\
+    $\Delta u_\text{ce}\,[\si{\volt}]$         & 245 & 187 & 173 & \good{86}  \\
+    \bottomrule
+  \end{tabularx}
+
+  \vspace{10pt}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \begin{alertblock}{FF1200 + DB1.00 (Case 3)}
+        Higher $E_\text{off}$ (\SI{152}{\milli\joule}) compared to reference.
+        Asymmetric $R_\text{g}$ may be sub-optimal.
+      \end{alertblock}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{exampleblock}{FF1200 + DB1.51 (Case 4)}
+        Best $\Delta u_\text{ce}$ (\SI{86}{\volt}).
+        Reduced $E_\text{off}$ vs Case 3.
+        Lowest voltage overshoot overall.
+      \end{exampleblock}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Results and Conclusions}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\begin{frame}{Results Overview -- FF1200R17IP5P vs.\ Existing Modules}
+  \centering
+  \renewcommand{\arraystretch}{1.5}
+  \begin{tabularx}{0.9\textwidth}{X c c c}
+    \toprule
+    \textbf{Metric} & \textbf{FF650R17IE4} & \textbf{FF650R17IE4DB2} & \textbf{FF1200R17IP5P} \\
+    \midrule
+    \rowcolor{rowgray}
+    $T_\text{j}^\text{max}$ allowed       & \SI{150}{\celsius} & \SI{150}{\celsius} & \good{\SI{175}{\celsius}} \\
+    $T_\text{j}^\text{Q}$ @ 520\,A, drive & \warn{\SI{156}{\celsius}} & \warn{\SI{170}{\celsius}} & \good{\SI{131}{\celsius}} \\
+    \rowcolor{rowgray}
+    $T_\text{j}^\text{D}$ @ 520\,A, gen.  & \warn{\SI{155}{\celsius}} & \SI{134}{\celsius}         & \good{\SI{107}{\celsius}} \\
+    $\Delta T_\text{j}$ @ 520\,A, drive   & \SI{42}{\celsius}          & \SI{50}{\celsius}          & \good{\SI{27}{\celsius}}  \\
+    \rowcolor{rowgray}
+    Design rule satisfied (140\% load)    & \warn{No}          & \warn{No}          & \good{Yes} \\
+    \bottomrule
+  \end{tabularx}
+\end{frame}
+
+\begin{frame}{Conclusions}
+  \begin{columns}[T]
+    \begin{column}{0.55\textwidth}
+      \begin{exampleblock}{{FF1200R17IP5P + DB1.51 -- Recommended}}
+        \begin{itemize}
+          \item Satisfies the thermal design rule at 140\% load
+          \item Lower $T_\text{j}$ than existing modules in all scenarios
+          \item Lowest $\Delta u_\text{ce} = \SI{86}{\volt}$ (Case\,4)
+          \item Compatible with DB1.51 driver board
+          \item $T_\text{j}^\text{max} = \SI{175}{\celsius}$ provides larger thermal margin
+        \end{itemize}
+      \end{exampleblock}
+    \end{column}
+    \begin{column}{0.42\textwidth}
+      \begin{alertblock}{{Existing Modules -- Inadequate}}
+        \begin{itemize}
+          \item FF650R17IE4 and FF650R17IE4DB2 exceed the thermal limit at 140\% load
+          \item $T_\text{j}^\text{max} = \SI{150}{\celsius}$ insufficient for new requirements
+        \end{itemize}
+      \end{alertblock}
+      \vspace{6pt}
+      \begin{block}{Next Steps}
+        \begin{itemize}
+          \item Load testing under real operating conditions
+          \item Thermal cycling validation
+          \item Platform integration testing
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ── Final slide ──────────────────────────────────────────────────────────────
+\begin{frame}
+  \centering
+  \vspace{20pt}
+  {\Large\textbf{Thank you for your attention}}\\[16pt]
+  {\large Questions?}\\[24pt]
+  \textcolor{leitgray}{\rule{0.6\textwidth}{0.4pt}}\\[10pt]
+  \small
+  \textbf{Davide Bagnara}\\
+  690\,V Electrical Drive Platform -- IGBT Module Feasibility Study\\[6pt]
+  \textit{FF1200R17IP5P (Infineon) -- DPT Evaluation with DB1.00 and DB1.51}
+\end{frame}
+
+\end{document}

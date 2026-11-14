@@ -1,0 +1,925 @@
+% lrc_filter_design_guidelines.tex
+% Design guidelines for L, LC, LCL and L(RC) filters: grid side of an active front end and
+% output side of inverters feeding induction and permanent-magnet synchronous motors.
+% pwr-control template (AAA_template_latex_settings); numbers of the worked examples:
+% lrc_filter_example.py (python3, numpy only)
+% Compile: pdflatex lrc_filter_design_guidelines.tex  (twice, for references)
+% Rev. 00 - October 2026 - first issue
+\documentclass[10pt,a4paper]{scrartcl}
+\input{../../../AAA_template_latex_settings/settings}
+% the document sits three levels below the repository root: logo path of settings.tex corrected here
+\rhead{\includegraphics[height=0.75cm]{../../../AAA_template_latex_settings/pwr-control_logo_doc.png}}
+\rfoot{\small Rev.~00}
+\geometry{left=2.0cm, right=2.0cm}
+\usepackage[european]{circuitikz}
+\ctikzset{bipoles/length=1.2cm}
+
+\sisetup{per-mode=symbol,range-phrase={\text{--}},range-units=single}
+\DeclareSIUnit{\EUR}{EUR}
+\setlist{nosep}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{3pt}
+\allowdisplaybreaks
+
+% --- shorthand ---
+\newcommand{\Vdc}{V_{dc}}
+\newcommand{\fsw}{f_{sw}}
+\newcommand{\wsw}{\omega_{sw}}
+\newcommand{\fres}{f_{res}}
+\newcommand{\wres}{\omega_{res}}
+\newcommand{\Lhf}{L_{hf}}
+\newcommand{\Rhf}{R_{hf}}
+\newcommand{\Cf}{C_{f}}
+\newcommand{\Lf}{L_{f}}
+\newcommand{\Lg}{L_{g}}
+\newcommand{\pp}{\mathrm{pp}}
+\newcommand{\rt}[1]{\text{\small\color{blue!60!black} #1}}
+
+% =============================================================
+%  DOCUMENT DATA (title page: AAA_template_latex_settings/titlepage.tex)
+% =============================================================
+\newcommand{\DocCategory}{Technical Note}
+\newcommand{\DocField}{Power Electronics and Control Systems}
+\newcommand{\DocTitle}{%
+	{\fontsize{20}{24}\selectfont\bfseries L(RC) Filter Design Guidelines:} \\[12pt]
+	{\fontsize{16}{26}\selectfont\bfseries grid-side filters for AFEs, \\[8pt] machine-side filters for PSMs, and IMs}
+}
+\newcommand{\DocSubtitle}{Topologies, sizing relations, resonance placement, damping \\[6pt] and interaction with the current control}
+\newcommand{\DocAuthor}{Davide Bagnara}
+\newcommand{\DocRevision}{00}
+\newcommand{\DocDate}{October 2026}
+\newcommand{\DocAbstract}{%
+Design guidelines for the passive filters of two-level voltage-source converters: the L, LC, LCL and L(RC)L filter between an active front end (AFE) and a grid of given impedance, and the LC or L(RC) output filter between an inverter and an induction motor (IM) or a permanent-magnet synchronous motor (PMSM). The note first settles the switching ripple of the converter-side inductor, with exact closed forms for sinusoidal, space-vector and discontinuous PWM, the mean and the rms ripple over the fundamental period, and a comparison with the usual $\Vdc/(8\fsw L)$ rule. It then gives, for the grid side, the sizing of the converter inductor, of the capacitor (reactive power), of the grid inductor (attenuation at the switching frequency against IEEE~519), the placement of the resonance with respect to the grid frequency, the switching frequency and the critical frequency $f_s/6$ of the digital current loop, the passive damping options (series resistor, R--C branch) with their losses, and the interaction with the grid impedance. For the motor side it covers the reflected-wave overvoltage with long cables, the $dv/dt$ and sine filter options, the resonance window, the loaded resonance set by the high-frequency inductance of the machine (transient inductance of the IM, $L_d$/$L_q$ of the PMSM), the damping, the capacitor current and voltage budget, and the consequences for the current control and for sensorless (observer-based) control. Two worked examples, carried out step by step for one \SI{450}{kW}, \SI{480}{V}, \SI{2}{kHz} drive (the L(RC)L grid filter of its active front end and the L(RC) sine filter of its induction or permanent-magnet motor), a comparison table AFE/IM/PMSM and a bibliography close the note; the numbers are reproduced by the companion Python script.
+}
+\newcommand{\RevisionHistory}{%
+	00 & October 2026 & First issue. & \DocAuthor \\
+}
+\newcommand{\MetaLabelA}{Project Repository}
+\newcommand{\MetaValueAUrl}{https://github.com/pwr-control/repositories-documentation.git}
+\newcommand{\MetaValueALabel}{repositories-documentation.git}
+\newcommand{\MetaLabelB}{Calculation}
+\newcommand{\MetaValueB}{Python 3 / NumPy (\texttt{lrc\_filter\_example.py})}
+
+\begin{document}
+\input{../../../AAA_template_latex_settings/titlepage}
+\tableofcontents
+\newpage
+\begin{onehalfspace}
+
+\section*{Nomenclature}
+\addcontentsline{toc}{section}{Nomenclature}
+All quantities are per phase of the star equivalent of the three-phase system; RMS values unless a hat (peak) or a ``pp'' (peak-to-peak) is written. Per-unit values refer to the base quantities of the converter ($Z_b$, $L_b$, $C_b$). The same filter symbols are used on the grid side (Fig.~\ref{fig:circ}a, inductances $L_1$, $L_2$) and on the motor side (Fig.~\ref{fig:circ}b, inductance $\Lf$); the damping-network symbols are common to both.
+
+\begin{onehalfspace}\small
+\begin{longtable}{@{}>{$}l<{$} p{10.1cm} l@{}}
+\toprule
+\text{Symbol} & Description & Unit \\
+\midrule
+\endfirsthead
+\toprule
+\text{Symbol} & Description & Unit \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+\bottomrule
+\endlastfoot
+\multicolumn{3}{@{}l}{\textit{Converter, PWM and base quantities}} \\
+\Vdc & DC-link voltage of the two-level voltage-source converter (VSC) & V \\
+\fsw,\ \wsw,\ T_{sw} & switching (carrier) frequency, $\wsw = 2\pi\fsw$, switching period $1/\fsw$ & Hz, rad/s, s \\
+f_s,\ T_s & update (sampling) frequency of the digital current loop, $f_s = \fsw$ with single update and $2\fsw$ with double update; $T_s = 1/f_s$; the computation and PWM delay is $1.5T_s$ & Hz, s \\
+f_1,\ \omega_1 & fundamental frequency (grid frequency on the grid side, motor supply frequency on the motor side), $\omega_1 = 2\pi f_1$ & Hz, rad/s \\
+f_{1,max},\ \omega_{1,max} & highest fundamental frequency of the drive (top speed, field weakening included) & Hz, rad/s \\
+V,\ V_{ph} & RMS line-to-line voltage and phase (star) voltage, $V_{ph} = V/\sqrt3$ & V \\
+S_n,\ P_n & rated apparent power of the converter, rated active power of the motor & VA, W \\
+I_n,\ \hat I_n & rated RMS phase current and its peak, $\hat I_n = \sqrt2 I_n$ & A \\
+\eta,\ \cos\varphi & rated efficiency and power factor of the motor, $I_n = P_n/(\sqrt3 V \eta\cos\varphi)$ & -- \\
+Z_b,\ L_b,\ C_b & base impedance ($V^2/S_n$ for the grid side, $V_{ph}/I_n$ for the motor side), base inductance $Z_b/\omega_1$ and base capacitance $1/(\omega_1 Z_b)$ at the rated fundamental frequency & $\Omega$, H, F \\
+m & modulation index: peak of the phase reference voltage over $\Vdc/2$; linear range $m \le 1$ for SPWM, $m \le 2/\sqrt3$ for SVM/THI & -- \\
+\theta & angle of the reference voltage vector; $\theta = 0$ when the phase-a voltage is at its peak, $90^\circ$ at its zero crossing & rad \\
+v_{ref},\ v_{1,n} & phase reference voltage and switched phase voltage with respect to the load neutral ($0$, $\pm\Vdc/3$, $\pm2\Vdc/3$) & V \\
+T_1,\ T_2,\ T_0 & dwell times of the two active vectors and total dwell time of the zero vectors in one switching period; $T_{0a}$, $T_{0b}$ are the parts of $T_0$ spent on $000$ and on $111$ & s \\
+\text{SPWM, SVM, THI, DPWM} & sinusoidal PWM (no zero sequence), space-vector PWM (equal split of the zero vectors), third-harmonic injection (same ripple as SVM), discontinuous PWM with $60^\circ$ clamping (DPWM1) & -- \\
+k & ripple coefficient, $\Delta i = k\,\Vdc/(\fsw L)$; tabulated in Table~\ref{tab:ripple} as $1/x$ & -- \\
+\Delta i_{\pp},\ \Delta i_{\pp,max} & peak-to-peak switching ripple of the inductor current in one switching period, and its maximum over the fundamental period & A \\
+I_{rip,rms},\ \mathrm{HDF} & RMS value of the switching ripple over the fundamental period and harmonic distortion factor of Holmes--Lipo, Eq.~\eqref{eq:hdf} & A, -- \\
+k_r & ripple allowance of the design, $\Delta i_{\pp,max}/\hat I_n$ & -- \\
+\epsilon_L & relative fundamental voltage drop on the filter inductance(s), $\omega_1 L I_n/V_{ph}$ & -- \\
+\multicolumn{3}{@{}l}{\textit{Converter losses and reactor model (Section~\ref{sec:optL})}} \\
+E_{on},\ E_{off},\ E_{rr} & switching energies of the IGBT (turn-on, turn-off) and of its diode (reverse recovery) at the datasheet reference $I_{ref}$, $V_{ref}$ & J \\
+I_{pk} & repetitive peak current, $\hat I_n + \Delta i_{\pp,max}/2$ & A \\
+A_p,\ A_c,\ A_w & area product of the reactor and its factors, core section and window area & m$^4$, m$^2$ \\
+B_{max},\ J,\ k_u & peak flux density at $I_{pk}$, winding current density, window fill factor & T, A/m$^2$, -- \\
+k_h,\ k_e & hysteresis and eddy-current coefficients of the core loss per unit mass, $p = k_h f \hat B^2 + k_e f^2 \hat B^2$ ($p$ in W/kg, $f$ in Hz, $\hat B$ in T) & -- \\
+F_r & AC-to-DC resistance ratio of the winding at $\fsw$ & -- \\
+v_{L,hf} & switching part of the voltage across the converter-side inductor; $\langle v_{L,hf}^2\rangle$ its mean square & V \\
+m_L,\ P_L & mass and total loss of the three-phase reactor ($P_{cu}$, $P_{fe,1}$, $P_{fe,sw}$: copper, core at $f_1$, core at $\fsw$) & kg, W \\
+L_{opt},\ k_{r,opt} & inductance and ripple allowance at the minimum of $P_L$ & H, -- \\
+c_P,\ c_m & cost weights of the capitalised losses (EUR per W) and of the reactor mass (EUR per kg) & -- \\
+\multicolumn{3}{@{}l}{\textit{Grid-side filter (Fig.~\ref{fig:circ}a)}} \\
+L_1,\ L_2 & converter-side and grid-side filter inductances & H \\
+\Lg,\ L_2' & grid inductance at the point of common coupling (transformer and upstream network) and total grid-side inductance $L_2' = L_2 + \Lg$ & H \\
+\Cf & filter capacitance per phase, star equivalent (a delta bank uses $\Cf/3$ per branch) & F \\
+r,\ x & inductance ratio $L_2/L_1$ and capacitor fraction $\Cf/C_b$ (the capacitor reactive power is $Q_c = x S_n$) & -- \\
+v_1,\ v_c,\ v_g & converter, capacitor-node and grid phase voltages & V \\
+i_1,\ i_2 & converter-side and grid-side currents & A \\
+Z_1,\ Z_2,\ Z_c & impedances of $L_1$, of $L_2'$ and of the shunt network (capacitor with its damping) & $\Omega$ \\
+\fres,\ \wres & resonance frequency of the LCL filter, Eq.~\eqref{eq:lcl}; $\fres^{min}$, $\fres^{max}$ its values at the weakest and at the stiffest grid & Hz, rad/s \\
+f_2,\ \omega_2 & resonance of $L_2'$ with $\Cf$, $1/(2\pi\sqrt{L_2'\Cf})$, the corner of the current ratio $i_2/i_1$ & Hz, rad/s \\
+k_a & attenuation of the filter at the switching frequency, $|i_2/i_1|_{\wsw}$ & -- \\
+I_{1,sw},\ I_{2,sw} & RMS converter-side and grid-side currents of the switching-frequency cluster & A \\
+I_1(f),\ I_2(f) & RMS value of the spectral line at frequency $f$ of $i_1$, $i_2$ (e.g.\ $f = \fsw \pm 2f_1$) & A \\
+L_t & trap inductor in series with $C_1$, tuned at $\fsw$ (LLCL filter) & H \\
+I_c,\ \hat v_{c,sw} & RMS capacitor current and peak switching ripple of the capacitor voltage & A, V \\
+S_{sc},\ \mathrm{SCR} & short-circuit power at the point of common coupling (PCC) and short-circuit ratio $S_{sc}/S_n$; $I_{sc}/I_L$ is the ratio of IEEE~519 with $I_L$ the maximum demand load current & VA, -- \\
+u_k,\ S_T & short-circuit (leakage) voltage and rating of the supply transformer & pu, VA \\
+h,\ \mathrm{TDD} & harmonic order and total demand distortion of IEEE~519 & -- \\
+f_c & crossover frequency of the current loop & Hz \\
+f_s/6 & critical resonance frequency of the digital current loop (Parker--McGrath--Holmes) & Hz \\
+Y_c,\ Z_g & converter output admittance and grid impedance of the impedance-based stability criterion & S, $\Omega$ \\
+\multicolumn{3}{@{}l}{\textit{Damping networks (both sides)}} \\
+\text{Y},\ \Delta \text{ (subscripts)} & star (per-phase) and delta (per-branch) values of a shunt branch, $Z_\Delta = 3Z_Y$, Section~\ref{sec:stardelta} & -- \\
+R_d & resistor in series with $\Cf$ (series damping) & $\Omega$ \\
+C_1,\ C_2,\ n & main capacitor and damping-branch capacitor of the R--C network, $n = C_2/C_1$; $C_1 + C_2$ is the total capacitance & F, -- \\
+R_2 & resistor of the R--C damping branch & $\Omega$ \\
+L_p & inductance seen by the capacitor node: $L_1 \parallel L_2'$ on the grid side, $\Lf \parallel \Lhf$ on the motor side & H \\
+R_0,\ \omega_0 & characteristic impedance $\sqrt{L_p/C_1}$ and undamped resonance $1/\sqrt{L_p C_1}$ of the damped network (on the motor side $\omega_0 = 2\pi f_0$ with $\Lf$) & $\Omega$, rad/s \\
+\rho,\ \rho_Z,\ \rho_H,\ \rho_P & normalised damping resistance $R_2/R_0$ and its closed-form optima (minimum peak impedance, minimum peak of the voltage transfer function, real pole at $\omega_0$) & -- \\
+\zeta,\ \zeta_m,\ Q & damping ratio of the filter resonance, contribution of the machine to it, quality factor $1/(2\zeta)$ & -- \\
+X_c & capacitor reactance at the switching frequency, $1/(\wsw\Cf)$ & $\Omega$ \\
+v_{c,sw} & RMS switching-ripple voltage on the capacitor node & V \\
+P_{R_d},\ P_{R_2} & losses of the damping resistors (fundamental plus switching terms) & W \\
+\multicolumn{3}{@{}l}{\textit{Motor-side filter (Fig.~\ref{fig:circ}b)}} \\
+v_i,\ i_i & inverter output voltage and current (filter input) & V, A \\
+v_c,\ v_s,\ i_s & capacitor voltage, stator (motor terminal) voltage, $v_s = v_c$ without cable, and stator current & V, A \\
+\Lf,\ R_{Lf} & filter inductance and its series resistance & H, $\Omega$ \\
+\Lhf,\ \Rhf & inductance and resistance presented by the machine at the filter resonance: $\Lhf = \sigma L_s = L_{ls} + L_{lr}'$ (transient inductance of the induction motor, stator and referred rotor leakage), $\Lhf = L_d$ or $L_q$ (PMSM); $\Rhf$ includes the deep-bar rotor resistance of the IM & H, $\Omega$ \\
+e & back-EMF of the machine & V \\
+f_0,\ f_p & unloaded resonance $1/(2\pi\sqrt{\Lf\Cf})$ and resonance with the machine connected, $f_0\sqrt{1 + \Lf/\Lhf}$ & Hz \\
+Z_0,\ v,\ \tau,\ l & surge impedance $\sqrt{L'/C'}$, propagation velocity, transit time $l/v$ and length of the motor cable & $\Omega$, m/$\mu$s, s, m \\
+t_r & rise time ($10$--$90\,\%$) of the voltage edge at the cable input & s \\
+\Gamma_m,\ \Gamma_s & voltage reflection coefficients at the motor and at the inverter end of the cable & -- \\
+l_{crit} & critical cable length $v t_r/2$ at which the full reflection is reached & m \\
+\hat V_m,\ OF & peak voltage at the motor terminals and overshoot factor $\hat V_m/\Vdc - 1$ & V, -- \\
+Z_m,\ C_{cable} & high-frequency impedance of the motor seen by the cable, cable capacitance & $\Omega$, F \\
+G_m & equivalent conductance of the machine branch at $f_p$, $\Rhf/(\Rhf^2 + (2\pi f_p\Lhf)^2)$ & S \\
+I_c & fundamental capacitor current $\omega_1 \Cf V_{ph}$ & A \\
+\alpha_i,\ \alpha_v,\ \alpha_s & bandwidths of the inverter-current, capacitor-voltage and stator-current loops of the cascaded control & rad/s \\
+f_{inj} & frequency of the high-frequency injection of saliency-based sensorless control & Hz \\
+\text{MTPA, MTPV} & maximum-torque-per-ampere and maximum-torque-per-volt trajectories of the PMSM & -- \\
+\end{longtable}
+\end{onehalfspace}
+
+\section{Scope}
+Two-level three-phase voltage-source converter (VSC) \cite{mohan2003,holmes2003} with DC link $\Vdc$, switching frequency $\fsw$, double-edge regular-sampled PWM with single or double update. Two applications are treated with the same formulas: the grid side of an active front end (AFE), Fig.~\ref{fig:circ}(a), and the output side of a motor inverter, Fig.~\ref{fig:circ}(b). Formulas are quoted without derivation except where the derivation is short and not found in the references; the numbers of the worked examples are reproduced by the companion script \texttt{lrc\_filter\_example.py}.
+
+\begin{figure}[htb]
+\centering
+\begin{subfigure}{\textwidth}
+\centering
+\begin{circuitikz}
+\draw (0,0) to[sV, l=$v_1$] (0,4.4)
+      to[L, l=$L_1$, i=$i_1$] (3,4.4)
+      to[short] (6.2,4.4)
+      to[L, l=$L_2$, i=$i_2$] (9.2,4.4)
+      to[L, l=$\Lg$] (12.2,4.4)
+      to[sV, l_=$v_g$] (12.2,0) -- (0,0);
+\draw[dashed] (3.8,4.4) to[R, l=$R_d$] (3.8,2.4);
+\draw (3.8,2.4) to[C, l=$\Cf$] (3.8,0);
+\draw (5.6,4.4) to[C, l=$C_2$] (5.6,2.4) to[R, l=$R_2$] (5.6,0);
+\draw (3.8,4.4) node[circ]{} (5.6,4.4) node[circ]{} (3.8,0) node[circ]{} (5.6,0) node[circ]{};
+\node[above] at (4.7,4.5) {$v_c$};
+\end{circuitikz}
+\caption{Grid side: L ($\Cf = 0$), LCL, L(RC)L; $\Lg$ is the grid (transformer and network) inductance.}
+\end{subfigure}
+\\[14pt]
+\begin{subfigure}{\textwidth}
+\centering
+\begin{circuitikz}
+\draw (0,0) to[sV, l=$v_i$] (0,4.4)
+      to[L, l=$\Lf$, i=$i_i$] (3,4.4)
+      to[short] (6.2,4.4)
+      to[generic, l={cable $Z_0,\ \tau$}, i=$i_s$] (8.6,4.4)
+      to[R, l=$\Rhf$] (10.4,4.4)
+      to[L, l=$\Lhf$] (12.2,4.4)
+      to[sV, l_=$e$] (12.2,0) -- (0,0);
+\draw[dashed] (3.8,4.4) to[R, l=$R_d$] (3.8,2.4);
+\draw (3.8,2.4) to[C, l=$\Cf$] (3.8,0);
+\draw (5.6,4.4) to[C, l=$C_2$] (5.6,2.4) to[R, l=$R_2$] (5.6,0);
+\draw (3.8,4.4) node[circ]{} (5.6,4.4) node[circ]{} (3.8,0) node[circ]{} (5.6,0) node[circ]{};
+\node[above] at (4.7,4.5) {$v_c$};
+\end{circuitikz}
+\caption{Motor side: LC, L(RC); the machine is $\Rhf$, $\Lhf$ ($\sigma L_s$ for the IM, $L_d$/$L_q$ for the PMSM) and the back-EMF $e$.}
+\end{subfigure}
+\caption{Filter structures. The damping is either the series resistor $R_d$ (dashed) or the parallel branch $C_2$--$R_2$ (the ``RC'' of L(RC)); only one of the two is used.}
+\label{fig:circ}
+\end{figure}
+
+\section{Switching ripple of the converter-side inductor}
+\label{sec:ripple}
+\subsection{Ripple coefficients}
+The converter-side inductor ($L_1$ or $\Lf$) is sized first from its switching ripple. With the capacitor node a stiff voltage at $\fsw$ (LCL, LC) or a stiff grid (plain L), the phase current ripple over one switching period $T_{sw} = 1/\fsw$ is piecewise linear with slopes $(v_{1,n} - v_{ref})/L$, where $v_{1,n}$ is the converter phase voltage with respect to the load neutral ($0$, $\pm\Vdc/3$, $\pm 2\Vdc/3$) and $v_{ref}$ the reference. Let $m = \hat V_{ref}/(\Vdc/2)$ be the modulation index ($m \le 1$ for sinusoidal PWM, $m \le 2/\sqrt3 = 1.155$ for space-vector or third-harmonic PWM). All ripple figures scale as
+\begin{equation}
+\Delta i = k\,\frac{\Vdc}{\fsw L},
+\label{eq:kdef}
+\end{equation}
+and the coefficient $k$ depends on the modulator, on $m$ and on the position $\theta$ along the fundamental period. Two closed forms cover the two extremes (phase voltage at its peak, $\theta = 0$, and at its zero crossing, $\theta = 90^\circ$):
+{\small
+\begin{align}
+k_{\pp}(\theta = 0) &= \frac{m}{4}\Big(1 - \frac{m}{2}\Big)\ \text{(SPWM)},\qquad
+\frac{m}{4}\Big(1 - \frac{3m}{4}\Big)\ \text{(SVM, THI)},\qquad
+\frac{m}{2}\Big(1 - \frac{3m}{4}\Big)\ \text{(DPWM, clamped phase)},
+\label{eq:kpk}\\
+k_{\pp}(\theta = 90^\circ) &= \frac{\sqrt3\,m}{12} = \frac{m}{6.93}\qquad \text{(all modulators)}.
+\label{eq:kzc}
+\end{align}}
+Eq.~\eqref{eq:kpk} follows from $\Delta i_{\pp} = v_{ref}\,(T_0 + |T_{0a} - T_{0b}|)/(2L)$, with $T_0 = T_{0a} + T_{0b}$ the total zero-vector time and $T_{0a}$, $T_{0b}$ its split between $000$ and $111$ (equal for SVM, $(1-m)T_{sw}/2$ and $(1-m/2)T_{sw}/2$ for SPWM at $\theta = 0$, all on one vector for the clamped phase of DPWM); at $\theta = 0$, $T_0/T_{sw} = 1 - 3m/4$. Eq.~\eqref{eq:kzc} follows from the two active vectors of equal dwell $T_1 = T_2 = (\sqrt3/4)\,m\,T_{sw}$ giving $\pm\Vdc/3$ to the phase at its zero crossing. The peak-to-peak ripple is largest at the phase peak for small $m$ and at the zero crossing for large $m$ (crossover at $m = 0.56$ for SVM, $0.85$ for SPWM). The worst case over the whole linear range is therefore
+\begin{align}
+\Delta i_{\pp,max} &= \frac{\Vdc}{4\sqrt3\,\fsw L} = \frac{\Vdc}{6.93\,\fsw L} && \text{(SPWM, at } m = 1), \label{eq:worst}\\
+\Delta i_{\pp,max} &= \frac{\Vdc}{6\,\fsw L} && \text{(SVM/THI, at } m = 2/\sqrt3\text{; DPWM, at } m = 2/3 \text{ and } 2/\sqrt3). \nonumber
+\end{align}
+The RMS value of the ripple over the fundamental period, needed for the inductor and capacitor losses and for the harmonic current injected into the capacitor, is given by the harmonic distortion factor of Holmes and Lipo \cite{holmes2003}:
+\begin{equation}
+I_{rip,rms} = \frac{\Vdc}{24\,\fsw L}\sqrt{\mathrm{HDF}(m)},\qquad
+\mathrm{HDF} =
+\begin{cases}
+\tfrac32 m^2 - \tfrac{4\sqrt3}{\pi} m^3 + \tfrac98 m^4 & \text{(SPWM)},\\[4pt]
+\tfrac32 m^2 - \tfrac{4\sqrt3}{\pi} m^3 + \Big(\tfrac{27}{16} - \tfrac{81\sqrt3}{64\pi}\Big) m^4 & \text{(SVM)}.
+\end{cases}
+\label{eq:hdf}
+\end{equation}
+Table~\ref{tab:ripple} lists $k$ for the maximum and the mean (over the fundamental period) peak-to-peak ripple and for the RMS ripple, computed exactly by the companion script; the closed forms \eqref{eq:kpk}--\eqref{eq:hdf} are reproduced to four digits.
+
+\begin{table}[htb]
+\centering\small\begin{onehalfspace}
+\caption{Ripple coefficient $k$ of \eqref{eq:kdef}, written as $1/x$: maximum peak-to-peak over the fundamental period, mean peak-to-peak, RMS of the ripple. Two-level VSC, double-edge regular sampling, isolated neutral.}
+\label{tab:ripple}
+\begin{tabular}{@{}c ccc ccc ccc@{}}
+\toprule
+ & \multicolumn{3}{c}{SPWM} & \multicolumn{3}{c}{SVM / THI} & \multicolumn{3}{c}{DPWM1 ($60^\circ$ clamping)} \\
+\cmidrule(lr){2-4}\cmidrule(lr){5-7}\cmidrule(lr){8-10}
+$m$ & max pp & mean pp & RMS & max pp & mean pp & RMS & max pp & mean pp & RMS \\
+\midrule
+0.4   & 1/12.5 & 1/17.6 & 1/67 & 1/14.3 & 1/18.7 & 1/68 & 1/7.1 & 1/10.4 & 1/35 \\
+0.6   & 1/9.5  & 1/13.7 & 1/52 & 1/11.6 & 1/15.3 & 1/55 & 1/6.1 & 1/8.8  & 1/30 \\
+0.8   & 1/8.3  & 1/12.1 & 1/44 & 1/8.7  & 1/14.4 & 1/49 & 1/6.3 & 1/8.9  & 1/31 \\
+0.9   & 1/7.7  & 1/11.4 & 1/41 & 1/7.7  & 1/14.0 & 1/47 & 1/6.8 & 1/9.4  & 1/32 \\
+1.0   & 1/6.9  & 1/10.9 & 1/37 & 1/6.9  & 1/13.5 & 1/45 & 1/6.9 & 1/10.4 & 1/35 \\
+1.1   & --     & --     & --   & 1/6.3  & 1/13.0 & 1/42 & 1/6.3 & 1/11.5 & 1/37 \\
+1.155 & --     & --     & --   & 1/6.0  & 1/12.8 & 1/40 & 1/6.0 & 1/11.9 & 1/38 \\
+\bottomrule
+\end{tabular}
+\end{onehalfspace}
+\end{table}
+
+\begin{mybox}
+\textbf{Which ripple formula to use.} The widely used $L = \Vdc/(8\fsw\Delta i_{\pp})$ is neither the maximum nor the mean: at $m \approx 1$ with SVM the true maximum is $\Vdc/(6.9\fsw L)$ (\SI{15}{\percent} above the rule), the worst case over $m$ is $\Vdc/(6\fsw L)$ (\SI{33}{\percent} above, the value used by Liserre et al.~\cite{liserre2005} and Reznik et al.~\cite{reznik2014}), while the mean peak-to-peak over the fundamental is $\Vdc/(13.5\fsw L)$ (\SI{40}{\percent} below). The rule is a fair ``typical period'' estimate; it is not an upper bound. Recommended use: (i) size $L$ and check the saturation current $\hat I_n + \Delta i_{\pp,max}/2$ with the maximum of Table~\ref{tab:ripple} at the largest $m$ of the application ($\Vdc/(6\fsw L)$ when the converter reaches the hexagon, $\Vdc/(7\fsw L)$ for an AFE at $m \approx 1$); (ii) use the RMS column, or \eqref{eq:hdf}, for the capacitor current, the damping losses and the harmonic current at $\fsw$; (iii) with discontinuous PWM at the same $\fsw$ the ripple is up to twice that of SVM at low $m$, so compare at equal switching losses ($\fsw$ raised by $1.5$).
+\end{mybox}
+
+\subsection{The ripple--inductance trade-off: where the optimum $L$ lies}
+\label{sec:optL}
+Eq.~\eqref{eq:kdef} ties $L$ to the ripple allowance $k_r = \Delta i_{\pp,max}/\hat I_n$ once $\fsw$ is given, $L = k_{\pp,max}\Vdc/(\fsw k_r \hat I_n)$; which $k_r$ to take is a balance between what the ripple costs in the converter and what the inductance costs in the reactor. The two sides are quantified in turn, then combined for the \SI{450}{kW} drive at $\fsw = \SIrange{2}{5}{kHz}$ (Fig.~\ref{fig:optL}, Table~\ref{tab:optL}); the same applies to the motor-side $\Lf$, which sees the same switched voltage.
+
+\textbf{Converter side: $\fsw$ is set by the semiconductor, $L$ hardly matters.} With the datasheet energies $E_{on}$, $E_{off}$, $E_{rr}$ at $I_{ref}$, $V_{ref}$ (linear in current and voltage), the switching loss of one IGBT--diode pair carrying a sinusoidal current is
+\begin{equation}
+P_{sw} = \fsw\,(E_{on} + E_{off} + E_{rr})\,\frac{\hat I_n}{\pi I_{ref}}\,\frac{\Vdc}{V_{ref}},
+\label{eq:Psw}
+\end{equation}
+and $P_{sw}$ plus the conduction loss at the overload current must fit the thermal budget of the module: this is what fixes $\fsw$ (\SIrange{2}{5}{kHz} with \SI{1700}{V} IGBTs at this power). The ripple then enters the semiconductor in three ways. (i) \emph{Peak current}: with continuous PWM the top IGBT turns on at the valley and off at the crest of the local ripple, so the repetitive peak is $\hat I_n + \Delta i_{\pp,max}/2 = \hat I_n(1 + k_r/2)$ at rated current and $\hat I_n(1.5 + k_r/2)$ at \SI{150}{\percent} overload; it must stay below the module $I_{CRM}$, below the over-current trip with its margin, and below the saturation current of $L$. This is the ``$I_0 + \Delta I/2$'' constraint, and it is the only one through which the IGBT sees $L$. (ii) \emph{Switching loss}: $E_{off}$ is paid at the crest and $E_{on}$, $E_{rr}$ at the valley, so to first order
+\begin{equation}
+\frac{\Delta P_{sw}}{P_{sw}} = \frac{E_{off} - E_{on} - E_{rr}}{E_{on} + E_{off} + E_{rr}}\;\frac{\pi}{4}\;\frac{\Delta i_{\pp,mean}}{\hat I_n}
+= 0.40\,k_r\,\frac{E_{off} - E_{on} - E_{rr}}{E_{on} + E_{off} + E_{rr}}\quad (\text{SVM},\ m \approx 1),
+\label{eq:dPsw}
+\end{equation}
+with $k_{\pp,mean}/k_{\pp,max} = 0.51$; a few percent either way: for \SI{1700}{V} IGBT4-class modules $E_{on} + E_{rr}$ exceeds $E_{off}$ by \SIrange{20}{40}{\percent} of the total, so the ripple \emph{lowers} $P_{sw}$ by \SIrange{3}{6}{\percent} at $k_r = 0.4$; with $E_{off}$-dominated devices the sign reverses. (iii) \emph{Conduction loss}: the RMS current rises by $(I_{rip,rms}/I_n)^2 = (0.22\,k_r)^2 < \SI{1}{\percent}$. The semiconductor is therefore indifferent to $L$ except through the peak; its stake in the choice is the trip margin, not the losses.
+
+\textbf{Reactor side: a scaling model.} Consider a family of geometrically similar gapped reactors (laminated SiFe, foil or flat-wire winding with fill factor $k_u$, forced-air cooling) designed at the same peak flux density $B_{max}$ at $I_{pk} = \hat I_n(1 + k_r/2)$ and at the same current density $J$. The area product
+\begin{equation}
+A_p = A_c A_w = \frac{L\,I_{pk}\,I_{rms}}{k_u B_{max} J},\qquad I_{rms} = \sqrt{I_n^2 + I_{rip,rms}^2},
+\label{eq:Ap}
+\end{equation}
+fixes the linear dimension $\propto A_p^{1/4}$, so core and copper masses scale as $A_p^{3/4} \propto L^{3/4}$ (the factor $(1 + k_r/2)^{3/4}$ from $I_{pk}$ is weak). The losses are:
+\begin{itemize}
+\item copper: $P_{cu} = R_{dc}\,(I_n^2 + F_r I_{rip,rms}^2) = \rho_{cu} J^2 V_{cu}\,(1 + F_r I_{rip,rms}^2/I_n^2) \propto L^{3/4}$, with $F_r = R_{ac}/R_{dc}$ at $\fsw$ ($3$--$5$ for a foil winding; the ripple term is a few percent);
+\item core at the fundamental: $P_{fe,1} = m_{fe}\,(k_h f_1 + k_e f_1^2)\,B_1^2 \propto L^{3/4}$, with $B_1 = B_{max}/(1 + k_r/2)$ and the loss separation $p = k_h f \hat B^2 + k_e f^2 \hat B^2$ per unit mass ($k_e = \pi^2\sigma d^2/(6\rho_m)$ for the lamination thickness $d$, valid while $d$ stays below the skin depth of the steel);
+\item core at the switching frequency: the eddy-current term depends on $\langle (dB/dt)^2\rangle = \langle v_{L,hf}^2\rangle/(N A_c)^2$ with $N A_c = L I_{pk}/B_{max}$, the hysteresis term on the amplitude of the ripple flux, so
+\begin{equation}
+P_{fe,sw} = m_{fe}\left[\frac{k_e}{2\pi^2}\,\langle v_{L,hf}^2\rangle\left(\frac{B_{max}}{L\,I_{pk}}\right)^{2} + k_h \fsw \hat B_{sw}^2\right],\qquad
+\hat B_{sw} = \sqrt3\,B_{max}\,\frac{I_{rip,rms}}{I_{pk}}.
+\label{eq:Pfesw}
+\end{equation}
+\end{itemize}
+Here $\langle v_{L,hf}^2\rangle$ is the mean square of the switching part of the voltage across the inductor (converter phase voltage minus reference, the capacitor node being stiff at $\fsw$). For the two-level VSC with SVM it has the closed form
+\begin{equation}
+\frac{\langle v_{L,hf}^2\rangle}{\Vdc^2} = \frac14 - \frac{\langle v_0^2\rangle}{\Vdc^2} - \frac{m^2}{8} = \frac{2\sqrt3}{3\pi}\,m - \frac{m^2}{8} = 0.057\quad (m = 1.02:\ \text{RMS } 0.24\,\Vdc),
+\label{eq:vhf}
+\end{equation}
+where $\langle v_0^2\rangle = \Vdc^2\,[a/36 + (1 - a)/4]$ is the mean square of the common-mode voltage and $a = 3\sqrt3\,m/(2\pi)$ the fraction of the period spent on the active vectors (the script reproduces it from the exact waveform). Two facts follow. The switched voltage does not depend on $\fsw$, so at a given $L$ the eddy-current loss, the part of $P_{fe,sw}$ that grows when $L$ is reduced, is the same at \SI{2}{kHz} and at \SI{5}{kHz} and scales as $m_{fe}/L^2 \propto L^{-5/4}$. And it is $2.4$ times what a triangular ripple with the same RMS at $\fsw$ would produce, because the multi-slope SVM waveform has a far larger $\langle v^2\rangle$ than its current ripple suggests: a core loss estimated ``from the ripple at $\fsw$'' underestimates it by that factor.
+
+\textbf{The optimum.} The total reactor loss $P_L = P_{cu} + P_{fe,1} + P_{fe,sw}$ is of the form $A L^{3/4} + B L^{-5/4}$, with its minimum where
+\begin{equation}
+P_{fe,sw} = \frac35\,(P_{cu} + P_{fe,1}),\qquad
+L_{opt} = L_t\sqrt{\frac{r_t}{0.6}},\quad r_t = \left.\frac{P_{fe,sw}}{P_{cu} + P_{fe,1}}\right|_{L_t},
+\label{eq:Lopt}
+\end{equation}
+i.e.\ where the switching-frequency core loss is \SI{60}{\percent} of the rest. The second form gives $L_{opt}$ from the loss split of any trial design $L_t$, e.g.\ from a supplier's loss sheet, provided the switching-frequency core loss is specified for the PWM voltage \eqref{eq:vhf} and not for a sinusoidal ripple. With a Steinmetz law $p \propto f^\alpha \hat B^\beta$ in place of the eddy term the ratio is $(3/4)/(\beta - 3/4)$ and $L_{opt} = L_t\,[r_t(4\beta - 3)/3]^{1/\beta}$; with the thermally consistent scaling $J \propto A_p^{-1/8}$ (larger reactors run at a lower current density) the ratio becomes $1/2$ and $L_{opt}$ moves up by about \SI{10}{\percent}. The mass $m_L \propto [(1 + k_r/2)/k_r]^{3/4}$ falls monotonically with $k_r$, so every design with $k_r < k_{r,opt}$ is dominated (heavier \emph{and} more lossy) and the useful range is $k_r \ge k_{r,opt}$: the loss optimum when the losses are capitalised (with $c_P \approx$ \SIrange{5}{10}{\EUR\per W} over the life of the drive against $c_m \approx$ \SIrange{10}{15}{\EUR\per kg} of reactor, minimising $c_P P_L + c_m m_L$ moves $k_r$ up by only \SI{10}{\percent}), a larger $k_r$ when the cabinet volume is binding, up to the peak-current limit of the converter and the capacitor-current and attenuation limits of Sections~\ref{sec:grid} and~\ref{sec:motor}. Since $\langle v_{L,hf}^2\rangle$ does not depend on $\fsw$, neither does $L_{opt}$: raising $\fsw$ at the optimum lowers the ripple ($k_{r,opt} \propto 1/\fsw$) but leaves mass and loss of the reactor unchanged; the smaller reactor expected from a higher $\fsw$ is obtained only by keeping $k_r$, i.e.\ by moving off the optimum and paying core loss, or with thinner laminations and better steel ($k_e \propto d^2$, hence $k_{r,opt} \propto 1/d$), amorphous or powder cores.
+
+\textbf{Numbers for the \SI{450}{kW} drive.} AFE of Example~1 ($I_n = \SI{601}{A}$, $\Vdc = \SI{800}{V}$, SVM at $m = 1.02$: $k_{\pp,max} = 1/6.8$, $k_{rms} = 1/44$); reactor model: \SI{0.35}{mm} non-oriented steel (\SI{3}{W/kg} at \SI{1.5}{T}, \SI{50}{Hz}: $k_h = \SI{0.024}{W/(kg.Hz.T^2)}$, $k_e = \SI{5.3e-5}{W/(kg.Hz^2.T^2)}$), $B_{max} = \SI{1.4}{T}$, $J = \SI{3}{A/mm^2}$, $k_u = 0.3$, UI core with a square leg $a$ and window $0.8a \times 2.5a$, three single-phase reactors, $F_r = 2 + \fsw/\SI{2}{kHz}$. Fig.~\ref{fig:optL} gives $P_L$ and $m_L$ against $k_r$ for $\fsw = 2$, $3$, $4$, \SI{5}{kHz}, Table~\ref{tab:optL} the optima. At \SI{2}{kHz} the loss optimum is $k_r = 0.43$ ($L = \SI{161}{\micro H}$, \SI{13}{\percent}), a flat minimum ($0.37$--$0.50$ within \SI{1}{\percent}) on which the $k_r = 0.40$ of step~A3 of Example~1 sits; the conventional $0.25$ would cost \SI{10}{\percent} more loss and \SI{42}{\percent} more mass. At \SI{4}{kHz} the optimum is $k_r = 0.20$ with the same $L = \SI{173}{\micro H}$: $0.25$, the allowance of the \SI{690}{V} design of Example~1b, costs \SI{2}{\percent} of loss and saves \SI{14}{\percent} of mass; $0.40$ saves \SI{36}{\percent} of mass for \SI{20}{\percent} more loss. The reactor at the optimum is the same at the four frequencies, $L \approx \SI{170}{\micro H}$ (\SI{14}{\percent}), \SI{165}{kg}, \SI{2.3}{kW} (\SI{0.47}{\percent} of $S_n$), with $P_{fe,sw}/(P_{cu} + P_{fe,1}) = 0.6$; the higher $\fsw$ pays on the filter side, where the grid line scales as $1/\fsw^3$ and the capacitor shrinks. The peak current at the optimum is $\hat I_n(1 + k_r/2) = \SI{1033}{A}$ at \SI{2}{kHz} and \SI{936}{A} at \SI{4}{kHz} (\SI{1460}{A} and \SI{1361}{A} at \SI{150}{\percent} overload), within the repetitive peak rating of the \SI{1400}{A}-class \SI{1700}{V} modules used at this power. Rule for the \SIrange{2}{5}{kHz} range with \SI{0.35}{mm} steel: $k_{r,opt} \approx \SI{0.8}{kHz}/\fsw$, equivalently $L_{opt} \approx$ \SIrange{13}{14}{\percent} of $L_b$, to be moved up with better steel and checked with \eqref{eq:Lopt} on the supplier's loss split.
+
+\begin{figure}[htb]
+\centering
+\begin{subfigure}{\textwidth}
+\centering
+\begin{tikzpicture}
+\begin{axis}[width=15cm, height=7cm, xlabel={$k_r = \Delta i_{\pp,max}/\hat I_n$}, ylabel={$P_L$ [kW]}, xmin=0.1, xmax=1.0, ymin=2, ymax=5, grid=both, grid style={gray!25}, legend pos=north west, legend style={font=\small, draw=gray!50}, label style={font=\small}, tick label style={font=\small}]
+\addplot[black, thick] coordinates {(0.10,4.184) (0.12,3.725) (0.14,3.396) (0.16,3.151) (0.18,2.964) (0.20,2.818) (0.22,2.704) (0.24,2.614) (0.26,2.543) (0.28,2.487) (0.30,2.443) (0.32,2.409) (0.34,2.383) (0.36,2.365) (0.38,2.352) (0.40,2.344) (0.42,2.341) (0.44,2.342) (0.46,2.345) (0.48,2.352) (0.50,2.361) (0.52,2.372) (0.54,2.385) (0.56,2.400) (0.58,2.417) (0.60,2.434) (0.62,2.453) (0.64,2.473) (0.66,2.494) (0.68,2.516) (0.70,2.539) (0.72,2.562) (0.74,2.586) (0.76,2.610) (0.78,2.635) (0.80,2.660) (0.82,2.686) (0.84,2.712) (0.86,2.738) (0.88,2.765) (0.90,2.792) (0.92,2.819) (0.94,2.846) (0.96,2.874) (0.98,2.901) (1.00,2.929)};
+\addplot[blue!70!black, thick] coordinates {(0.10,3.238) (0.12,2.936) (0.14,2.731) (0.16,2.588) (0.18,2.488) (0.20,2.420) (0.22,2.374) (0.24,2.347) (0.26,2.333) (0.28,2.331) (0.30,2.338) (0.32,2.351) (0.34,2.371) (0.36,2.396) (0.38,2.425) (0.40,2.458) (0.42,2.493) (0.44,2.532) (0.46,2.572) (0.48,2.614) (0.50,2.658) (0.52,2.703) (0.54,2.750) (0.56,2.797) (0.58,2.845) (0.60,2.894) (0.62,2.944) (0.64,2.994) (0.66,3.044) (0.68,3.095) (0.70,3.146) (0.72,3.198) (0.74,3.249) (0.76,3.301) (0.78,3.353) (0.80,3.405) (0.82,3.457) (0.84,3.509) (0.86,3.561) (0.88,3.612) (0.90,3.664) (0.92,3.716) (0.94,3.768) (0.96,3.819) (0.98,3.870) (1.00,3.922)};
+\addplot[teal!70!black, thick] coordinates {(0.10,2.778) (0.12,2.576) (0.14,2.452) (0.16,2.379) (0.18,2.341) (0.20,2.329) (0.22,2.335) (0.24,2.357) (0.26,2.389) (0.28,2.431) (0.30,2.479) (0.32,2.534) (0.34,2.593) (0.36,2.656) (0.38,2.722) (0.40,2.791) (0.42,2.862) (0.44,2.935) (0.46,3.009) (0.48,3.085) (0.50,3.161) (0.52,3.239) (0.54,3.317) (0.56,3.395) (0.58,3.474) (0.60,3.554) (0.62,3.633) (0.64,3.713) (0.66,3.793) (0.68,3.872) (0.70,3.952) (0.72,4.031) (0.74,4.111) (0.76,4.190) (0.78,4.269) (0.80,4.348) (0.82,4.426) (0.84,4.504) (0.86,4.582) (0.88,4.660) (0.90,4.737) (0.92,4.814) (0.94,4.890) (0.96,4.967) (0.98,5.042) (1.00,5.118)};
+\addplot[orange!80!black, thick] coordinates {(0.10,2.532) (0.12,2.405) (0.14,2.344) (0.16,2.328) (0.18,2.342) (0.20,2.378) (0.22,2.431) (0.24,2.495) (0.26,2.570) (0.28,2.652) (0.30,2.739) (0.32,2.832) (0.34,2.929) (0.36,3.028) (0.38,3.130) (0.40,3.234) (0.42,3.340) (0.44,3.447) (0.46,3.555) (0.48,3.664) (0.50,3.773) (0.52,3.883) (0.54,3.993) (0.56,4.103) (0.58,4.214) (0.60,4.324) (0.62,4.434) (0.64,4.543) (0.66,4.653) (0.68,4.762) (0.70,4.871) (0.72,4.979) (0.74,5.087) (0.76,5.194) (0.78,5.301) (0.80,5.407) (0.82,5.513) (0.84,5.618) (0.86,5.723) (0.88,5.827) (0.90,5.931) (0.92,6.034) (0.94,6.136) (0.96,6.238) (0.98,6.340) (1.00,6.440)};
+\addplot[only marks, mark=*, mark size=2pt, black] coordinates {(0.43,2.341) (0.27,2.331) (0.20,2.329) (0.16,2.328)};
+\legend{{$\fsw = \SI{2}{kHz}$}, {\SI{3}{kHz}}, {\SI{4}{kHz}}, {\SI{5}{kHz}}, {loss optimum, Eq.~\eqref{eq:Lopt}}}
+\end{axis}
+\end{tikzpicture}
+\caption{Total loss $P_L$ of the three-phase reactor.}
+\end{subfigure}
+\\[8pt]
+\begin{subfigure}{\textwidth}
+\centering
+\begin{tikzpicture}
+\begin{axis}[width=15cm, height=7cm, xlabel={$k_r = \Delta i_{\pp,max}/\hat I_n$}, ylabel={$m_L$ [kg]}, xmin=0.1, xmax=1.0, ymin=0, ymax=450, grid=both, grid style={gray!25}, legend pos=north east, legend style={font=\small, draw=gray!50}, label style={font=\small}, tick label style={font=\small}]
+\addplot[black, thick] coordinates {(0.10,449) (0.12,395) (0.14,354) (0.16,323) (0.18,297) (0.20,277) (0.22,259) (0.24,245) (0.26,232) (0.28,221) (0.30,211) (0.32,203) (0.34,195) (0.36,188) (0.38,182) (0.40,176) (0.42,171) (0.44,166) (0.46,162) (0.48,158) (0.50,154) (0.52,150) (0.54,147) (0.56,144) (0.58,141) (0.60,138) (0.62,136) (0.64,133) (0.66,131) (0.68,129) (0.70,127) (0.72,125) (0.74,123) (0.76,122) (0.78,120) (0.80,118) (0.82,117) (0.84,116) (0.86,114) (0.88,113) (0.90,112) (0.92,110) (0.94,109) (0.96,108) (0.98,107) (1.00,106)};
+\addplot[blue!70!black, thick] coordinates {(0.10,331) (0.12,291) (0.14,261) (0.16,238) (0.18,219) (0.20,204) (0.22,191) (0.24,181) (0.26,171) (0.28,163) (0.30,156) (0.32,150) (0.34,144) (0.36,139) (0.38,134) (0.40,130) (0.42,126) (0.44,122) (0.46,119) (0.48,116) (0.50,113) (0.52,111) (0.54,108) (0.56,106) (0.58,104) (0.60,102) (0.62,100) (0.64,98) (0.66,97) (0.68,95) (0.70,94) (0.72,92) (0.74,91) (0.76,90) (0.78,89) (0.80,87) (0.82,86) (0.84,85) (0.86,84) (0.88,83) (0.90,82) (0.92,81) (0.94,81) (0.96,80) (0.98,79) (1.00,78)};
+\addplot[teal!70!black, thick] coordinates {(0.10,267) (0.12,235) (0.14,211) (0.16,192) (0.18,177) (0.20,165) (0.22,154) (0.24,146) (0.26,138) (0.28,131) (0.30,126) (0.32,120) (0.34,116) (0.36,112) (0.38,108) (0.40,105) (0.42,102) (0.44,99) (0.46,96) (0.48,94) (0.50,91) (0.52,89) (0.54,87) (0.56,86) (0.58,84) (0.60,82) (0.62,81) (0.64,79) (0.66,78) (0.68,77) (0.70,76) (0.72,74) (0.74,73) (0.76,72) (0.78,71) (0.80,70) (0.82,70) (0.84,69) (0.86,68) (0.88,67) (0.90,66) (0.92,66) (0.94,65) (0.96,64) (0.98,64) (1.00,63)};
+\addplot[orange!80!black, thick] coordinates {(0.10,226) (0.12,198) (0.14,178) (0.16,162) (0.18,150) (0.20,139) (0.22,130) (0.24,123) (0.26,117) (0.28,111) (0.30,106) (0.32,102) (0.34,98) (0.36,95) (0.38,91) (0.40,89) (0.42,86) (0.44,83) (0.46,81) (0.48,79) (0.50,77) (0.52,76) (0.54,74) (0.56,72) (0.58,71) (0.60,70) (0.62,68) (0.64,67) (0.66,66) (0.68,65) (0.70,64) (0.72,63) (0.74,62) (0.76,61) (0.78,60) (0.80,60) (0.82,59) (0.84,58) (0.86,57) (0.88,57) (0.90,56) (0.92,56) (0.94,55) (0.96,54) (0.98,54) (1.00,53)};
+\addplot[only marks, mark=*, mark size=2pt, black] coordinates {(0.43,168) (0.27,167) (0.20,165) (0.16,162)};
+\legend{{$\fsw = \SI{2}{kHz}$}, {\SI{3}{kHz}}, {\SI{4}{kHz}}, {\SI{5}{kHz}}, {loss optimum}}
+\end{axis}
+\end{tikzpicture}
+\caption{Mass $m_L$ of the three-phase reactor (core and copper).}
+\end{subfigure}
+\caption{Ripple--inductance trade-off of the converter-side reactor of the \SI{450}{kW} AFE ($I_n = \SI{601}{A}$, $\Vdc = \SI{800}{V}$, SVM) against the ripple allowance $k_r$, for $\fsw = 2$, $3$, $4$, \SI{5}{kHz}. The dots mark the loss optimum \eqref{eq:Lopt}, which lies at the same $L \approx \SI{170}{\micro H}$ for the four frequencies. Reactor model of Section~\ref{sec:optL}: \SI{0.35}{mm} SiFe, $B_{max} = \SI{1.4}{T}$, $J = \SI{3}{A/mm^2}$, $k_u = 0.3$; mass decreasing monotonically, loss with a minimum.}
+\label{fig:optL}
+\end{figure}
+
+\begin{table}[htb]
+\centering\small\begin{onehalfspace}
+\setlength{\tabcolsep}{3.5pt}
+\caption{Loss optimum of the converter-side reactor of the \SI{450}{kW} AFE (model of Fig.~\ref{fig:optL}); $P_L$ and $m_L$ for the three phases; the last column is the loss and mass penalty of the conventional $k_r = 0.25$ with respect to the optimum.}
+\label{tab:optL}
+\begin{tabular}{@{}c c c c c c c c c c c@{}}
+\toprule
+$\fsw$ & $k_{r,opt}$ & $L_{opt}$ & $I_{pk}$ & $P_{cu} + P_{fe,1}$ & $P_{fe,sw}$ & $P_L$ & $m_L$ & $k_r$ within & $k_r$ at the & $k_r = 0.25$: \\
+kHz & -- & \si{\micro H} (\% $L_b$) & A & W & W & W (\% $S_n$) & kg & \SI{1}{\percent} of $P_{L,min}$ & cost optimum & $\Delta P_L$, $\Delta m_L$ \\
+\midrule
+2 & 0.43 & 161 (13.2) & 1033 & 1436 & 905 & 2341 (0.47) & 168 & 0.37--0.50 & 0.47 & $+10\,\%$, $+42\,\%$ \\
+3 & 0.27 & 171 (14.0) & 965  & 1450 & 880 & 2331 (0.47) & 167 & 0.24--0.32 & 0.30 & $+0.3\,\%$, $+5\,\%$ \\
+4 & 0.20 & 173 (14.2) & 936  & 1444 & 884 & 2329 (0.47) & 165 & 0.18--0.23 & 0.22 & $+2\,\%$, $-14\,\%$ \\
+5 & 0.16 & 173 (14.2) & 919  & 1434 & 894 & 2328 (0.47) & 162 & 0.14--0.18 & 0.17 & $+9\,\%$, $-26\,\%$ \\
+\bottomrule
+\end{tabular}
+\end{onehalfspace}
+\end{table}
+
+\section{Filter structures and transfer functions}
+\label{sec:tf}
+\subsection{Transfer functions and damping networks}
+With $Z_1 = sL_1$, $Z_2 = s(L_2 + \Lg)$ and $Z_c$ the impedance of the shunt network of Fig.~\ref{fig:circ}(a), and the grid voltage a short at the switching harmonics,
+\begin{equation}
+\frac{i_1}{v_1} = \frac{Z_c + Z_2}{Z_1 Z_2 + Z_c (Z_1 + Z_2)},\qquad
+\frac{i_2}{v_1} = \frac{Z_c}{Z_1 Z_2 + Z_c (Z_1 + Z_2)},\qquad
+\frac{i_2}{i_1} = \frac{Z_c}{Z_c + Z_2}.
+\label{eq:tf}
+\end{equation}
+For the undamped LCL ($Z_c = 1/(s\Cf)$), writing $L_2' = L_2 + \Lg$,
+\begin{equation}
+\frac{i_2}{v_1} = \frac{1}{s^3 L_1 L_2' \Cf + s(L_1 + L_2')},\qquad
+\wres^2 = \frac{L_1 + L_2'}{L_1 L_2' \Cf},\qquad
+\frac{i_2}{i_1} = \frac{1}{1 + s^2 L_2' \Cf},\qquad
+\omega_2^2 = \frac{1}{L_2'\Cf}.
+\label{eq:lcl}
+\end{equation}
+At the switching frequency the attenuation of the LCL with respect to its own converter current is
+\begin{equation}
+	\begin{aligned}
+		&k_a = \left|\frac{i_2}{i_1}\right|_{\wsw} = \frac{1}{\wsw^2 L_2' \Cf - 1} \approx \Big(\frac{f_2}{\fsw}\Big)^2,
+		\qquad\text{equivalently \cite{liserre2005}}\\[6pt]
+		&\frac{i_2(\wsw)}{i_{L}(\wsw)} = \frac{1}{\big|1 + r\,(1 - \wsw^2 L_1 \Cf)\big|},\ \ r = \frac{L_2}{L_1},
+	\end{aligned}
+\label{eq:ka}
+\end{equation}
+the second form being referred to the current $i_L = v_1/(j\wsw L_1)$ of the plain L filter; the two coincide where $\Cf$ is a short at $\fsw$. The damped networks are $Z_c = R_d + 1/(s\Cf)$ (series resistor) and $Z_c = \frac{1}{s C_1} \parallel \big(R_2 + \frac{1}{s C_2}\big)$ (R--C branch, with $C_1 + C_2$ the total capacitance). The series resistor turns the $-60$~dB/decade roll-off of $i_2/v_1$ into $-40$~dB/decade above $1/(2\pi R_d \Cf)$ and degrades \eqref{eq:ka} to $k_a = \sqrt{R_d^2 + X_c^2}/\sqrt{R_d^2 + (\wsw L_2' - X_c)^2}$, $X_c = 1/(\wsw\Cf)$; the R--C branch keeps the roll-off and is analysed in \cite{bagnara2026,erickson1999,erickson2020,middlebrook1976}. The motor-side LC filter of Fig.~\ref{fig:circ}(b) obeys the same algebra with $Z_1 = s\Lf$ and $Z_2 = \Rhf + s\Lhf$ (the back-EMF is a short at the ripple frequencies, the cable adds its capacitance to $\Cf$):
+\begin{equation}
+\frac{v_c}{v_i} = \frac{Z_c \parallel Z_2}{Z_1 + Z_c \parallel Z_2},\qquad
+f_0 = \frac{1}{2\pi\sqrt{\Lf\Cf}},\qquad
+f_p = f_0\sqrt{1 + \frac{\Lf}{\Lhf}},\qquad
+\left|\frac{v_c}{v_i}\right|_{\fsw} \approx \frac{1}{(\fsw/f_p)^2 - 1},
+\label{eq:lc}
+\end{equation}
+where $f_0$ is the unloaded resonance and $f_p$ the resonance with the machine connected.
+
+\subsection{Star or delta connection of the shunt branches}
+\label{sec:stardelta}
+All formulas of this note use the star (per-phase) equivalent of the shunt branches; the hardware is usually delta. The two are exchanged through $Z_\Delta = 3Z_Y$, element by element (the topology of the branch does not change):
+\begin{equation}
+C_\Delta = \frac{C_Y}{3},\qquad R_\Delta = 3R_Y,\qquad V_\Delta = \sqrt3\,V_Y = V,\qquad I_\Delta = \frac{I_Y}{\sqrt3},
+\label{eq:stardelta}
+\end{equation}
+with the same reactive power, the same stored energy ($3\cdot\tfrac12 C_\Delta V^2 = 3\cdot\tfrac12 C_Y V_{ph}^2$), the same damping ratio, attenuation and losses ($3R_\Delta I_\Delta^2 = 3R_Y I_Y^2$). Table~\ref{tab:stardelta} lists both sets for the branches of the worked examples: the delta capacitor holds one third of the capacitance at $\sqrt3$ the voltage and $1/\sqrt3$ the current, the delta resistor is three times larger at $1/\sqrt3$ the current, which for the low-ohmic series resistor (\SI{150}{m\ohm} at \SI{14}{A} instead of \SI{50}{m\ohm} at \SI{25}{A}) is the easier part to build.
+
+\textbf{Which one.} In low voltage (\SIrange{400}{690}{V}) the industrial choice is the delta: three-phase MKP filter capacitors are supplied as single delta-connected units rated at the line voltage (the \SIrange{525}{600}{V} classes on a \SI{480}{V} line, \SIrange{760}{800}{V} on \SI{690}{V}, to cover the switching ripple and the overvoltage margin), no star point is needed and there is no zero-sequence path: the common-mode voltage of the converter ($\pm\Vdc/6$ on the active vectors, $\pm\Vdc/2$ on the zero vectors, plus the zero-sequence injection of SVM) does not drive the capacitors, exactly as with a floating star point. The star is chosen when the star point is needed: on the motor side, tied to the DC-link midpoint, it gives the common-mode current a path and attenuates the common-mode $dv/dt$ and the bearing currents, at the price of capacitors rated for the pole voltage, a common-mode choke that limits that current and a larger capacitor current; with single-phase units in medium voltage or at very large currents; or when the phase voltages are to be measured directly. On the grid side the star point is never tied to ground or to the DC link (triplen harmonics, leakage current, earth-fault relays).
+
+\textbf{Where the resistor goes.} A resistor directly across the capacitor is not a damping option at the fundamental: $\zeta = Z_0/(2R)$ asks for $R = Z_0/(2\zeta) \approx \SIrange{2.5}{5}{\ohm}$ at $\zeta = 0.06$ and dissipates $3V_{ph}^2/R$, tens of kW. The usable networks are the series resistor in the capacitor branch and the R--C branch in parallel with $C_1$ (Sections~\ref{sec:dampgrid} and~\ref{sec:dampmotor}, in star or in delta alike), and the resistor in parallel with $L_2$, whose fundamental loss is low only while the drop $\epsilon_L V_{ph}$ on $L_2$ is small and which lets the switching-frequency current bypass $L_2$ through $R$, i.e. costs attenuation. Industrial practice: AFE and LCL filters use delta capacitors with a small series resistor ($\zeta \approx 0.05$, attenuation penalty \SIrange{2}{3}{\percent}, as the \SI{50}{m\ohm} of Example~1b) or no passive damping and active damping in the current loop; the split R--C branch is less common in catalogue filters (two capacitor banks) and is the choice where the losses matter or $\fsw$ is low, as in Example~1 (\SI{414}{W} against \SI{1.9}{kW} of the series resistor at the same $\zeta$). Motor sine filters are delta LC without resistor, the resonance at $\fsw/3$ being damped by the cable, the machine and the inductor loss; the R--C branch is added for sensorless control, long cables or a low $\fsw$ (Example~2), and $dv/dt$ filters use the R--C as a terminator at the motor terminals.
+
+\begin{table}[htb]
+\centering\small\begin{onehalfspace}
+\setlength{\tabcolsep}{4pt}
+\caption{Star and delta values of the shunt branches of the worked examples (\SI{480}{V} line unless noted; voltages and currents at the fundamental, rated point; the loss is the fundamental-frequency part, equal in the two connections).}
+\label{tab:stardelta}
+\begin{tabular}{@{}l cccc cccc c@{}}
+\toprule
+ & \multicolumn{4}{c}{star (per phase)} & \multicolumn{4}{c}{delta (per branch)} & loss \\
+\cmidrule(lr){2-5}\cmidrule(lr){6-9}
+branch & $C_Y$ & $R_Y$ & $V_Y$ & $I_Y$ & $C_\Delta$ & $R_\Delta$ & $V_\Delta$ & $I_\Delta$ & \\
+ & \si{\micro F} & \si{\ohm} & V & A & \si{\micro F} & \si{\ohm} & V & A & W \\
+\midrule
+AFE, $C_1$ (A4)                        & 280 & --    & 277 & 29.3 & 93.3 & --    & 480 & 16.9 & --   \\
+AFE, $C_2$--$R_2$, $n = 0.25$ (A7)     & 70  & 2.59  & 277 & 7.3  & 23.3 & 7.8   & 480 & 4.2  & 414  \\
+\SI{690}{V} AFE, $C$--$R_d$ (Ex.~1b)   & 200 & 0.050 & 398 & 25.0 & 66.7 & 0.150 & 690 & 14.4 & 94 (118 with ripple) \\
+IM, $\Cf$ (B4)                         & 660 & --    & 277 & 69.0 & 220  & --    & 480 & 39.8 & --   \\
+IM, $C_2$--$R_2$ (B6)                  & 165 & 1.63  & 277 & 17.2 & 55   & 4.9   & 480 & 9.9  & 1436 \\
+PMSM, $\Cf$ (B4)                       & 500 & --    & 277 & 52.2 & 167  & --    & 480 & 30.1 & --   \\
+PMSM, $C_2$--$R_2$ (B6)                & 125 & 2.13  & 277 & 13.0 & 41.7 & 6.4   & 480 & 7.5  & 1079 \\
+\bottomrule
+\end{tabular}
+\end{onehalfspace}
+\end{table}
+
+
+\section{Grid-side filter of an active front end}
+\label{sec:grid}
+
+\subsection{Design inputs}
+Rated power $S_n$, voltage $V$, frequency $f_1$, DC-link voltage $\Vdc$ (boost operation requires $\Vdc \ge \sqrt2 V (1 + \epsilon_L)$, i.e.\ $m \le 2\sqrt2 V_{ph}(1+\epsilon_L)/\Vdc$ with $\epsilon_L$ the filter drop), $\fsw$ and $f_s$, the current-feedback choice (converter current $i_1$ or grid current $i_2$), the range of the grid impedance at the point of common coupling (PCC), and the harmonic limits. The grid inductance per phase, transformer included, is
+\begin{equation}
+\Lg = \frac{V^2}{\omega_1 S_{sc}} = \frac{u_k V^2}{\omega_1 S_T} + \Lg^{MV},\qquad
+\frac{S_{sc}}{S_n} = \frac{I_{sc}}{I_L}\ \text{(short-circuit ratio)},
+\label{eq:Lg}
+\end{equation}
+to be bracketed between the stiffest ($S_{sc,max}$) and the weakest ($S_{sc,min}$) expected PCC. The limits of IEEE~519 \cite{ieee519} at the PCC depend on $I_{sc}/I_L$ (Table~\ref{tab:ieee}); the design practice for a stand-alone converter is to apply them to its own $I_n$. At a high pulse ratio the switching cluster lies above $h = 50$ and the last column is used for the whole cluster; at a low pulse ratio ($\fsw/f_1 < 50$) the cluster straddles the rows and each of its lines, $\fsw \pm 2f_1$ first, is checked against the limit of its own order (Section~\ref{sec:common}). IEC~61800-3 \cite{iec61800-3} sets the EMC environment (C1--C4) and refers to the IEC~61000-3 series for the low-frequency emission.
+\begin{table}[htb]
+\centering\small\begin{onehalfspace}
+\caption{IEEE~519-2014 current distortion limits at the PCC, \SI{120}{V}--\SI{69}{kV}, in percent of the maximum demand current $I_L$ (odd harmonics; even harmonics \SI{25}{\percent} of these).}
+\label{tab:ieee}
+\begin{tabular}{@{}c ccccc c@{}}
+\toprule
+$I_{sc}/I_L$ & $h < 11$ & $11 \le h < 17$ & $17 \le h < 23$ & $23 \le h < 35$ & $35 \le h \le 50$ & TDD \\
+\midrule
+$< 20$ & 4.0 & 2.0 & 1.5 & 0.6 & 0.3 & 5.0 \\
+$20$--$50$ & 7.0 & 3.5 & 2.5 & 1.0 & 0.5 & 8.0 \\
+$50$--$100$ & 10.0 & 4.5 & 4.0 & 1.5 & 0.7 & 12.0 \\
+$100$--$1000$ & 12.0 & 5.5 & 5.0 & 2.0 & 1.0 & 15.0 \\
+$> 1000$ & 15.0 & 7.0 & 6.0 & 2.5 & 1.4 & 20.0 \\
+\bottomrule
+\end{tabular}
+\end{onehalfspace}
+\end{table}
+
+\subsection{Converter-side inductor $L_1$}
+From Section~\ref{sec:ripple}, with the ripple allowance $k_r = \Delta i_{\pp,max}/\hat I_n$ (\SIrange{15}{30}{\percent} is usual at \SIrange{4}{5}{kHz} and \SIrange{40}{50}{\percent} at \SI{2}{kHz}, the loss optimum of the reactor scaling as $1/\fsw$, Section~\ref{sec:optL}; a smaller value increases $L_1$, its mass, its copper loss and the voltage drop, a larger one the peak current, the core loss and the capacitor current),
+\begin{equation}
+L_1 \ge \frac{k\,\Vdc}{\fsw\,k_r \hat I_n},\qquad k = \frac{1}{7}\ \text{(SVM, } m \approx 1),\quad \frac16\ \text{(worst case)},
+\label{eq:L1}
+\end{equation}
+and the drop $\epsilon_L = \omega_1 (L_1 + L_2) I_n / V_{ph}$ (typically \SIrange{0.05}{0.15}{pu} in total) must be compatible with $\Vdc$. The inductor carries $I_n$ plus the ripple, must not saturate at $\hat I_n + \Delta i_{\pp,max}/2$ (plus the overload and the inrush at pre-charge), and its core loss is set by the ripple RMS of Table~\ref{tab:ripple}.
+
+\subsection{Capacitor $\Cf$}
+The capacitor is bounded by its reactive power at the fundamental, which the converter must compensate (and which raises the no-load current),
+\begin{equation}
+\Cf \le x\,C_b = \frac{x\,S_n}{\omega_1 V^2},\qquad Q_c = \omega_1 \Cf V^2 = x S_n,\qquad x \le 0.05\ \text{\cite{liserre2005}},
+\label{eq:Cf}
+\end{equation}
+($\Cf$ is the star value; a delta bank uses $\Cf/3$ per branch). A larger $\Cf$ lowers $L_2$ for a given attenuation and lowers $\fres$; with $x = \SIrange{2}{5}{\percent}$ the capacitor is the cheapest element and is normally taken at its upper bound. The capacitor must withstand $1.1 V$ plus the switching ripple voltage $\hat v_{c,sw} \approx I_{rip,rms}\sqrt2/(\wsw\Cf)$, carry $I_{c} = \sqrt{(\omega_1 \Cf V_{ph})^2 + I_{rip,rms}^2}$ and be rated for the harmonic background of the grid (5th, 7th) that it absorbs through $L_2'$.
+
+\subsection{Grid-side inductor $L_2$ and attenuation}
+The converter-side current at the switching frequency is estimated from the ripple RMS of Table~\ref{tab:ripple}: the first carrier cluster holds \SIrange{85}{94}{\percent} of it with SVM, split mainly between the two lines at $\fsw \pm 2f_1$, each about $\Vdc/(90\fsw L_1)$ at $m \approx 1$ and $\Vdc/(73\fsw L_1)$ at full modulation (Table~\ref{tab:cluster}; the analytical sideband spectrum is in \cite{holmes2003}). With the admissible grid harmonic $I_{2,sw}$ of Table~\ref{tab:ieee} at the order of the line considered, the required attenuation is $k_a = I_{2,sw}/I_{1,sw}$ and, from \eqref{eq:ka} with $\Lg = 0$ (worst case: $\Lg$ only adds attenuation),
+\begin{equation}
+L_2 \ge \frac{1 + 1/k_a}{\wsw^2 \Cf},\qquad r = \frac{L_2}{L_1} = \SIrange{0.2}{1}{}.
+\label{eq:L2}
+\end{equation}
+Since $I_{1,sw} \propto 1/L_1$ and $k_a \approx 1/(\wsw^2 L_2' \Cf)$, the grid harmonic scales as $1/(\fsw^3 L_1 L_2' \Cf)$ and the total inductance for a given harmonic is minimum at $L_2' = L_1 + 1/(\wsw^2\Cf) \approx L_1$; values of $r$ above unity give little further attenuation for the volume \cite{liserre2005,jalili2009}. The grid inductor may be the leakage of the dedicated transformer or a line reactor. If the attenuation cannot be met, raise $\Cf$ up to its bound (it helps only as $1/\sqrt{\Cf}$ at fixed total inductance), then $L_1$, then $\fsw$; at low pulse ratios ($\fsw/f_1 \lesssim 40$) a trap inductor $L_t = 1/(\wsw^2\Cf)$ in series with the capacitor (LLCL filter \cite{wu2012}) notches the first cluster and is the usual way out, see Example~1.
+
+\subsection{Resonance placement}
+\label{sec:resgrid}
+With $\Lg$ between $\Lg^{min}$ and $\Lg^{max}$ the resonance \eqref{eq:lcl} sweeps the band $[\fres^{min}, \fres^{max}]$, $\fres^{min}$ at the weakest grid. The constraints are
+\begin{equation}
+10 f_1 \le \fres^{min},\qquad \fres^{max} \le \frac{\fsw}{2}\ \text{\cite{liserre2005}},\qquad
+\fres \notin \Big[0.8, 1.2\Big]\frac{f_s}{6}\ \text{\cite{parker2014}}.
+\label{eq:resband}
+\end{equation}
+The lower bound keeps the resonance away from the low-order grid harmonics and from the current-loop crossover $f_c$ (design $f_c \le \fres/3$, with $f_c \approx \fsw/20 \ldots \fsw/10$ for a PI in the $dq$ frame \cite{dannehl2009}); the upper bound preserves the attenuation at $\fsw$. The third constraint comes from the discrete-time analysis of the current loop with the computation and PWM delay ($1.5 T_s$): with converter-current feedback the LCL resonance is stable without any damping only for $\fres > f_s/6$, with grid-current feedback only for $\fres < f_s/6$, and at $\fres = f_s/6$ no controller gain stabilises the loop \cite{parker2014}. Place the whole band $[\fres^{min}, \fres^{max}]$ on the side consistent with the feedback variable, or provide damping (passive, Section~\ref{sec:dampgrid}, or active) whenever the band crosses or approaches $f_s/6$ or when the grid impedance is uncertain \cite{liserre2006,pena2014}.
+
+\subsection{Passive damping}
+\label{sec:dampgrid}
+\textbf{Series resistor.} The classical choice \cite{liserre2005} is one third of the capacitor reactance at the resonance,
+\begin{equation}
+R_d = \frac{1}{3\wres\Cf},\qquad \zeta \approx \frac{R_d}{2}\sqrt{\frac{\Cf}{L_p}} \approx \frac16,\qquad L_p = \frac{L_1 L_2'}{L_1 + L_2'},\qquad
+P_{R_d} = 3 R_d \big[(\omega_1 \Cf V_{ph})^2 + I_{rip,rms}^2\big],
+\label{eq:Rd}
+\end{equation}
+where the loss has a fundamental term (the whole capacitor current flows in $R_d$) and a switching term; both are usually \SIrange{0.1}{0.3}{\percent} of $S_n$ \cite{pena2013}. The price is the attenuation penalty of Section~\ref{sec:tf}.
+
+\textbf{R--C branch.} Adding to the main capacitor $C_1$ a branch $C_2 = nC_1$ with $R_2$ in series keeps the $-60$~dB/decade slope; $C_1$ is the capacitor that sets $\fres$ and the attenuation, and the branch is added to it rather than carved out of a fixed total, because splitting raises the shunt impedance at $\fsw$ by $(1+n)$ and costs attenuation whenever $\fres$ is within an octave of $\fsw$ (Example~1). With $R_0 = \sqrt{L_p/C_1}$ and $\rho = R_2/R_0$, the three closed-form choices of \cite{bagnara2026} are
+\begin{align}
+\rho_Z &= \sqrt{\frac{(2+n)(4+3n)}{2n^2(4+n)}} && \text{minimum peak of the output impedance \cite{erickson1999}}, \label{eq:rRC}\\
+\rho_H &= \frac{\sqrt{(1+n)(2+n)/2}}{n} && \text{minimum peak of } |v_c/v_1|, \nonumber\\
+\rho_P &= \frac{2+n}{2n} && \text{real pole at } \omega_0 = 1/\sqrt{L_p C_1}, \nonumber
+\end{align}
+with $\zeta = n/(2\sqrt{2(2+n)})$ for $\rho_P$ (0.20 for $n = 1$, 0.35 for $n = 2$) and a peak of $|v_c/v_1|$ not lower than $(2+n)/n$. On the AC grid the branch carries the fundamental capacitive current of $C_2$, so
+\begin{equation}
+P_{R_2} = 3 R_2 \frac{(\omega_1 C_2 V_{ph})^2}{1 + (\omega_1 C_2 R_2)^2} + 3\frac{v_{c,sw}^2}{R_2},\qquad v_{c,sw} \approx \frac{I_{rip,rms}}{\wsw C_1},
+\label{eq:PR2}
+\end{equation}
+which limits $n$ to \numrange{1}{2} and makes the loss comparable with the series resistor \cite{pena2013}. Both networks are to be checked at $\fres^{min}$ and $\fres^{max}$; in modern AFEs passive damping is kept small as a robustness backstop and the bulk of the damping is active (capacitor-current or capacitor-voltage feedback \cite{dannehl2009,pena2014,teodorescu2011}).
+
+\subsection{Interaction with the grid impedance and stability}
+The grid sees the converter as a current source with an output admittance $Y_c(s)$ shaped by the current controller; stability of the interconnection is that of the loop $Z_g(s)Y_c(s)$ \cite{sun2011}. With the digital delay the real part of $Y_c$ becomes negative between about $f_s/6$ and $f_s/2$ for converter-current control, so any resonance of $Z_g$ with the filter falling in that band is destabilised, whatever the gains; passive damping and the choice of $\fres$ of Section~\ref{sec:resgrid} move the resonance out of the band or make $Y_c$ passive there. Practical rules: (i) evaluate $\fres$ and the phase margin at both ends of the $\Lg$ range; (ii) a weak grid (SCR $< 3$) also demands a slow PLL ($\le$ \SI{20}{Hz}) and a reduced current-loop bandwidth; (iii) the background distortion of the grid is amplified by the LCL between $f_2$ and $\fres$, which is why $\fres \ge 10 f_1$ and why the capacitor must be rated for the 5th/7th harmonics; (iv) verify the design with the transformer leakage and the cable of the actual installation, not with $\Lg = 0$ only.
+
+
+\section{Output filters between inverter and motor}
+\label{sec:motor}
+
+\subsection{Why: $dv/dt$, reflected waves and insulation stress}
+A PWM edge with rise time $t_r$ travels along the motor cable (surge impedance $Z_0 = \sqrt{L'/C'} \approx \SIrange{20}{80}{\ohm}$, velocity $v \approx \SIrange{150}{200}{m/\micro s}$, transit time $\tau = l/v$) and is reflected at the motor with coefficient $\Gamma_m = (Z_m - Z_0)/(Z_m + Z_0)$, close to $+1$ because the high-frequency impedance of the winding is $\gg Z_0$ (\SIrange{0.8}{0.95}{} for motors below \SI{100}{kW}), and at the inverter with $\Gamma_s \approx -1$. The terminal voltage reaches $\Vdc(1 + \Gamma_m)$ when the edge is shorter than the round trip \cite{persson1992,vonjouanne1996}:
+\begin{equation}
+l_{crit} = \frac{v\,t_r}{2},\qquad
+\hat V_m \le \Vdc\Big[1 + \Gamma_m\min\Big(1, \frac{l}{l_{crit}}\Big)\Big],
+\label{eq:lcrit}
+\end{equation}
+the second expression being the design envelope of \cite{vonjouanne1997} (the lossless-line solution for a linear edge lies below it; real edges and cable losses smooth it). Double pulsing and polarity reversal within the cable ringing period $4\tau$ raise the peak up to $3\Vdc$ \cite{kerkman1997}; the high-frequency models needed for prediction are in \cite{moreira2002}. With IGBT edges of \SIrange{0.1}{0.3}{\micro s}, $l_{crit}$ is \SIrange{10}{30}{m} and any industrial cable gives the full $2\Vdc$. The limits are those of the motor insulation: NEMA~MG\,1 Part~31 \cite{nema} (definite-purpose inverter-fed motors) allows $3.1\,V_{rated}$ peak with $t_r \ge \SI{0.1}{\micro s}$ for $\le \SI{600}{V}$ motors, Part~30 (general purpose) \SI{1000}{V} peak and $t_r \ge \SI{2}{\micro s}$; IEC~60034-18-41 \cite{iec60034-18-41} qualifies the insulation by stress category (overshoot factor and impulse rise time), IEC~TS~60034-25 \cite{iec60034-25} gives the application guide and IEC~TS~61800-8 \cite{iec61800-8} the method to specify the voltage at the power interface. The common-mode $dv/dt$ (bearing currents, EMI) is a separate issue, mitigated by common-mode chokes and not covered here.
+
+\subsection{Filter options}
+\begin{itemize}
+\item \textbf{Output reactor} (\SIrange{1}{3}{\percent}): slows the edge seen by the cable only through the cable capacitance, $t_r \approx 2.2\,\sqrt{L C_{cable}}$-like; mostly limits the capacitive charging current and the inverter stress; insufficient alone above \SIrange{50}{100}{m}.
+\item \textbf{$dv/dt$ filter} (LC, $f_0 = \SIrange{5}{10}{}\,\fsw$, damped): limits the edge at the filter output to $t_r \approx 0.3/f_0$ (undamped $10$--$90\,\%$ rise; \SIrange{0.3}{0.5}{} with damping). From \eqref{eq:lcrit}, for an admissible overshoot $OF = \hat V_m/\Vdc - 1$ and cable length $l$: $l_{crit} \ge l\,\Gamma_m/OF$, i.e.\ $t_r \ge 2 l \Gamma_m/(v\,OF)$. The capacitor is charged and discharged twice per switching period, so irrespective of the damping resistor the loss is bounded by $P \approx 3\fsw\Cf\Vdc^2$: $\Cf$ must stay at \SIrange{0.1}{0.5}{\micro F} and the filter cannot be made slow. Damping $\zeta = \SIrange{0.3}{0.5}{}$ with $R_d$ in series with $\Cf$ or a resistor across $\Lf$ (carries no fundamental); clamping diodes to the DC bus recover the energy \cite{finlayson1998,vonjouanne1997}.
+\item \textbf{Sine filter} (LC or L(RC), $f_0 \ll \fsw$): sinusoidal motor voltage, no reflection problem at any length (the edge is $\sim 1/(2f_0)$), lower motor noise and harmonic losses, standard motors usable, but fundamental drop, capacitor current, reduced control bandwidth and field-weakening range \cite{steinke1999,finlayson1998,salomaki2008}. The remainder of this section is on the sine filter.
+\item \textbf{Motor-terminal RC} ($R = Z_0$, $C \approx 3 t_r/Z_0$): matches the cable at the motor end \cite{vonjouanne1996}; used when the filter cannot be at the inverter.
+\end{itemize}
+
+\subsection{Sine filter: resonance window}
+The unloaded resonance $f_0$ must sit between the highest fundamental and its low-order harmonics on one side, and the switching frequency on the other:
+\begin{equation}
+(8 \ldots 10)\,f_{1,max} \le f_0 \le \frac{\fsw}{4 \ldots 3},\qquad
+\left|\frac{v_c}{v_i}\right|_{\fsw} \approx \Big(\frac{f_p}{\fsw}\Big)^2 = \SIrange{-20}{-28}{dB}.
+\label{eq:window}
+\end{equation}
+The lower bound keeps the 5th and 7th harmonics generated by the dead time and by the inverter nonlinearity (at $5f_1$, $7f_1$, up to \SI{1.4}{kHz} for a \SI{200}{Hz} machine) away from the resonance, where they would be amplified by $Q = 1/(2\zeta)$, and keeps the current-loop crossover below $f_0/3$. The window exists only if $\fsw \ge (24 \ldots 40)\,f_{1,max}$: a \SI{50}{Hz} induction motor in field weakening up to \SI{75}{Hz} is served by $\fsw = \SI{4}{kHz}$, a high-speed or high-pole PMSM at \SI{200}{Hz} needs $\fsw \ge \SIrange{6}{8}{kHz}$ or a relaxed attenuation. This, with the capacitor current, is the main reason why sine filters are heavier for PMSM drives.
+
+\subsection{Sine filter: inductor, capacitor, loaded resonance}
+\textbf{Inductor.} Sized by the fundamental drop at $f_{1,max}$ and checked for the inverter ripple (the allowance follows Section~\ref{sec:optL} as on the grid side: $k_{r,opt} \propto 1/\fsw$, $0.4$--$0.5$ at \SI{2}{kHz}),
+\begin{equation}
+\Lf \le \frac{\epsilon_L V_{ph}}{\omega_{1,max} I_n},\ \ \epsilon_L = \SIrange{0.05}{0.10}{};\qquad
+\Delta i_{\pp,max} = \frac{\Vdc}{6\fsw\Lf}\ \ \text{(the inverter reaches } m = 2/\sqrt3 \text{ at } f_{1,max}),
+\label{eq:Lf}
+\end{equation}
+With $\Lf = \SIrange{3}{6}{\percent}$ the inverter current ripple is \SIrange{25}{45}{\percent} of $\hat I_n$: it flows entirely into $\Cf$, the motor sees none of it, but the inverter must be rated for the peak and for the switching losses, and the inductor core for the ripple RMS of Table~\ref{tab:ripple}. The drop reduces the voltage available to the machine by $\omega_1 \Lf I_n$ (vectorially): it must be budgeted in $\Vdc$ or accepted as an earlier field-weakening onset.
+
+\textbf{Capacitor.} From the chosen $f_0$ and the fundamental capacitive current,
+\begin{equation}
+\Cf = \frac{1}{(2\pi f_0)^2 \Lf},\qquad I_c = \omega_{1,max}\Cf V_{ph} \le (0.1 \ldots 0.2)\,I_n,\qquad
+\boldsymbol i_i = \boldsymbol i_s + j\omega_1 \Cf \boldsymbol v_c,\quad \boldsymbol v_i = \boldsymbol v_c + (R_{Lf} + j\omega_1 \Lf)\,\boldsymbol i_i,
+\label{eq:Cfm}
+\end{equation}
+the last two relations giving the inverter current and voltage that set the inverter rating and shift the torque-maximising trajectories of the machine \cite{salomaki2008}. The capacitor is rated for $1.1 V$ plus the switching ripple $\hat v_{c,sw} \approx \sqrt2 I_{rip,rms}/(\wsw\Cf)$ and for $\sqrt{I_c^2 + I_{rip,rms}^2}$.
+
+\textbf{Loaded resonance.} With the machine connected the resonance moves from $f_0$ to $f_p = f_0\sqrt{1 + \Lf/\Lhf}$ of \eqref{eq:lc}, where $\Lhf$ is the inductance the machine presents at kilohertz frequencies: the transient (total leakage) inductance $\sigma L_s = L_{ls} + L_{lr}'$ of the induction motor, \SIrange{0.15}{0.25}{pu}, or $L_d$, $L_q$ of the PMSM, \SIrange{0.1}{0.3}{pu} for surface magnets and \SIrange{0.3}{0.8}{pu} for interior magnets with $L_q > L_d$ and a strong dependence on $i_q$ (saturation). The shift is \SIrange{4}{20}{\percent} and must be included in \eqref{eq:window}; for an IPM it differs between the $d$ and $q$ axes, so the plant seen by the current controller is anisotropic. The damping contributed by the machine is small because $\Lhf \gg \Lf$ decouples it from the capacitor node: the machine branch acts at $f_p$ as a conductance $G_m = \Rhf/(\Rhf^2 + (2\pi f_p \Lhf)^2)$ and gives $\zeta_m = \tfrac12 G_m\sqrt{L_p/\Cf}$ with $L_p = \Lf \parallel \Lhf$, i.e.\ a few $10^{-3}$ even with the deep-bar rotor resistance of the IM (\SIrange{0.05}{0.15}{pu} at \SI{1}{kHz}), and $10^{-4}$ for the PMSM, whose rotor has no cage. The resonance therefore has $Q \approx 10$--$20$, set by the inductor losses, unless it is damped explicitly.
+
+\subsection{Sine filter: damping}
+\label{sec:dampmotor}
+The same two passive networks of Section~\ref{sec:dampgrid} apply with $\wres \to 2\pi f_p$ and $L_p = \Lf \parallel \Lhf$; on the motor side the fundamental reaches $f_{1,max}$ and the capacitor is a larger fraction of $C_b$, so the fundamental term dominates the loss of both networks and the R--C branch, which adds $C_2 = n\Cf$ to the capacitance, costs typically twice the series resistor. The series resistor $R_d = 1/(3\cdot 2\pi f_p \Cf)$ ($\zeta \approx 0.17$) is the usual passive choice at \SIrange{0.5}{1}{\percent} of $P_n$; it also reduces the attenuation by the factor $\sqrt{1 + (2\pi\fsw R_d \Cf)^2}$. Active damping (a virtual resistor through capacitor-voltage or capacitor-current feedback, or the cascaded control of the next section) is lossless and is preferred where the control has the necessary measurements; the passive resistor is then kept small as a backstop for the V/f mode and for the resonance excited by the dead-time harmonics.
+
+\subsection{Consequences for the control, IM versus PMSM}
+\label{sec:control}
+With the filter the inverter current $i_i$ and voltage $v_i$ are no longer the stator quantities: $i_s = i_i - \Cf\,dv_c/dt$ and $v_s = v_c = v_i - (R_{Lf} + \Lf\,d/dt)\,i_i$. A vector controller that ignores the filter commits a steady-state error of \SIrange{5}{15}{\percent} on the voltage (the drop on $\Lf$) and of \SIrange{5}{20}{\percent} on the current (the capacitor current), and has the undamped LC resonance inside its loop. The structures that work are:
+\begin{itemize}
+\item \textbf{Cascaded control} \cite{salomaki2006}: inner loop on $i_i$ (plant $\Lf$, bandwidth $\alpha_i \le 2\pi\fsw/10$), middle loop on $v_c$ (plant $\Cf$, $\alpha_v \approx \alpha_i/3 \ldots \alpha_i/5$), outer loop on $i_s$ (plant $\Lhf$, $\alpha_s \approx \alpha_v/3 \ldots \alpha_v/5$); the inner loops damp the resonance actively. The stator-current bandwidth ends at $f_p/5$--$f_p/3$, i.e.\ \SIrange{100}{400}{Hz} instead of the \SIrange{0.5}{1}{kHz} of a filterless drive, and the speed loop is correspondingly slower; this is the price for servo-like PMSM applications.
+\item \textbf{Full-order observer} of the filter and machine states from $i_i$ (and $v_i$ reference), which restores $i_s$, $v_s$ and the flux without extra sensors \cite{salomaki2006,salomaki2006b}; the observer must include $\Lf$, $\Cf$ and the correct $\Lhf$ (for the IPM, $L_d$ and $L_q$ with their saturation).
+\item \textbf{Direct measurement} of $i_s$ or $v_c$ after the filter when the cabinet layout allows it.
+\end{itemize}
+
+\textbf{Sensorless control.} Back-EMF (fundamental-model) observers of the PMSM need $v_s$: using $v_i$ instead of $v_c$ injects the $\Lf$ drop directly into the position estimate, so the filter model must be in the observer \cite{salomaki2006b}; the same holds for the IM flux observer \cite{salomaki2006}. Saliency-based high-frequency injection ($f_{inj} = \SIrange{0.5}{2}{kHz}$) is attenuated and phase-shifted by the filter and, near $f_p$, the response is dominated by the filter rather than by the saliency: keep $f_{inj} \le f_p/3$ with the filter transfer function compensated, or measure $i_s$ directly; many drives disable injection with a sine filter.
+
+\textbf{IM versus PMSM, summary.} (i) $\Lhf$: $\sigma L_s$ for the IM, $L_d$/$L_q$ for the PMSM, larger and anisotropic for the IPM, so the loaded resonance shift and the plant differ per axis. (ii) The IM rotor cage adds a lossy branch but, as shown, the damping it gives to the filter is marginal; the PMSM gives none. (iii) The PMSM usually has the higher $f_{1,max}$, which narrows the window \eqref{eq:window} and raises the required $\fsw$. (iv) The filter drop and the capacitor current change the voltage and current limits: for the PMSM they shift the MTPA/MTPV trajectories and anticipate the field weakening \cite{salomaki2008}; for the IM they reduce the maximum torque in field weakening. (v) The benefit differs too: for the PMSM the sinusoidal current removes the magnet eddy-current losses and the demagnetisation risk from the switching ripple at high temperature; for the IM it removes the rotor-bar harmonic losses and the acoustic noise.
+
+\section{Worked examples: \SI{450}{kW} drive, \SI{480}{V}, \SI{2}{kHz}}
+\label{sec:examples}
+The two examples size the AC sine filters of one drive: a \SI{450}{kW} motor at \SI{480}{V}, \SI{60}{Hz}, fed by a two-level inverter through an L(RC) sine filter, with the DC link supplied by a \SI{500}{kVA} AFE through an L(RC)L filter from a \SI{480}{V}, \SI{60}{Hz} grid. Both converters switch at $\fsw = \SI{2}{kHz}$ with SVM and double update ($f_s = \SI{4}{kHz}$, delay $1.5T_s = \SI{375}{\micro s}$) and share $\Vdc = \SI{800}{V}$. The pulse ratio $\fsw/f_1 = 33.3$ is low: this is the case where the filter, not the converter, dominates the design, and the examples show where the general relations of Sections~\ref{sec:grid} and \ref{sec:motor} bite. Each step gives the relation, the substitution and the result; the companion script reproduces every number.
+
+\subsection{Common data: ripple spectrum at pulse ratio 33}
+\label{sec:common}
+At a low pulse ratio the carrier clusters are close to the fundamental ($\fsw \pm 2f_1$ is $h = 31.3$ and $35.3$), so the harmonic limits must be applied line by line rather than to the cluster as a whole. The exact ripple waveform of Section~\ref{sec:ripple} over three fundamental periods (100 switching periods) gives the spectrum of Table~\ref{tab:cluster}: with SVM the first cluster carries \SIrange{85}{94}{\percent} of the ripple RMS, its two largest lines are at $\fsw \pm 2f_1$ (the carrier itself and $\fsw \pm 3kf_1$ are common mode and cancel in the line current), and the second cluster is \numrange{2}{3.5} times smaller.
+
+\begin{table}[htb]
+\centering\scriptsize\begin{onehalfspace}
+\caption{Ripple RMS coefficients $k$ of \eqref{eq:kdef}, written as $1/x$, by carrier cluster and by spectral line, SVM, $\fsw/f_1 = 33.3$ (computed by FFT of the exact piecewise-linear ripple).}
+\label{tab:cluster}
+\begin{tabular}{@{}l ccc cc cc c cc@{}}
+\toprule
+ & total & 1st cluster & 2nd cluster & \multicolumn{2}{c}{$\fsw \pm 2f_1$} & \multicolumn{2}{c}{$\fsw \pm 4f_1$} & $2\fsw \pm f_1$ & \multicolumn{2}{c}{$2\fsw \pm 5f_1$} \\
+\cmidrule(lr){5-6}\cmidrule(lr){7-8}\cmidrule(lr){10-11}
+$m$ & RMS & ($\fsw$) & ($2\fsw$) & $-$ & $+$ & $-$ & $+$ & $\pm$ & $-$ & $+$ \\
+\midrule
+1.00 (AFE)   & 1/45.0 & 1/53.1 & 1/98.7  & 1/90.2 & 1/94.1 & 1/127 & 1/137 & 1/155 & 1/328 & 1/336 \\
+1.02 (AFE with drop) & 1/44.4 & 1/51.1 & 1/104 & 1/86.8 & 1/90.7 & 1/121 & 1/131 & 1/175 & 1/312 & 1/322 \\
+1.155 (motor, full $V$) & 1/39.8 & 1/42.2 & 1/144 & 1/71.2 & 1/75.4 & 1/99.0 & 1/110 & 1/391--1/405 & 1/252 & 1/277 \\
+\bottomrule
+\end{tabular}
+\end{onehalfspace}
+\end{table}
+
+\subsection{Example 1: grid-side L(RC)L sine filter of the AFE}
+\label{sec:ex1}
+\textbf{Inputs.} $V = \SI{480}{V}$, $f_1 = \SI{60}{Hz}$, $S_n = \SI{500}{kVA}$ (the \SI{450}{kW} motor at $\eta = 0.96$ plus margin), $\Vdc = \SI{800}{V}$, $\fsw = \SI{2}{kHz}$, $f_s = \SI{4}{kHz}$, SVM, converter-current ($i_1$) feedback, unity power factor at the grid, $S_{sc} = \SIrange{12}{48}{MVA}$ at the PCC.
+
+\textbf{A1 -- Base quantities and grid inductance.} From \eqref{eq:Lg}:
+\begin{gather*}
+I_n = \frac{S_n}{\sqrt3 V} = \SI{601}{A},\qquad \hat I_n = \sqrt2 I_n = \SI{851}{A},\qquad Z_b = \frac{V^2}{S_n} = \SI{0.461}{\ohm},\\
+L_b = \frac{Z_b}{\omega_1} = \SI{1.222}{mH},\qquad C_b = \frac{1}{\omega_1 Z_b} = \SI{5.76}{mF},\qquad \frac{I_{sc}}{I_L} = \frac{S_{sc}}{S_n} = 24 \ldots 96,\\
+\Lg = \frac{V^2}{\omega_1 S_{sc}} = \frac{480^2}{377 \cdot (12 \ldots 48)\cdot 10^6} = \SIrange{50.9}{12.7}{\micro H}\ (\SIrange{4.2}{1.0}{\percent}).
+\end{gather*}
+At the weakest PCC ($I_{sc}/I_L = 24$) the IEEE~519 row $20 < I_{sc}/I_L < 50$ applies: \SI{1.0}{\percent} of $I_n$ for $23 \le h < 35$ (\SI{6.0}{A}) and \SI{0.5}{\percent} for $35 \le h \le 50$ (\SI{3.0}{A}).
+
+\textbf{A2 -- Modulation index and ripple coefficients.} The drop on $L_1 + L_2$ (\SI{30}{\percent}, step A5) is in quadrature with the current at unity power factor, so
+\begin{gather*}
+m = \frac{2\sqrt2\,V_{ph}\sqrt{1 + \epsilon_L^2}}{\Vdc} = \frac{2\sqrt2 \cdot 277 \cdot 1.04}{800} = 1.02,\\
+k_{\pp,max} = \frac{\sqrt3\,m}{12} = 0.148 = \frac{1}{6.8}\ \text{\eqref{eq:kzc}},\qquad k_{\pp,mean} = \frac{1}{13.4},\qquad k_{rms} = \frac{1}{44.4}\ \text{\eqref{eq:hdf}},
+\end{gather*}
+and from Table~\ref{tab:cluster} the lines at $\fsw \pm 2f_1$ have $k = 1/86.8$ and $1/90.7$, those at $2\fsw \pm f_1$ $k = 1/175$.
+
+\textbf{A3 -- Converter-side inductor $L_1$.} From \eqref{eq:L1} with the usual allowance $k_r = 0.25$,
+\begin{equation*}
+L_1 \ge \frac{k_{\pp,max}\Vdc}{\fsw k_r \hat I_n} = \frac{0.148 \cdot 800}{2000 \cdot 0.25 \cdot 851} = \SI{278}{\micro H} = \SI{22.7}{\percent},
+\end{equation*}
+which is too large at \SI{2}{kHz}: since the capacitor takes the whole ripple, the allowance is relaxed to $k_r = 0.40$ (the usual compromise of large converters at low $\fsw$, and the loss optimum of the reactor at \SI{2}{kHz}, Section~\ref{sec:optL}), giving $L_1 \ge \SI{174}{\micro H}$ and
+\begin{gather*}
+L_1 = \SI{180}{\micro H}\ (\SI{14.7}{\percent}):\qquad
+\Delta i_{\pp,max} = \frac{0.148 \cdot 800}{2000 \cdot 180\cdot 10^{-6}} = \SI{328}{A}\ (\SI{39}{\percent}\ \hat I_n),\qquad
+\Delta i_{\pp,mean} = \SI{166}{A},\\
+I_{rip,rms} = \frac{800}{44.4 \cdot 2000 \cdot 180\cdot 10^{-6}} = \SI{50}{A}\ (\SI{8.3}{\percent}\ I_n),\\
+I_1(\fsw + 2f_1) = \frac{800}{90.7 \cdot 2000 \cdot 180\cdot 10^{-6}} = \SI{24.5}{A},\qquad I_1(\fsw - 2f_1) = \frac{800}{86.8 \cdot 2000 \cdot 180\cdot 10^{-6}} = \SI{25.6}{A},
+\end{gather*}
+with the saturation current $\hat I_n + \Delta i_{\pp,max}/2 = \SI{1015}{A}$. For comparison, the worst case $\Vdc/(6\fsw L_1) = \SI{370}{A}$ and the rule $\Vdc/(8\fsw L_1) = \SI{278}{A}$.
+
+\textbf{A4 -- Capacitor $C_1$.} From \eqref{eq:Cf} with $x = 0.05$:
+\begin{gather*}
+C_1 \le 0.05\,C_b = \SI{288}{\micro F}\ \Rightarrow\ C_1 = \SI{280}{\micro F}\ \text{star (\SI{93}{\micro F} delta)},\\
+Q_c = \omega_1 C_1 V^2 = \SI{24.3}{kvar}\ (\SI{4.9}{\percent}\ S_n),\qquad I_c = \omega_1 C_1 V_{ph} = \SI{29.3}{A}.
+\end{gather*}
+
+\textbf{A5 -- Grid-side inductor $L_2$ from the attenuation.} The binding line is $\fsw + 2f_1 = \SI{2120}{Hz}$ ($h = 35.3$, limit \SI{3.0}{A}); with $\Lg = 0$ in \eqref{eq:L2} (worst case) and then with the actual $\Lg$:
+\begin{gather*}
+k_a \le \frac{3.0}{24.5} = 0.123\ (\SI{-18.2}{dB}),\qquad
+L_2' \ge \frac{1 + 1/k_a}{\omega^2 C_1} = \frac{9.13}{(2\pi\cdot 2120)^2 \cdot 280\cdot 10^{-6}} = \SI{184}{\micro H};\\
+\fsw - 2f_1 = \SI{1880}{Hz}:\qquad k_a \le \frac{6.0}{25.6} = 0.235,\qquad L_2' \ge \SI{135}{\micro H}.
+\end{gather*}
+Because $I_1 \propto 1/L_1$ and $k_a \approx 1/(\omega^2 L_2' C_1)$, the total inductance for a given $I_2$ is minimum at $L_2' = L_1 + 1/(\omega^2 C_1) \approx L_1$ ($r \approx 1$); here $L_1 = \SI{172}{\micro H}$, $L_2' = \SI{192}{\micro H}$, i.e.\ \SI{30}{\percent} in total. The chosen $L_2 = \SI{180}{\micro H}$ ($r = 1$) gives
+\begin{gather*}
+\Lg^{min}:\quad L_2' = \SI{192.7}{\micro H},\qquad k_a = \frac{1}{\omega^2 L_2' C_1 - 1} = 0.117,\\
+I_2(\fsw + 2f_1) = 0.117 \cdot 24.5 = \SI{2.86}{A}\ (\SI{0.47}{\percent}),\qquad I_2(\fsw - 2f_1) = \SI{3.92}{A}\ (\SI{0.65}{\percent});\\
+\Lg^{max}:\quad L_2' = \SI{230.9}{\micro H},\qquad k_a = 0.095,\qquad I_2(\fsw + 2f_1) = \SI{2.34}{A}\ (\SI{0.39}{\percent}),
+\end{gather*}
+both lines within their limits. The drop of $L_1 + L_2 = \SI{360}{\micro H} = \SI{29.5}{\percent}$ is in quadrature with the current:
+\begin{equation*}
+V_1 = \sqrt{V_{ph}^2 + \big(\omega_1 (L_1 + L_2) I_n\big)^2} = \sqrt{277^2 + 81.6^2} = \SI{289}{V}\ (+\SI{4.2}{\percent}),\qquad m = \frac{2\sqrt2 \cdot 289}{800} = 1.02,
+\end{equation*}
+well inside the SVM range at $\Vdc = \SI{800}{V}$.
+
+\begin{mybox}
+\textbf{Why the filter is heavy at \SI{2}{kHz}.} The grid line $I_2(\fsw \pm 2f_1)$ scales as $1/(\fsw^3 L_1 L_2' C_1)$: at pulse ratio 33 the \SI{0.5}{\percent} line limit at $h = 35$ with the capacitor at \SI{5}{\percent} needs $L_1 L_2' \approx (\SI{15}{\percent})^2$, and a larger capacitor helps only as $1/\sqrt{C_1}$. The three ways out, in order of practice: (i) a trap inductor $L_t = 1/(\wsw^2 C_1) = \SI{22.6}{\micro H}$ in series with $C_1$ (LLCL filter \cite{wu2012}), which notches the first cluster; the second cluster ($2\fsw \pm f_1$, \SI{12.7}{A} at $L_1 = \SI{180}{\micro H}$) then sizes $L_2$ through the inductive divider $|Z_c|/|Z_c + Z_2|$ with $Z_c = j\SI{0.437}{\ohm}$ at \SI{4060}{Hz}, giving $L_2' \ge \SI{55}{\micro H}$; (ii) $\fsw = \SI{4}{kHz}$, which at the same $k_r$ and $C_1$ gives $L_1 = \SI{87}{\micro H}$ and $L_2' \ge \SI{51}{\micro H}$, \SI{11}{\percent} in total instead of \SI{30}{\percent}; (iii) the limit applied at the plant PCC with the actual maximum demand current $I_L$ of IEEE~519 rather than with $I_n$ of the converter. A fourth option, the L(RC) without $L_2$ and with a large capacitor, needs a high pulse ratio and is reviewed in Section~\ref{sec:gridL2}. The example continues with the plain L(RC)L to show the resonance and damping steps.
+\end{mybox}
+
+\textbf{A6 -- Resonance.} From \eqref{eq:lcl} and \eqref{eq:resband}:
+\begin{gather*}
+\fres = \frac{1}{2\pi}\sqrt{\frac{L_1 + L_2'}{L_1 L_2' C_1}} = \frac{1}{2\pi}\sqrt{\frac{372.7\cdot 10^{-6}}{180 \cdot 192.7 \cdot 280 \cdot 10^{-18}}} = \SI{986}{Hz}\ (\Lg^{min}),\\
+\fres = \SI{946}{Hz}\ (\Lg^{max}),\qquad \SI{1003}{Hz}\ (\Lg = 0);\\
+10f_1 = \SI{600}{Hz} \le \fres \le \frac{\fsw}{2} = \SI{1000}{Hz};\qquad \frac{f_s}{6} = \SI{667}{Hz}.
+\end{gather*}
+The band \SIrange{946}{986}{Hz} is above the critical $f_s/6$ (forbidden band \SIrange{533}{800}{Hz}): with $i_1$ feedback the loop is inherently stable \cite{parker2014} and the passive damping is a backstop against the uncertainty of $\Lg$; the corner $f_2 = 1/(2\pi\sqrt{L_2'C_1}) = \SI{626}{Hz}$ at $\Lg^{max}$ is also above $10f_1$.
+
+\textbf{A7 -- Damping, R--C branch added to $C_1$.} With $L_p = L_1 \parallel L_2' = \SI{93}{\micro H}$ ($\Lg^{min}$) and $R_0 = \sqrt{L_p/C_1} = \SI{0.577}{\ohm}$, the pole-placement choice $\rho_P$ of \eqref{eq:rRC} and the loss \eqref{eq:PR2} give, for the three usual values of $n = C_2/C_1$:
+\begin{center}\scriptsize\begin{onehalfspace}
+\setlength{\tabcolsep}{2.5pt}
+\begin{tabular}{@{}c ccc cc cc cc@{}}
+\toprule
+$n$ & $C_2$ & total $C$ & $\rho_P$ & $R_2$ & $\zeta$ & $P_{R_2}$ fund.\,+\,sw. & $P_{R_2}/S_n$ & $k_a$ at $\fsw + 2f_1$ & $I_2(\fsw + 2f_1)$ \\
+\midrule
+0.25 & \SI{70}{\micro F}  & \SI{6.1}{\percent} & 4.50 & \SI{2.59}{\ohm} & 0.059 & $414 + 136 = \SI{550}{W}$  & \SI{0.11}{\percent} & 0.112 & \SI{2.73}{A} \\
+0.5  & \SI{140}{\micro F} & \SI{7.3}{\percent} & 2.50 & \SI{1.44}{\ohm} & 0.112 & $920 + 235 = \SI{1155}{W}$ & \SI{0.23}{\percent} & 0.108 & \SI{2.64}{A} \\
+1    & \SI{280}{\micro F} & \SI{9.7}{\percent} & 1.50 & \SI{0.86}{\ohm} & 0.204 & $2202 + 370 = \SI{2572}{W}$ & \SI{0.51}{\percent} & 0.102 & \SI{2.50}{A} \\
+\midrule
+\multicolumn{10}{@{}l}{series resistor instead of the branch: $R_d = 1/(3\wres C_1) = \SI{192}{m\ohm}$, $\zeta = 0.17$, $P_{R_d} = 3R_d(I_c^2 + I_{rip,rms}^2) = \SI{1940}{W}$ (\SI{0.39}{\percent});} \\
+\multicolumn{10}{@{}l}{\quad attenuation penalty $k_a = 0.143$, $I_2(\fsw + 2f_1) = \SI{3.50}{A} > \SI{3.0}{A}$: rejected} \\
+\bottomrule
+\end{tabular}
+\end{onehalfspace}\end{center}
+The branch is added to $C_1$ rather than carved out of it: the attenuation and $\fres$ stay those of $C_1$ (the branch even adds shunt admittance at $\fsw$, hence the slightly better $k_a$), whereas splitting a fixed total into $C_1$ and $C_2$ would raise the shunt impedance at $\fsw$ by $(1 + n)$ and, with $\fres$ only one octave below $\fsw$, lose the limit. The series resistor loses it for the same reason. Selected: $n = 0.25$, $C_2 = \SI{70}{\micro F}$, $R_2 = \SI{2.59}{\ohm}$, $\zeta = 0.06$ ($Q \approx 8$), \SI{550}{W}; the total capacitance is \SI{6.1}{\percent} of $C_b$ (\SI{30}{kvar}), the price of the backstop. $n = 0.5$ is the alternative where more passive damping is wanted against a weak or resonant grid.
+
+\textbf{A8 -- Ratings and control.} $L_1$: \SI{601}{A} RMS, saturation $\ge \SI{1015}{A}$, ripple \SI{50}{A} RMS at \SI{2}{kHz} (core loss). $L_2$: \SI{601}{A} line reactor, or the leakage of a dedicated transformer. $C_1$: $\ge 1.1V = \SI{528}{V}$ AC, switching ripple $\hat v_{c,sw} = \SI{17}{V}$, $\sqrt{I_c^2 + I_{1,sw}^2} = \SI{52}{A}$ RMS. $C_2$: \SI{7.3}{A}; $R_2$: \SI{2.59}{\ohm}, \SI{550}{W} for the three phases. Control: $f_c \le \fres^{min}/3 = \SI{315}{Hz}$ ($\fsw/6.3$), phase margin to be verified at both $\Lg$ with the \SI{375}{\micro s} delay; PLL $\le \SI{20}{Hz}$ at $S_{sc,min}$.
+
+\subsection{Example 1b: L(RC) without $L_2$, the grid as second inductance}
+\label{sec:gridL2}
+The lighter and very common alternative to Example~1 is the L(RC) filter alone, with the transformer and network inductance $\Lg$ as the second inductance of the current divider and a capacitor larger than the \SI{5}{\percent} bound. It is reviewed here on a field design for a \SI{690}{V}, \SI{250}{kW}, \SI{4}{kHz} AFE ($S_n = \SI{275}{kVA}$, $I_n = \SI{230}{A}$, $\Vdc = \SI{1100}{V}$, $f_1 = \SI{50}{Hz}$, double update $f_s = \SI{8}{kHz}$, SVM, $i_1$ feedback): $L_1 = \SI{500}{\micro H}$, $C = \SI{200}{\micro F}$ with $R_d = \SI{50}{m\ohm}$ in series, $\Lg \approx \SI{50}{\micro H}$ ($S_{sc} = \SI{30}{MVA}$, $I_{sc}/I_L = 110$). The criterion that such a filter must meet, with the \emph{stiffest} grid expected ($\Lg^{min}$, where the divider is weakest and the resonance highest), is
+\begin{equation}
+f_2 = \frac{1}{2\pi\sqrt{\Lg C}},\qquad \fres = f_2\sqrt{1 + \frac{\Lg}{L_1}} \approx f_2,\qquad
+1.2\,\frac{f_s}{6} \le \fres(\Lg^{max}) \quad\text{and}\quad \fres(\Lg^{min}) \le \frac{\fsw}{2.5}\ \ (k_a \le 0.19),
+\label{eq:gridL2}
+\end{equation}
+with the line limit then checked through \eqref{eq:ka}. Since $\Lg$ is only \SIrange{0.5}{2}{\percent}, \eqref{eq:gridL2} can be met only with a large capacitor and a high pulse ratio ($\fsw/f_1 \gtrsim 60$): it is the ``large capacitor'' design, whose resonance is wherever the grid puts it.
+
+\textbf{D1 -- Base quantities and ripple.} $Z_b = \SI{1.73}{\ohm}$, $L_b = \SI{5.51}{mH}$, $C_b = \SI{1.84}{mF}$; $m = 1.045$, $k_{\pp,max} = 1/6.6$, $k_{rms} = 1/43.7$; at pulse ratio 80 the lines $\fsw \pm 2f_1$ have $k = 1/84.5$ and $1/86.2$. With \eqref{eq:L1} and $k_r = 0.25$, $L_1 \ge 1100/(6.6 \cdot 4000 \cdot 0.25 \cdot 325) = \SI{510}{\micro H}$: the \SI{500}{\micro H} (\SI{9.1}{\percent}) are exactly the \SI{25}{\percent} allowance (on the flat part of the loss curve of Section~\ref{sec:optL}, whose optimum at \SI{4}{kHz} is $k_r \approx 0.2$),
+\begin{gather*}
+\Delta i_{\pp,max} = \frac{1100}{6.6 \cdot 4000 \cdot 500\cdot 10^{-6}} = \SI{83}{A}\ (\SI{25}{\percent}),\qquad
+I_{rip,rms} = \frac{1100}{43.7 \cdot 4000 \cdot 500\cdot 10^{-6}} = \SI{12.6}{A},\\
+I_1(\fsw \pm 2f_1) = \SIrange{6.5}{6.4}{A},\qquad \hat I_n + \frac{\Delta i_{\pp,max}}{2} = \SI{367}{A}.
+\end{gather*}
+
+\textbf{D2 -- Capacitor.} $C = \SI{200}{\micro F} = \SI{10.9}{\percent}\,C_b$, twice the bound of \eqref{eq:Cf}: $Q_c = \SI{30}{kvar}$ (\SI{11}{\percent} of $S_n$, the no-load current of the converter), $I_c = \SI{25}{A}$, $v_{c,sw} = \SI{2.2}{V}$. The size is not a choice but the consequence of D3.
+
+\textbf{D3 -- Attenuation with the grid only.} From \eqref{eq:ka} with the series resistor and the limits \SI{1.15}{A} (\SI{0.5}{\percent}) and \SI{2.3}{A} (\SI{1.0}{\percent}, the row of this grid):
+\begin{center}\small\begin{onehalfspace}
+\begin{tabular}{@{}c ccc cc c@{}}
+\toprule
+$\Lg$ & $f_2$ & $\fres$ & $\fres/\fsw$ & $k_a(\fsw + 2f_1)$ & $I_2(\fsw + 2f_1)$ & $\zeta$ from $R_d$ \\
+\midrule
+\SI{25}{\micro H} (\SI{0.5}{\percent})  & \SI{2251}{Hz} & \SI{2306}{Hz} & 0.58 & 0.44 & \SI{2.83}{A} (\SI{1.23}{\percent}) & 0.072 \\
+\SI{50}{\micro H} (\SI{0.9}{\percent})  & \SI{1592}{Hz} & \SI{1669}{Hz} & 0.42 & 0.18 & \SI{1.17}{A} (\SI{0.51}{\percent}) & 0.052 \\
+\SI{75}{\micro H} (\SI{1.4}{\percent})  & \SI{1299}{Hz} & \SI{1394}{Hz} & 0.35 & 0.12 & \SI{0.74}{A} (\SI{0.32}{\percent}) & 0.044 \\
+\SI{100}{\micro H} (\SI{1.8}{\percent}) & \SI{1125}{Hz} & \SI{1233}{Hz} & 0.31 & 0.08 & \SI{0.54}{A} (\SI{0.23}{\percent}) & 0.039 \\
+\bottomrule
+\end{tabular}
+\end{onehalfspace}\end{center}
+At the nominal \SI{50}{\micro H} the line is \SI{0.51}{\percent} of $I_n$: inside the \SI{1.0}{\percent} of its own grid, at the edge of the \SI{0.5}{\percent} used in Example~1. The attenuation is however entirely the grid's: a stiffer PCC (\SI{25}{\micro H}, e.g.\ a larger transformer) doubles the harmonic to \SI{1.23}{\percent} and fails both limits, a weaker one improves it. The same filter at $\fsw = \SI{2}{kHz}$ would have its lines at $1900$ and \SI{2100}{Hz} on the resonance, $k_a = 2.3$ and $1.3$ (\SI{7}{\percent} and \SI{4}{\percent} of $I_n$): the reason why Example~1 needs $L_2$.
+
+\textbf{D4 -- Resonance and damping.} $\fres = \SI{1669}{Hz} = 0.42\fsw$ lies above $1.2 f_s/6 = \SI{1600}{Hz}$, but only just: for $\Lg > \SI{49}{\micro H}$ the resonance enters the band \SIrange{1067}{1600}{Hz} around $f_s/6$ and at \SI{100}{\micro H} it is at \SI{1233}{Hz}, below $f_s/6$, where $i_1$ feedback is unstable without damping \cite{parker2014}. The \SI{50}{m\ohm} give $\zeta = \SIrange{0.04}{0.07}{}$ ($Q = 7$--$12$) with $P_{R_d} = 3R_d(I_c^2 + I_{rip,rms}^2) = \SI{118}{W}$ and an attenuation penalty $\sqrt{1 + (\wsw R_d C)^2} = 1.03$: a correct backstop at the nominal grid, the only stabiliser at a weak one, to be verified with the controller gains and the \SI{188}{\micro s} delay.
+
+\textbf{D5 -- Aligned version.} With the criteria of Example~1 (capacitor within the \SI{5}{\percent} bound, $L_2$ as a design variable, resonance band inside $[1.2 f_s/6,\ \fsw/2]$ for $\Lg = \SIrange{25}{100}{\micro H}$, R--C branch with $n = 0.25$), the same $L_1 = \SI{500}{\micro H}$ gives
+\begin{gather*}
+C_1 = \SI{60}{\micro F}\ (\SI{3.3}{\percent}),\qquad L_2 = \SI{140}{\micro H}\ (\SI{2.5}{\percent}),\\
+\fres = \frac{1}{2\pi}\sqrt{\frac{L_1 + L_2'}{L_1 L_2' C_1}} = \SI{1845}{Hz}\ (\Lg = \SI{25}{\micro H}),\qquad \SI{1751}{Hz}\ (\SI{50}{\micro H}),\qquad \SI{1614}{Hz}\ (\SI{100}{\micro H}),\\
+k_a = \frac{1}{\omega^2 L_2' C_1 - 1} = 0.18,\ 0.15,\ 0.12\ \Rightarrow\ I_2(\fsw + 2f_1) = 1.15,\ 0.97,\ \SI{0.75}{A}\ (\SIrange{0.50}{0.32}{\percent}\ I_n),\\
+L_p = L_1 \parallel L_2' = \SI{124}{\micro H},\qquad R_0 = \sqrt{L_p/C_1} = \SI{1.44}{\ohm},\qquad C_2 = 0.25\,C_1 = \SI{15}{\micro F},\\
+R_2 = \rho_P R_0 = 4.5 \cdot 1.44 = \SI{6.5}{\ohm},\qquad \zeta = 0.06,\qquad P_{R_2} = 68 + 20 = \SI{88}{W},
+\end{gather*}
+with the total capacitance at \SI{4.1}{\percent} of $C_b$ ($I_c = \SI{7.5}{A}$ instead of \SI{25}{A}), the drop of $L_1 + L_2 = \SI{11.6}{\percent}$ in quadrature ($V_1 = \SI{401}{V}$, $+\SI{0.7}{\percent}$, $m = 1.03$) and the attenuation of the original design at its nominal grid now guaranteed over the whole $\Lg$ range, with the resonance pinned between $0.40$ and $0.46\fsw$. Keeping $C = \SI{200}{\micro F}$ and adding $L_2$ is not an option: $\fres \ge 1.2 f_s/6$ at $\Lg^{max}$ would require $L_1 \parallel L_2' \le \SI{49}{\micro H}$, i.e.\ no room for any $L_2$; the large capacitor and the absence of $L_2$ go together.
+
+\begin{mybox}
+\textbf{Review of the \SI{690}{V} design in one paragraph.} What is already aligned: $L_1$ at the \SI{25}{\percent} ripple allowance, the \SI{50}{m\ohm} at $\zeta \approx 0.05$ with negligible loss and attenuation penalty, and the line at $\fsw + 2f_1$ within the limit of its grid at \SI{4}{kHz}. What the criteria of this note change: the capacitor from \SI{11}{\percent} to \SI{3.3}{\percent} (plus \SI{0.8}{\percent} in the damping branch), a \SI{2.5}{\percent} line reactor ($L_2 = \SI{140}{\micro H}$) that makes attenuation and resonance independent of the PCC, and the R--C branch (\SI{15}{\micro F}, \SI{6.5}{\ohm}) in place of the series resistor. The price is the reactor and the \SI{11.6}{\percent} series reactance (in quadrature, hence harmless for the voltage); the gain is the reactive power (\SI{30}{kvar} to \SI{11}{kvar}), a resonance that cannot drift onto $f_s/6$ or onto the switching cluster when the transformer changes, and a design that would survive a move to \SI{2}{kHz} with the method of Example~1 rather than fail silently.
+\end{mybox}
+
+\subsection{Example 2: L(RC) sine filter between inverter and motor}
+\label{sec:ex2}
+\textbf{Inputs.} $P_n = \SI{450}{kW}$, $V = \SI{480}{V}$, $f_{1,max} = \SI{60}{Hz}$ (rated speed, no field weakening), $\Vdc = \SI{800}{V}$, $\fsw = \SI{2}{kHz}$, SVM, motor cable $l = \SI{150}{m}$ with $v = \SI{150}{m/\micro s}$, inverter edge $t_r = \SI{0.3}{\micro s}$ (\SI{1200}{V} IGBT modules). Two machines of the same rating:
+\begin{itemize}
+\item IM, 4-pole, \SI{1780}{rpm}: $I_n = \SI{650}{A}$ ($\cos\varphi = 0.87$, $\eta = 0.96$), $\sigma L_s = \SI{0.18}{pu}$, $\Rhf = \SI{0.10}{pu}$ (deep-bar rotor at \SI{700}{Hz});
+\item PMSM (IPM), 8-pole, \SI{900}{rpm}: $I_n = \SI{590}{A}$ ($\cos\varphi = 0.95$, $\eta = 0.97$), $L_q = \SI{0.30}{pu}$ ($L_d \approx \SI{0.20}{pu}$), $\Rhf = \SI{0.02}{pu}$.
+\end{itemize}
+Base quantities with $Z_b = V_{ph}/I_n$: IM $Z_b = \SI{0.426}{\ohm}$, $L_b = \SI{1.131}{mH}$, $C_b = \SI{6.22}{mF}$, $\Lhf = 0.18 L_b = \SI{204}{\micro H}$; PMSM $Z_b = \SI{0.470}{\ohm}$, $L_b = \SI{1.246}{mH}$, $C_b = \SI{5.65}{mF}$, $\Lhf = L_q = \SI{374}{\micro H}$.
+
+\textbf{B1 -- Is a filter needed, and which.} From \eqref{eq:lcrit}:
+\begin{equation*}
+l_{crit} = \frac{v\,t_r}{2} = \frac{150 \cdot 0.3}{2} = \SI{22.5}{m} \ll l,\qquad
+\hat V_m = \Vdc(1 + \Gamma_m) = 800 \cdot 1.8 = \SI{1440}{V}\quad (\Gamma_m = 0.8),
+\end{equation*}
+within the NEMA~MG\,1-31 envelope of an inverter-duty motor ($3.1V = \SI{1488}{V}$) but far above the \SI{1000}{V} of a general-purpose motor (MG\,1-30). A $dv/dt$ filter limiting the overshoot to $OF = 0.2$ would need $l_{crit} \ge l\Gamma_m/OF = \SI{600}{m}$, i.e.\ $t_r \ge \SI{8}{\micro s}$ ($f_0 \le \SI{38}{kHz}$, $dv/dt \le \SI{100}{V/\micro s}$) with $\Cf \le \SI{0.22}{\micro F}$ (loss bound $3\fsw\Cf\Vdc^2 = \SI{845}{W}$). The sine filter is chosen: standard motor, long cable, and at \SI{2}{kHz} the sinusoidal voltage also removes the audible switching noise and the harmonic losses of the machine.
+
+\textbf{B2 -- Resonance window.} From \eqref{eq:window}:
+\begin{equation*}
+8 f_{1,max} = \SI{480}{Hz} \le f_0 \le \frac{\fsw}{4} = \SI{500}{Hz}\ \Big(\frac{\fsw}{3} = \SI{667}{Hz}\Big),\qquad \frac{\fsw}{f_{1,max}} = 33.3\ \text{(the window needs 24--40)}.
+\end{equation*}
+The window is at its limit: the design places the \emph{loaded} resonance at the relaxed bound $f_p = \fsw/3 = \SI{667}{Hz}$ and derives $f_0 = f_p/\sqrt{1 + \Lf/\Lhf}$ from it. Any field weakening (e.g.\ \SI{72}{Hz}) would require $f_0 \ge \SI{576}{Hz}$ and close the window; the dead-time harmonics are checked in B5.
+
+\textbf{B3 -- Inductor $\Lf$.} The drop bound of \eqref{eq:Lf} and the ripple bound conflict at \SI{2}{kHz}:
+\begin{gather*}
+\text{drop } \epsilon_L \le 0.08:\quad \Lf \le \frac{0.08 \cdot 277}{377 \cdot 650} = \SI{90}{\micro H}\ \Rightarrow\ \Delta i_{\pp,max} = \frac{\Vdc}{6\fsw\Lf} = \SI{741}{A} = \SI{80}{\percent}\ \hat I_n\ \text{(not acceptable)};\\
+\text{ripple } k_r = 0.5:\quad \Lf \ge \frac{\Vdc}{6\fsw k_r \hat I_n} = \frac{800}{6 \cdot 2000 \cdot 0.5 \cdot 919} = \SI{145}{\micro H}\ \Rightarrow\ \Lf = \SI{150}{\micro H}\ (\SI{13.3}{\percent}),
+\end{gather*}
+the ripple bound wins and the drop (\SI{13.3}{\percent} at \SI{60}{Hz}) is budgeted in $\Vdc$ (step B4). Then
+\begin{gather*}
+\Delta i_{\pp,max} = \frac{800}{6 \cdot 2000 \cdot 150\cdot 10^{-6}} = \SI{444}{A}\ (\SI{48}{\percent}),\qquad
+I_{rip,rms} = \frac{800}{39.8 \cdot 2000 \cdot 150 \cdot 10^{-6}} = \SI{67}{A}\ (\SI{10.3}{\percent}),\\
+I_i(\fsw\ \text{cluster}) = \frac{800}{42.2 \cdot 2000 \cdot 150 \cdot 10^{-6}} = \SI{63}{A},
+\end{gather*}
+with $k = 1/6$ and $1/39.8$ at full modulation (Table~\ref{tab:ripple}, \ref{tab:cluster}). PMSM: $\Lf \ge \SI{160}{\micro H}$ $\Rightarrow$ $\Lf = \SI{160}{\micro H}$ (\SI{12.8}{\percent}), $\Delta i_{\pp,max} = \SI{417}{A}$ (\SI{50}{\percent}), $I_{rip,rms} = \SI{63}{A}$ (\SI{10.7}{\percent}).
+
+\textbf{B4 -- Capacitor $\Cf$ from the loaded resonance.} With $f_p = \SI{667}{Hz}$ and \eqref{eq:lc}, \eqref{eq:Cfm}:
+\begin{gather*}
+\text{IM:}\qquad f_0 = \frac{f_p}{\sqrt{1 + \Lf/\Lhf}} = \frac{667}{\sqrt{1 + 150/204}} = \SI{506}{Hz}\ (8.4 f_{1,max}),\\
+\Cf = \frac{1}{(2\pi f_0)^2 \Lf} = \frac{1}{(2\pi \cdot 506)^2 \cdot 150\cdot 10^{-6}} = \SI{660}{\micro F}\ (\SI{10.6}{\percent}\ C_b),\qquad I_c = \omega_1 \Cf V_{ph} = \SI{69}{A}\ (\SI{10.6}{\percent});\\
+\text{PMSM:}\qquad f_0 = \frac{667}{\sqrt{1 + 160/374}} = \SI{558}{Hz}\ \Rightarrow\ \Cf = \SI{509}{\micro F} \to \SI{500}{\micro F}\ (\SI{8.9}{\percent}),\\
+f_0 = \SI{563}{Hz}\ (9.4 f_{1,max}),\qquad f_p = \SI{672}{Hz},\qquad I_c = \SI{52}{A}\ (\SI{8.9}{\percent}).
+\end{gather*}
+The larger $\Lhf$ of the PMSM shifts the resonance less ($f_p/f_0 = 1.19$ against $1.32$) and allows the smaller capacitor. Inverter operating point at rated load from the phasor relations of \eqref{eq:Cfm} (stator current lagging, capacitor current leading): IM $I_i = \SI{619}{A}$ (power factor $0.91$ at the inverter), $V_i = \SI{293}{V}$ phase (\SI{508}{V} line), $m = 1.04$; PMSM $I_i = \SI{576}{A}$, $V_i = \SI{287}{V}$, $m = 1.02$: both inside the SVM range of $\Vdc = \SI{800}{V}$ and below the inverter rating, the capacitor current partly compensating the lagging stator current.
+
+\textbf{B5 -- Attenuation, machine damping, dead-time harmonics.} From \eqref{eq:lc}:
+\begin{gather*}
+\left|\frac{v_c}{v_i}\right|_{\fsw} = \frac{1}{(\fsw/f_p)^2 - 1} = \frac{1}{9 - 1} = 0.125\ (\SI{-18.1}{dB}),\\
+v_{c,sw} \approx \frac{I_i(\fsw)}{\wsw \Cf} = \frac{63}{2\pi \cdot 2000 \cdot 660\cdot 10^{-6}} = \SI{7.6}{V}\ (\SI{2.8}{\percent}\ V_{ph}),
+\end{gather*}
+PMSM $0.127$ (\SI{-17.9}{dB}), \SI{9.4}{V} (\SI{3.4}{\percent}): a weak sine filter by the standards of \eqref{eq:window}, but enough for the insulation and the machine losses. Machine damping with $L_p = \Lf \parallel \Lhf$: IM $L_p = \SI{86}{\micro H}$, $G_m = \Rhf/(\Rhf^2 + (2\pi f_p\Lhf)^2) = \SI{58}{mS}$, $\zeta_m = \tfrac12 G_m\sqrt{L_p/\Cf} = 0.011$; PMSM $L_p = \SI{112}{\micro H}$, $G_m = \SI{3.8}{mS}$, $\zeta_m = 0.0009$. The 5th and 7th dead-time harmonics at \SI{300}{} and \SI{420}{Hz} are amplified by $1/|1 - (f/f_p)^2| = 1.25$ and $1.66$: acceptable with dead-time compensation and the damping of B6.
+
+\textbf{B6 -- Damping, R--C branch added to $\Cf$.} With $R_0 = \sqrt{L_p/\Cf}$ (IM \SI{0.362}{\ohm}, PMSM \SI{0.473}{\ohm}) and the fundamental at $f_{1,max}$ in \eqref{eq:PR2}:
+\begin{center}\scriptsize\begin{onehalfspace}
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{@{}c cccc cc cccc cc@{}}
+\toprule
+ & \multicolumn{6}{c}{IM} & \multicolumn{6}{c}{PMSM} \\
+\cmidrule(lr){2-7}\cmidrule(lr){8-13}
+$n$ & $C_2$ & $R_2$ & $\zeta$ & $P_{R_2}$ & $P_{R_2}/P_n$ & $I_c$ total & $C_2$ & $R_2$ & $\zeta$ & $P_{R_2}$ & $P_{R_2}/P_n$ & $I_c$ total \\
+\midrule
+0.25 & \SI{165}{\micro F} & \SI{1.63}{\ohm} & 0.059 & \SI{1.53}{kW} & \SI{0.34}{\percent} & \SI{86}{A} (\SI{13}{\percent}) & \SI{125}{\micro F} & \SI{2.13}{\ohm} & 0.059 & \SI{1.19}{kW} & \SI{0.26}{\percent} & \SI{65}{A} (\SI{11}{\percent}) \\
+0.5  & \SI{330}{\micro F} & \SI{0.90}{\ohm} & 0.112 & \SI{3.35}{kW} & \SI{0.74}{\percent} & \SI{103}{A} (\SI{16}{\percent}) & \SI{250}{\micro F} & \SI{1.18}{\ohm} & 0.112 & \SI{2.59}{kW} & \SI{0.57}{\percent} & \SI{78}{A} (\SI{13}{\percent}) \\
+1    & \SI{660}{\micro F} & \SI{0.54}{\ohm} & 0.204 & \SI{7.87}{kW} & \SI{1.75}{\percent} & \SI{138}{A} (\SI{21}{\percent}) & \SI{500}{\micro F} & \SI{0.71}{\ohm} & 0.204 & \SI{6.02}{kW} & \SI{1.34}{\percent} & \SI{104}{A} (\SI{18}{\percent}) \\
+\midrule
+$R_d$ & \multicolumn{6}{l}{$1/(3\cdot 2\pi f_p\Cf) = \SI{121}{m\ohm}$, $\zeta = 0.17$: \SI{3.35}{kW} (\SI{0.74}{\percent}), attenuation $\times 1.41$} & \multicolumn{6}{l}{\SI{158}{m\ohm}, $\zeta = 0.17$: \SI{3.16}{kW} (\SI{0.70}{\percent}), attenuation $\times 1.41$} \\
+\bottomrule
+\end{tabular}
+\end{onehalfspace}\end{center}
+The loss is almost entirely the fundamental term (the switching term is \SIrange{90}{310}{W}), because the capacitor is \SIrange{9}{11}{\percent} of $C_b$ and the branch carries $\omega_1 C_2 V_{ph}$ at full voltage all the time; it scales with $n$. Passive damping to $\zeta = 0.2$ costs \SIrange{1.3}{1.8}{\percent} of $P_n$ and is not acceptable; the series resistor is no better and also degrades the attenuation. Selected: $n = 0.25$ ($\zeta = 0.06$, $Q \approx 8$, \SIrange{0.26}{0.34}{\percent}) as a backstop for the V/f mode and the dead-time harmonics, with the bulk of the damping provided actively by the cascaded control of Section~\ref{sec:control}.
+
+\textbf{B7 -- Ratings and control.} IM: $\Lf$ \SI{650}{A} RMS plus \SI{67}{A} RMS ripple at \SI{2}{kHz}, saturation $\ge \hat I_n + \Delta i_{\pp,max}/2 = \SI{1141}{A}$; $\Cf$ $\ge \SI{528}{V}$ AC plus \SI{11}{V} peak ripple, $\sqrt{I_c^2 + I_{rip,rms}^2} = \SI{96}{A}$ RMS; $C_2$ \SI{17}{A}, $R_2$ \SI{1.5}{kW}. PMSM: saturation $\ge \SI{1043}{A}$, capacitor \SI{82}{A}, $C_2$ \SI{13}{A}, $R_2$ \SI{1.2}{kW}. Control (both): inverter-current loop $\alpha_i \le 2\pi\fsw/10 = 2\pi\cdot\SI{200}{Hz}$, capacitor-voltage loop $\alpha_i/4$, stator-current loop $\le f_p/5 = \SI{133}{Hz}$, HF injection $f_{inj} \le f_p/3 = \SI{222}{Hz}$ (in practice disabled); for the IPM the observer uses $L_d \ne L_q$, so $f_p$ is \SI{672}{Hz} on the $q$ axis and $\approx \SI{700}{Hz}$ on the $d$ axis.
+
+\subsection{Comparison: AFE, induction motor, PMSM}
+\label{sec:compare}
+\begin{table}[htb]
+\centering\footnotesize\begin{onehalfspace}
+\caption{The three L(RC) sine filters of the \SI{450}{kW}, \SI{480}{V}, \SI{2}{kHz} drive (SVM, $\Vdc = \SI{800}{V}$). Percentages are per unit of the respective converter base; losses refer to $S_n$ (AFE) or $P_n$ (motors).}
+\label{tab:compare}
+\begin{tabular}{@{}l p{3.9cm} p{3.9cm} p{3.9cm}@{}}
+\toprule
+ & AFE, grid side (L(RC)L) & IM (L(RC)) & PMSM, IPM (L(RC)) \\
+\midrule
+rating, current & \SI{500}{kVA}, \SI{601}{A} & \SI{450}{kW}, \SI{650}{A} & \SI{450}{kW}, \SI{590}{A} \\
+design driver & IEEE~519 line limit at $h = 35$ (attenuation) & resonance window at pulse ratio 33 and ripple & same, with the larger $\Lhf$ \\
+converter-side inductance & $L_1 = \SI{180}{\micro H}$ (\SI{14.7}{\percent}) & $\Lf = \SI{150}{\micro H}$ (\SI{13.3}{\percent}) & $\Lf = \SI{160}{\micro H}$ (\SI{12.8}{\percent}) \\
+second inductance & $L_2 = \SI{180}{\micro H}$ (\SI{14.7}{\percent}) $+ \Lg = \SIrange{13}{51}{\micro H}$ & $\Lhf = \sigma L_s = \SI{204}{\micro H}$ (\SI{18}{\percent}), given & $\Lhf = L_q = \SI{374}{\micro H}$ (\SI{30}{\percent}), given, $L_d \ne L_q$ \\
+main capacitor $C_1$ & \SI{280}{\micro F} (\SI{4.9}{\percent}) & \SI{660}{\micro F} (\SI{10.6}{\percent}) & \SI{500}{\micro F} (\SI{8.9}{\percent}) \\
+R--C branch ($n = 0.25$) & \SI{70}{\micro F}, \SI{2.59}{\ohm}, $\zeta = 0.06$ & \SI{165}{\micro F}, \SI{1.63}{\ohm}, $\zeta = 0.06$ & \SI{125}{\micro F}, \SI{2.13}{\ohm}, $\zeta = 0.06$ \\
+damping loss & \SI{550}{W} (\SI{0.11}{\percent}) & \SI{1.53}{kW} (\SI{0.34}{\percent}) & \SI{1.19}{kW} (\SI{0.26}{\percent}) \\
+damping by the load & none ($\Lg$ lossless) & $\zeta_m = 0.011$ (rotor cage) & $\zeta_m = 0.001$ \\
+resonance & $\fres = \SIrange{946}{986}{Hz}$ ($0.47$--$0.49\fsw$), set by $\Lg$ & $f_0 = \SI{506}{Hz}$, $f_p = \SI{667}{Hz}$ ($\fsw/3$), shift $+\SI{32}{\percent}$ & $f_0 = \SI{563}{Hz}$, $f_p = \SI{672}{Hz}$ ($\fsw/3$), shift $+\SI{19}{\percent}$ \\
+attenuation at $\fsw$ & $k_a = 0.11$ (\SI{-19}{dB}) on $i_2/i_1$ & $0.125$ (\SI{-18}{dB}) on $v_c/v_i$ & $0.127$ (\SI{-18}{dB}) \\
+residual at the far side & $I_2(\fsw + 2f_1) = \SI{2.7}{A}$ (\SI{0.45}{\percent}) & $v_{c,sw} = \SI{7.6}{V}$ (\SI{2.8}{\percent}) & \SI{9.4}{V} (\SI{3.4}{\percent}) \\
+ripple, converter side & \SI{328}{A} pp (\SI{39}{\percent}), \SI{50}{A} RMS & \SI{444}{A} pp (\SI{48}{\percent}), \SI{67}{A} RMS & \SI{417}{A} pp (\SI{50}{\percent}), \SI{63}{A} RMS \\
+fundamental drop & \SI{29.5}{\percent} (quadrature, $+\SI{4}{\percent}$ voltage) & \SI{13.3}{\percent} ($m = 1.04$) & \SI{12.8}{\percent} ($m = 1.02$) \\
+capacitor current ($C_1$) & \SI{29}{A} (\SI{4.9}{\percent}) & \SI{69}{A} (\SI{10.6}{\percent}) & \SI{52}{A} (\SI{8.9}{\percent}) \\
+inductor peak current & \SI{1015}{A} & \SI{1141}{A} & \SI{1043}{A} \\
+stability constraint & $\fres > f_s/6 = \SI{667}{Hz}$ with $i_1$ feedback & $f_p$ inside the current loop: cascaded control or observer & same, anisotropic plant \\
+current-loop bandwidth & $f_c \le \fres/3 = \SI{315}{Hz}$ & stator loop $\le f_p/5 = \SI{133}{Hz}$ & \SI{134}{Hz} \\
+sensorless / PLL & PLL $\le \SI{20}{Hz}$ at $S_{sc,min}$ & flux observer with the filter model & back-EMF observer with the filter model; HF injection $\le \SI{220}{Hz}$ \\
+what it protects & PCC harmonics, grid resonance & motor insulation (\SI{1440}{V} peak without filter), losses, noise & same, plus magnet losses and demagnetisation margin \\
+how to lighten it & trap $L_t = \SI{22.6}{\micro H}$, or \SI{4}{kHz} (\SI{11}{\percent} total $L$; at \SI{4}{kHz} also the grid as $L_2$, Section~\ref{sec:gridL2}) & \SI{4}{kHz}: window opens, $\Lf$ and $\Cf$ halve & same; lower pole count would need higher $\fsw$ \\
+\bottomrule
+\end{tabular}
+\end{onehalfspace}
+\end{table}
+
+Table~\ref{tab:compare} shows what is common and what differs. The three filters share the inductor (\SIrange{13}{15}{\percent}, set by a ripple of \SIrange{40}{50}{\percent} at \SI{2}{kHz}), the resonance placement at a fixed fraction of $\fsw$ ($\fsw/2$ for the AFE with $i_1$ feedback, $\fsw/3$ for the motors), the modest attenuation of \SIrange{18}{19}{dB} that follows from it, and the conclusion that at pulse ratio 33 the passive damping must be kept small ($\zeta \approx 0.06$) and complemented by active damping. They differ in what fixes the second inductance: on the grid side $L_2$ is a design variable and $\Lg$ an uncertainty, so the resonance is a band and the harmonic limit sets the heaviest element of the whole drive (\SI{30}{\percent} of inductance, or a trap); on the motor side the second inductance is the machine itself, so the capacitor is the design variable, the resonance shift is known from $\Lhf$, and the capacitor is \SIrange{9}{11}{\percent} with the fundamental current and the damping loss that go with it. Between the two machines, the PMSM has the larger $\Lhf$ (\SI{30}{\percent} against \SI{18}{\percent}) and therefore the smaller capacitor, the smaller resonance shift and the lower damping loss, but it gives no damping of its own, its plant is anisotropic ($L_d \ne L_q$, saturating with $i_q$) and its sensorless control must carry the filter model; the IM is more forgiving on the control side and pays with the larger capacitor. For both motors the stator-current bandwidth of about \SI{130}{Hz} is the real cost of the sine filter at \SI{2}{kHz}: adequate for pumps, fans, compressors and propulsion, not for a servo axis.
+
+\end{onehalfspace}
+
+\begin{thebibliography}{99}\small
+\bibitem{liserre2005} M. Liserre, F. Blaabjerg, S. Hansen, ``Design and control of an LCL-filter-based three-phase active rectifier,'' \emph{IEEE Transactions on Industry Applications}, vol.~41, no.~5, pp.~1281--1291, Sep./Oct. 2005.
+\bibitem{reznik2014} A. Reznik, M. G. Sim\~oes, A. Al-Durra, S. M. Muyeen, ``LCL filter design and performance analysis for grid-interconnected systems,'' \emph{IEEE Transactions on Industry Applications}, vol.~50, no.~2, pp.~1225--1232, Mar./Apr. 2014.
+\bibitem{jalili2009} K. Jalili, S. Bernet, ``Design of LCL filters of active-front-end two-level voltage-source converters,'' \emph{IEEE Transactions on Industrial Electronics}, vol.~56, no.~5, pp.~1674--1689, May 2009.
+\bibitem{pena2013} R. Pe\~na-Alzola, M. Liserre, F. Blaabjerg, R. Sebasti\'an, J. Dannehl, F. W. Fuchs, ``Analysis of the passive damping losses in LCL-filter-based grid converters,'' \emph{IEEE Transactions on Power Electronics}, vol.~28, no.~6, pp.~2642--2646, Jun. 2013.
+\bibitem{pena2014} R. Pe\~na-Alzola, M. Liserre, F. Blaabjerg, M. Ordonez, Y. Yang, ``LCL-filter design for robust active damping in grid-connected converters,'' \emph{IEEE Transactions on Industrial Informatics}, vol.~10, no.~4, pp.~2192--2203, Nov. 2014.
+\bibitem{parker2014} S. G. Parker, B. P. McGrath, D. G. Holmes, ``Regions of active damping control for LCL filters,'' \emph{IEEE Transactions on Industry Applications}, vol.~50, no.~1, pp.~424--432, Jan./Feb. 2014.
+\bibitem{dannehl2009} J. Dannehl, C. Wessels, F. W. Fuchs, ``Limitations of voltage-oriented PI current control of grid-connected PWM rectifiers with LCL filters,'' \emph{IEEE Transactions on Industrial Electronics}, vol.~56, no.~2, pp.~380--388, Feb. 2009.
+\bibitem{liserre2006} M. Liserre, R. Teodorescu, F. Blaabjerg, ``Stability of photovoltaic and wind turbine grid-connected inverters for a large set of grid impedance values,'' \emph{IEEE Transactions on Power Electronics}, vol.~21, no.~1, pp.~263--272, Jan. 2006.
+\bibitem{sun2011} J. Sun, ``Impedance-based stability criterion for grid-connected inverters,'' \emph{IEEE Transactions on Power Electronics}, vol.~26, no.~11, pp.~3075--3078, Nov. 2011.
+\bibitem{teodorescu2011} R. Teodorescu, M. Liserre, P. Rodr\'iguez, \emph{Grid Converters for Photovoltaic and Wind Power Systems}, Wiley-IEEE Press, 2011, Ch.~11 (grid filter design).
+\bibitem{erickson1999} R. W. Erickson, ``Optimal single resistor damping of input filters,'' \emph{Proc. IEEE Applied Power Electronics Conference (APEC)}, 1999, pp.~1073--1079.
+\bibitem{erickson2020} R. W. Erickson, D. Maksimovi\'c, \emph{Fundamentals of Power Electronics}, 3rd ed., Springer, 2020, Ch.~17 (input filter design).
+\bibitem{middlebrook1976} R. D. Middlebrook, ``Input filter considerations in design and application of switching regulators,'' \emph{Proc. IEEE IAS Annual Meeting}, 1976, pp.~366--382.
+\bibitem{bagnara2026} D. Bagnara, \emph{Passively damped LC output filter with R--C damping branch}, pwr-control technical note (\texttt{research/power\_electronics/damped\_lc\_filter}), Rev.~00, 2026.
+\bibitem{holmes2003} D. G. Holmes, T. A. Lipo, \emph{Pulse Width Modulation for Power Converters: Principles and Practice}, IEEE Press/Wiley, 2003, Ch.~5--6 (harmonic distortion factor, sideband spectra).
+\bibitem{mohan2003} N. Mohan, T. M. Undeland, W. P. Robbins, \emph{Power Electronics: Converters, Applications, and Design}, 3rd ed., Wiley, 2003, Ch.~8 (PWM inverters).
+\bibitem{ieee519} IEEE Std 519-2022, \emph{IEEE Standard for Harmonic Control in Electric Power Systems}, 2022.
+\bibitem{iec61800-3} IEC 61800-3:2022, \emph{Adjustable speed electrical power drive systems -- Part 3: EMC requirements and specific test methods for PDS and machine tools}, Ed.~4, 2022.
+\bibitem{iec61800-8} IEC TS 61800-8:2010, \emph{Adjustable speed electrical power drive systems -- Part 8: Specification of voltage on the power interface}, 2010.
+\bibitem{iec60034-18-41} IEC 60034-18-41:2014+AMD1:2019, \emph{Rotating electrical machines -- Part 18-41: Partial discharge free electrical insulation systems (Type I) used in rotating electrical machines fed from voltage converters -- Qualification and quality control tests}.
+\bibitem{iec60034-25} IEC TS 60034-25:2014, \emph{Rotating electrical machines -- Part 25: AC electrical machines used in power drive systems -- Application guide}.
+\bibitem{nema} NEMA MG 1-2016, \emph{Motors and Generators}, Part~30 (general purpose motors used with adjustable-voltage or adjustable-frequency controls) and Part~31 (definite-purpose inverter-fed polyphase motors).
+\bibitem{wu2012} W. Wu, Y. He, F. Blaabjerg, ``An LLCL power filter for single-phase grid-tied inverter,'' \emph{IEEE Transactions on Power Electronics}, vol.~27, no.~2, pp.~782--789, Feb. 2012.
+\bibitem{persson1992} E. Persson, ``Transient effects in application of PWM inverters to induction motors,'' \emph{IEEE Transactions on Industry Applications}, vol.~28, no.~5, pp.~1095--1101, Sep./Oct. 1992.
+\bibitem{vonjouanne1996} A. von Jouanne, D. A. Rendusara, P. N. Enjeti, J. W. Gray, ``Filtering techniques to minimize the effect of long motor leads on PWM inverter-fed AC motor drive systems,'' \emph{IEEE Transactions on Industry Applications}, vol.~32, no.~4, pp.~919--926, Jul./Aug. 1996.
+\bibitem{vonjouanne1997} A. von Jouanne, P. N. Enjeti, ``Design considerations for an inverter output filter to mitigate the effects of long motor leads in ASD applications,'' \emph{IEEE Transactions on Industry Applications}, vol.~33, no.~5, pp.~1138--1145, Sep./Oct. 1997.
+\bibitem{kerkman1997} R. J. Kerkman, D. Leggate, G. L. Skibinski, ``Interaction of drive modulation and cable parameters on AC motor transients,'' \emph{IEEE Transactions on Industry Applications}, vol.~33, no.~3, pp.~722--731, May/Jun. 1997.
+\bibitem{moreira2002} A. F. Moreira, T. A. Lipo, G. Venkataramanan, S. Bernet, ``High-frequency modeling for cable and induction motor overvoltage studies in long cable drives,'' \emph{IEEE Transactions on Industry Applications}, vol.~38, no.~5, pp.~1297--1306, Sep./Oct. 2002.
+\bibitem{finlayson1998} P. T. Finlayson, ``Output filters for PWM drives with induction motors,'' \emph{IEEE Industry Applications Magazine}, vol.~4, no.~1, pp.~46--52, Jan./Feb. 1998.
+\bibitem{steinke1999} J. K. Steinke, ``Use of an LC filter to achieve a motor-friendly performance of the PWM voltage source inverter,'' \emph{IEEE Transactions on Energy Conversion}, vol.~14, no.~3, pp.~649--654, Sep. 1999.
+\bibitem{salomaki2006} J. Salom\"aki, M. Hinkkanen, J. Luomi, ``Sensorless control of induction motor drives equipped with inverter output filter,'' \emph{IEEE Transactions on Industrial Electronics}, vol.~53, no.~4, pp.~1188--1197, Aug. 2006.
+\bibitem{salomaki2006b} J. Salom\"aki, A. Piippo, M. Hinkkanen, J. Luomi, ``Sensorless vector control of PMSM drives equipped with inverter output filter,'' \emph{Proc. IEEE IECON 2006}, Paris, pp.~1059--1064, 2006.
+\bibitem{salomaki2008} J. Salom\"aki, M. Hinkkanen, J. Luomi, ``Influence of inverter output filter on maximum torque and speed of PMSM drives,'' \emph{IEEE Transactions on Industry Applications}, vol.~44, no.~1, pp.~153--160, Jan./Feb. 2008.
+\end{thebibliography}
+
+\end{document}

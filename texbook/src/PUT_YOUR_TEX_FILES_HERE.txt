@@ -1,0 +1,4 @@
+Drop your standalone .tex files in this folder, then edit the `file:` names in
+../manifest.yaml so they match, and run:
+
+    python3 tools/merge_tex.py --src src --out . --manifest manifest.yaml

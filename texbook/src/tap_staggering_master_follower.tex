@@ -1,0 +1,93 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{geometry}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\geometry{margin=2.5cm}
+
+\title{Master--Follower On-Load Tap Changer Control\\ for Parallel Power Transformers}
+\author{Davide Bagnara}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This note describes the master--follower (master--slave) control scheme used to coordinate on-load tap changers (OLTCs) on power transformers operating in parallel, and contrasts it with the alternative circulating-current and power-factor paralleling methods. The scheme's operating principle, its inherent limitations, the resulting circulating-current behavior under turn-ratio mismatch, and the practical implementation aspects (relay interlocking, communication requirements, IEC~61850/GOOSE-based modern realizations) are summarized.
+\end{abstract}
+
+\section{Problem Context}
+
+When two or more power transformers are connected in parallel on both the primary and secondary buses, and each is equipped with an independent on-load tap changer, the relative tap position of each unit directly affects the secondary no-load voltage. If the units are not kept at matched effective turns ratios, a circulating current flows between them even at no load, proportional to the voltage difference and inversely proportional to the sum of the transformer short-circuit impedances:
+\begin{equation}
+I_{circ} \approx \frac{\Delta V}{Z_{cc,1}+Z_{cc,2}},
+\end{equation}
+where $\Delta V$ is the open-circuit secondary voltage mismatch arising from the tap position difference. This circulating current adds directly to the transformer thermal loading without contributing to the delivered load current, and is particularly severe for delta-connected units, where it can cause significant overheating that is not visible from line or load current measurements alone.
+
+Coordinating the OLTC actions of all paralleled units is therefore necessary, and several automatic control philosophies exist for this purpose: master--follower, circulating-current, power-factor, and $\Delta$VAr methods. This note focuses on the master--follower scheme.
+
+\section{Master--Follower Operating Principle}
+
+The master--follower method is the most direct of the available schemes: one unit's automatic voltage regulator (AVR) is designated as the \emph{master}, and it alone evaluates the bus voltage error and decides whether a tap change is required. The resulting raise/lower command is not only applied to the master's own tap changer but is also transmitted to every other (\emph{follower}) unit's tap-change mechanism, so that all units execute the same tap movement in the same direction at (approximately) the same time. The intended outcome is that every paralleled transformer remains permanently at the same tap position.
+
+The classical, pre-digital implementation of this scheme uses auxiliary relays and inter-panel wiring: closing of the raise/lower contact on the master's voltage-regulating relay directly closes the corresponding motor contactor on every follower's tap-change drive, while auxiliary interlocking switches lock out any further command until all units have completed and confirmed their single step. This handshake -- "follower step taken and acknowledged" before the master is permitted to issue the next command -- is what keeps the units synchronized step by step rather than allowing them to drift apart.
+
+Two practical variants are commonly described in the literature:
+\begin{itemize}
+  \item \textbf{Direct master--follower}, where a single voltage-regulating relay performs the voltage comparison and directly drives the tap mechanisms of all paralleled units; suitable mainly for two to four transformers, since the time required to complete a coordinated tap movement grows with the number of units involved.
+  \item \textbf{Master--follower with multiple regulating relays}, where every transformer is fitted with its own voltage-regulating relay, and any one unit in the group can be dynamically selected to act as master while the rest follow in a chosen sequence -- offering more flexibility (e.g.\ master reselection after a unit is taken out of service) at the cost of additional coordination logic.
+\end{itemize}
+
+\section{Strengths and Limitations}
+
+\subsection{What the scheme guarantees}
+
+As long as all units genuinely execute the same tap movement together, no circulating current arises from tap operation, and the only loss contribution is the brief transient during the few seconds each tap change takes to mechanically complete. The load-side bus voltage is also correctly regulated, since the master's voltage measurement is representative of the whole bank.
+
+\subsection{Structural requirement: matched tap hardware}
+
+The master--follower principle only works cleanly if every paralleled transformer has an \emph{identical} number of taps and an identical tap-step size, since every master action is blindly duplicated on every follower. If the transformers have unequal turns ratios per step -- for instance because they were supplied by different manufacturers, or are of different vintage/design -- a continuing circulating current persists even with perfectly synchronized tap movements, because matching tap \emph{positions} does not guarantee matching tap \emph{voltages} when the step size differs.
+
+\subsection{What the scheme does \emph{not} do}
+
+The defining weakness of master--follower control, repeatedly emphasized in the technical literature, is that it does nothing to actively minimize circulating current: it only prevents tap-related divergence by forcing identical tap positions. If a circulating current already exists for reasons other than tap-position mismatch -- e.g.\ differing transformer impedances, differing vector groups, or a genuine inter-system real-power flow -- master--follower control provides no corrective action, since its only sensed quantity is bus voltage, not current.
+
+This stands in contrast with the circulating-current control method, which directly measures and actively minimizes the inter-unit circulating current by biasing the tap-change decision of each unit, and which is reported to generally require fewer tap operations over a daily load cycle because, in many implementations, only one transformer in the scheme needs to tap to correct a given disturbance. The trade-off is architectural: circulating-current schemes require each AVR to exchange both analog (current) and digital information with the others, traditionally over a dedicated communication link, whereas master--follower historically needed only simple command wiring.
+
+\section{Worked Numerical Illustration}
+
+A commonly cited illustrative case considers two 25\,MVA, $\pm 10\%$ tap-range transformers, both nominally 66/11\,kV, with 10\% impedance per IEC~60076-5, supplying 40\,MW at unity power factor. If a tap-changer malfunction leaves one unit at $-1\%$ tap and the other at $-2\%$ tap (i.e.\ a 1\% relative mismatch), the resulting low-voltage terminal voltages differ (11.11\,kV vs.\ 11.22\,kV in the cited example), and a circulating current on the order of 79\,A flows in the secondaries of both units -- entirely attributable to the uncorrected tap mismatch, and entirely avoidable under correctly functioning master--follower coordination, which is precisely the failure mode the scheme is designed to prevent.
+
+\section{Modern Digital Implementation}
+
+Contemporary substation automation replaces the legacy hard-wired relay interlocking with IED-based (Intelligent Electronic Device) regulators communicating over a station bus. Both the master--follower and circulating-current methods can be implemented using IEC~61850 GOOSE (Generic Object Oriented Substation Event) messaging for up to several transformers in parallel: the master's tap-change decision (or, for the circulating-current method, each unit's measured circulating current) is published over the substation Ethernet network and subscribed to by the other units' AVR IEDs, without requiring any additional IEC~61850 service beyond GOOSE. This is compatible both with fully IEC~61850-based substations and with conventional ones, since GOOSE can be deployed as a relatively self-contained addition.
+
+\section{Comparison with Other Paralleling Methods}
+
+\begin{center}
+\begin{tabular}{@{}p{3.3cm}p{4.6cm}p{5.6cm}@{}}
+\toprule
+Method & Sensed quantity & Key characteristic \\
+\midrule
+Master--follower & Bus voltage only & Forces identical tap positions; simple; does not actively reduce circulating current; requires matched tap hardware. \\
+Circulating-current & Inter-unit circulating current & Actively biases tap decisions to minimize circulating current; typically fewer total tap operations; needs current/data exchange between AVRs. \\
+Power-factor & Phase angle of unit currents & Targets equal power factor across units rather than equal taps; does not itself drive a control action, but blocks operations that would worsen the angle mismatch. \\
+$\Delta$VAr & Reactive power flow imbalance & Shares VAr flow among units in a defined ratio; requires matching auxiliary CTs when paralleling units of unequal impedance. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+A documented limitation common to the simpler schemes (master--follower, plain circulating-current, power-factor) is degraded behavior when paralleled units have a markedly different ratio of impedances, or when relative impedances vary significantly as tap changes proceed; in such conditions none of these single-criterion methods can simultaneously guarantee correct bus voltage regulation \emph{and} minimum circulating current, particularly if part of the inter-unit current is a genuine active-power (kW) flow that no tap-changer action can correct.
+
+\section{Relevance to Fixed-Ratio Medium-Frequency Transformers}
+
+It is worth noting explicitly that the master--follower (and more generally, OLTC paralleling) framework applies to power-frequency transformers equipped with mechanical tap changers. Medium-frequency transformers used in DAB-type converter modules are normally fixed-ratio units with no tap changer, so the scheme does not apply literally in that context. The conceptually analogous corrective action there is a deliberate, characterization-based phase-shift bias applied per module in the digital controller, compensating for a known leakage-inductance mismatch -- the same underlying idea (a discrete, factory-informed correction overriding a purely passive equilibrium) expressed in the control domain rather than through a physical tap mechanism.
+
+\section{Conclusion}
+
+The master--follower scheme is the simplest and historically earliest method for coordinating on-load tap changers across paralleled power transformers: by forcing every follower unit to replicate the master's tap action, it eliminates circulating current of tap-position origin and keeps the load bus voltage correctly regulated, at the cost of requiring identical tap hardware across all units and of providing no corrective action against circulating currents arising from other causes (impedance mismatch, vector-group mismatch, genuine active-power flow between systems). Where active minimization of circulating current is the primary objective, the circulating-current method is generally preferred, at the expense of a more demanding communication and instrumentation architecture -- a trade-off now largely addressed by IEC~61850 GOOSE-based digital implementations of either scheme.
+
+\end{document}

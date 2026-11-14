@@ -1,0 +1,314 @@
+% ============================================================
+%  Three-Phase Phasor Extraction via DFT – Mathematical Notes
+%  Author : Davide Bagnara
+% ============================================================
+\documentclass[11pt,a4paper]{article}
+
+% --- Packages ---
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{lmodern}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{mathtools}
+\usepackage{bm}
+\usepackage{geometry}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{caption}
+\usepackage{hyperref}
+\usepackage{microtype}
+\usepackage{parskip}
+
+\geometry{top=2.5cm, bottom=2.5cm, left=2.8cm, right=2.8cm}
+
+% --- Listings style for MATLAB ---
+\definecolor{matlabgreen}{rgb}{0.13,0.55,0.13}
+\definecolor{matlabblue} {rgb}{0.00,0.00,0.80}
+\definecolor{matlabgray} {rgb}{0.50,0.50,0.50}
+
+\lstdefinestyle{matlab}{
+  language        = Matlab,
+  basicstyle      = \ttfamily\small,
+  keywordstyle    = \color{matlabblue}\bfseries,
+  commentstyle    = \color{matlabgreen}\itshape,
+  stringstyle     = \color{red},
+  numbers         = left,
+  numberstyle     = \tiny\color{matlabgray},
+  numbersep       = 8pt,
+  frame           = single,
+  framerule       = 0.4pt,
+  rulecolor       = \color{matlabgray},
+  breaklines      = true,
+  captionpos      = b,
+  tabsize         = 4,
+  showstringspaces= false,
+}
+
+% --- Math operators ---
+\DeclareMathOperator{\Real}{Re}
+\DeclareMathOperator{\Imag}{Im}
+\newcommand{\jj}{\mathrm{j}}          % imaginary unit
+\newcommand{\e}{\mathrm{e}}           % Euler's number
+\newcommand{\DFT}[1]{\mathcal{F}\!\left\{#1\right\}}
+
+% --- Theorem-like environments ---
+\newtheorem{remark}{Remark}
+\newtheorem{property}{Property}
+
+% ============================================================
+\begin{document}
+
+\begin{center}
+  {\LARGE\bfseries Three-Phase Phasor Extraction via DFT}\\[0.6em]
+  {\large Mathematical Derivation and MATLAB Implementation}\\[0.4em]
+  {\normalsize claude}\\[0.2em]
+  {\small \today}
+\end{center}
+
+\vspace{0.5em}
+\hrule
+\vspace{1em}
+
+% ============================================================
+\section{Problem Statement}
+
+Consider a balanced three-wire three-phase system whose line currents satisfy
+Kirchhoff's current law at every instant:
+\begin{equation}
+  i_u(t) + i_v(t) + i_w(t) = 0 \qquad \forall\, t.
+  \label{eq:kcl}
+\end{equation}
+In the fundamental case each current is a sinusoid of amplitude $\hat{I}$,
+frequency $f_0$, and initial phase $\varphi$:
+\begin{align}
+  i_u(t) &= \hat{I}\cos(2\pi f_0 t + \varphi),              \label{eq:iu}\\
+  i_v(t) &= \hat{I}\cos\!\left(2\pi f_0 t + \varphi - \tfrac{2\pi}{3}\right),\label{eq:iv}\\
+  i_w(t) &= \hat{I}\cos\!\left(2\pi f_0 t + \varphi + \tfrac{2\pi}{3}\right).\label{eq:iw}
+\end{align}
+The constraint~\eqref{eq:kcl} is automatically verified because
+$\cos\theta + \cos(\theta-2\pi/3) + \cos(\theta+2\pi/3) = 0$ for all $\theta$.
+
+The goal is to represent each current as a \emph{phasor}
+$\underline{I}_x \in \mathbb{C}$ in the polar plane, and to extract those
+phasors numerically from sampled data using the Discrete Fourier Transform (DFT).
+
+% ============================================================
+\section{Phasor Representation}
+
+A real sinusoid $x(t) = \hat{X}\cos(2\pi f_0 t + \phi)$ is identified by its
+\emph{complex phasor}
+\begin{equation}
+  \underline{X} \;=\; \hat{X}\,\e^{\jj\phi} \;=\; \hat{X}\angle\phi,
+  \label{eq:phasor_def}
+\end{equation}
+so that $x(t) = \Real\!\left[\underline{X}\,\e^{\jj 2\pi f_0 t}\right]$.
+
+For the three-phase system above:
+\begin{equation}
+  \underline{I}_u = \hat{I}\e^{\jj\varphi},\qquad
+  \underline{I}_v = \hat{I}\e^{\jj(\varphi - 2\pi/3)},\qquad
+  \underline{I}_w = \hat{I}\e^{\jj(\varphi + 2\pi/3)}.
+  \label{eq:phasors}
+\end{equation}
+The three phasors are displaced by $120°$ in the complex plane and satisfy
+$\underline{I}_u + \underline{I}_v + \underline{I}_w = 0$.
+
+% ============================================================
+\section{Discrete Fourier Transform – Brief Review}
+
+Let $x[n] = x(n/F_s)$, $n = 0,1,\ldots,N-1$, be a uniformly sampled sequence
+with sampling frequency $F_s$ and $N$ total samples.  The DFT is defined as
+\begin{equation}
+  X[k] \;=\; \sum_{n=0}^{N-1} x[n]\,\e^{-\jj 2\pi k n / N},
+  \qquad k = 0, 1, \ldots, N-1.
+  \label{eq:dft}
+\end{equation}
+The DFT bin $k$ corresponds to the physical frequency
+\begin{equation}
+  f_k = \frac{k\,F_s}{N}.
+  \label{eq:fk}
+\end{equation}
+For a pure cosine at $f_0$ sampled over an \emph{integer number of periods}
+(i.e.\ $N = m\,F_s/f_0$ for some integer $m$), only two bins are non-zero:
+$k_1 = m$ (positive frequency) and $k_{N-k_1}$ (negative frequency).  The
+positive-frequency bin evaluates to
+\begin{equation}
+  X[k_1] = \frac{N}{2}\,\hat{X}\,\e^{\jj\phi},
+  \label{eq:dft_cosine}
+\end{equation}
+so the phasor can be recovered as
+\begin{equation}
+  \boxed{%
+  \underline{X} = \frac{2}{N}\,X[k_1]
+               = \frac{2}{N}\sum_{n=0}^{N-1} x[n]\,\e^{-\jj 2\pi k_1 n/N}.}
+  \label{eq:phasor_extract}
+\end{equation}
+
+\begin{remark}
+  The factor $2/N$ accounts for the one-sided normalisation: the DFT at the
+  positive-frequency bin captures half the total signal energy (the other half
+  is in the conjugate bin at $N-k_1$).
+\end{remark}
+
+% ============================================================
+\section{Derivation of the \texttt{phasor()} Function}
+\label{sec:derivation}
+
+Equation~\eqref{eq:phasor_extract} is the theoretical backbone of the
+one-liner used in the MATLAB script:
+\begin{equation}
+  \texttt{phasor(x)} \;\equiv\;
+  \frac{2}{N}\sum_{n=0}^{N-1} x[n]\,\e^{-\jj 2\pi k_1 n/N},
+  \label{eq:phasor_matlab}
+\end{equation}
+where $k_1 = \texttt{round}(f_0 N / F_s)$ is the DFT bin index closest to the
+fundamental frequency $f_0$.
+
+\subsection*{Step-by-step derivation}
+
+\noindent\textbf{Step 1 – Represent the sinusoid as a sum of complex
+exponentials.}
+
+Using Euler's formula $\cos\theta = \tfrac{1}{2}(\e^{\jj\theta}+\e^{-\jj\theta})$,
+a single-tone signal of amplitude $\hat{X}$ and phase $\phi$ is
+\begin{equation}
+  x[n] = \hat{X}\cos\!\left(\frac{2\pi k_1 n}{N}+\phi\right)
+       = \frac{\hat{X}}{2}\,\e^{\jj\phi}\,\e^{\jj 2\pi k_1 n/N}
+       + \frac{\hat{X}}{2}\,\e^{-\jj\phi}\,\e^{-\jj 2\pi k_1 n/N}.
+  \label{eq:euler}
+\end{equation}
+
+\noindent\textbf{Step 2 – Substitute into the DFT inner product at bin $k_1$.}
+
+Multiplying $x[n]$ by the DFT kernel $\e^{-\jj 2\pi k_1 n/N}$ and summing:
+\begin{align}
+  \sum_{n=0}^{N-1} x[n]\,\e^{-\jj 2\pi k_1 n/N}
+  &= \frac{\hat{X}}{2}\,\e^{\jj\phi}
+     \underbrace{\sum_{n=0}^{N-1}\e^{\jj 2\pi k_1 n/N}\e^{-\jj 2\pi k_1 n/N}}_{= N}
+  \notag\\
+  &\quad + \frac{\hat{X}}{2}\,\e^{-\jj\phi}
+     \underbrace{\sum_{n=0}^{N-1}\e^{-\jj 2\pi \cdot 2k_1 n/N}}_{= 0\text{ (orthogonality)}}.
+  \label{eq:inner}
+\end{align}
+The second sum vanishes because $2k_1/N$ is not an integer multiple of $1/N$
+(under the assumption $k_1 < N/2$), so the complex exponential completes full
+cycles that cancel.  Hence
+\begin{equation}
+  \sum_{n=0}^{N-1} x[n]\,\e^{-\jj 2\pi k_1 n/N}
+  = \frac{N}{2}\,\hat{X}\,\e^{\jj\phi}.
+  \label{eq:inner_result}
+\end{equation}
+
+\noindent\textbf{Step 3 – Normalise to obtain the phasor.}
+
+Multiplying both sides by $2/N$:
+\begin{equation}
+  \frac{2}{N}\sum_{n=0}^{N-1} x[n]\,\e^{-\jj 2\pi k_1 n/N}
+  = \hat{X}\,\e^{\jj\phi} = \underline{X}. \qquad \square
+  \label{eq:result}
+\end{equation}
+This is exactly the complex phasor defined in~\eqref{eq:phasor_def}, with
+modulus $|\underline{X}| = \hat{X}$ (peak value) and argument
+$\arg(\underline{X}) = \phi$.
+
+\begin{remark}[Validity for non-pure-tone signals]
+  If the signal contains multiple harmonics or noise, the DFT at bin $k_1$
+  still isolates the fundamental component, because the DFT basis vectors are
+  orthogonal.  Contributions from other frequencies land on different bins and
+  do not corrupt $X[k_1]$.  This makes the method robust to distortion.
+\end{remark}
+
+% ============================================================
+\section{MATLAB Implementation}
+
+The derivation translates verbatim into the following anonymous function:
+
+\begin{lstlisting}[style=matlab, caption={Phasor extraction via single-bin DFT (MATLAB).}]
+% Number of samples in one fundamental period
+N  = length(t);
+
+% DFT bin index corresponding to f0
+k1 = round(f0 * N / Fs);
+
+% Anonymous function: single-bin DFT, normalised to peak phasor
+phasor = @(x) (2/N) * sum( x .* exp(-1j * 2*pi * (0:N-1) * k1 / N) );
+
+% Apply to each phase current
+Iu = phasor(iu);   % Complex phasor of i_u(t)
+Iv = phasor(iv);   % Complex phasor of i_v(t)
+Iw = phasor(iw);   % Complex phasor of i_w(t)
+\end{lstlisting}
+
+\subsection*{Line-by-line explanation}
+
+\begin{description}
+  \item[\texttt{N = length(t)}]
+    Total number of samples.  Since \texttt{t} spans exactly one period
+    $T = 1/f_0$ with step $1/F_s$, we have $N = F_s/f_0$, ensuring integer
+    DFT bin alignment.
+
+  \item[\texttt{k1 = round(f0*N/Fs)}]
+    Computes the fundamental bin index from~\eqref{eq:fk}:
+    $k_1 = f_0 N / F_s$.  The \texttt{round} guards against floating-point
+    rounding when $F_s/f_0$ is not exactly integer.
+
+  \item[\texttt{exp(-1j*2*pi*(0:N-1)*k1/N)}]
+    Evaluates the DFT kernel $\e^{-\jj 2\pi k_1 n/N}$ for all sample indices
+    $n = 0,1,\ldots,N-1$ in a single vectorised operation.
+
+  \item[\texttt{x .* (\ldots)}]
+    Element-wise multiplication of the signal vector by the kernel vector,
+    implementing the inner product $\sum_n x[n]\,\e^{-\jj 2\pi k_1 n/N}$.
+
+  \item[\texttt{sum(\ldots)}]
+    Accumulates the inner product over all $N$ samples.
+
+  \item[\texttt{(2/N) * (\ldots)}]
+    Applies the normalisation factor from~\eqref{eq:phasor_extract}, returning
+    the complex phasor $\underline{X} = \hat{X}\e^{\jj\phi}$.
+\end{description}
+
+% ============================================================
+\section{Verification}
+
+For the balanced system~\eqref{eq:iu}--\eqref{eq:iw} with $\hat{I}=100\,\text{A}$
+and $\varphi = 0$:
+\begin{align*}
+  \underline{I}_u &= 100\angle 0°,\\
+  \underline{I}_v &= 100\angle{-120°},\\
+  \underline{I}_w &= 100\angle{+120°}.
+\end{align*}
+These satisfy $|\underline{I}_u|=|\underline{I}_v|=|\underline{I}_w|=\hat{I}$
+and $\underline{I}_u+\underline{I}_v+\underline{I}_w=0$, consistent with
+the Kirchhoff constraint~\eqref{eq:kcl}.
+
+\begin{property}[Symmetry check in MATLAB]
+  The residual \texttt{max(abs(iu+iv+iw))} should be of order $10^{-12}$\,A
+  (double-precision machine epsilon times $\hat{I}$), confirming that the
+  constraint is satisfied to numerical precision.
+\end{property}
+
+% ============================================================
+\section{Summary}
+
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+  \toprule
+  Quantity & Symbol & MATLAB expression \\
+  \midrule
+  Peak amplitude   & $\hat{X}$              & \texttt{abs(phasor(x))} \\
+  Phase angle      & $\phi$                 & \texttt{angle(phasor(x))} \\
+  Real part        & $\hat{X}\cos\phi$      & \texttt{real(phasor(x))} \\
+  Imaginary part   & $\hat{X}\sin\phi$      & \texttt{imag(phasor(x))} \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+The single-bin DFT approach is preferred over peak-detection or zero-crossing
+methods because it is robust to harmonics, noise, and non-integer periods, and
+because it generalises directly to unbalanced or distorted waveforms without
+any modification to the code.
+
+\end{document}

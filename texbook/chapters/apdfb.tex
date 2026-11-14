@@ -1,0 +1,485 @@
+% chapters/apdfb.tex
+% generated from apd_fullbridge_control.tex
+\chapter{Energy control of a full-bridge active power decoupler}
+\label{ch:apdfb}
+\begin{chapabstract}
+This note develops the control design for a full-bridge active power decoupling
+(APD) circuit connected in parallel with the dc link of a single-phase active
+front end (AFE). The buffer capacitor is operated with a \emph{bipolar} voltage
+at grid frequency, which gives full utilisation of the stored energy and a
+bounded, sinusoidal buffer current. The plant is reformulated in terms of stored
+energy, which removes the square-root nonlinearity of the voltage reference and
+yields two cascaded loops with linear plants. Reference generation, inner
+current-loop design with proportional-resonant (PR) compensators, outer energy
+loops, stability considerations and a worked design example for
+\SI{350}{\kilo\watt} on a \SI{16.7}{\hertz} traction network are given.
+\end{chapabstract}
+
+\section{Scope and problem statement}
+
+A single-phase converter exchanging active power $P$ and reactive power $Q$ with
+the grid delivers an instantaneous power
+\begin{equation}
+p_g(t) = P - S\cos(2\omega_g t + \varphi),
+\qquad S=\sqrt{P^2+Q^2},\quad \varphi=\arctan\frac{Q}{P},
+\label{apdfb:eq:pg}
+\end{equation}
+where $\omega_g$ is the grid angular frequency. The dc load absorbs the constant
+term; the oscillating term must be buffered. Integrating it gives the energy
+that must be exchanged with the storage element,
+\begin{equation}
+\Delta E_{pp} = \frac{S}{\omega_g}.
+\label{apdfb:eq:deltaE}
+\end{equation}
+
+Equation~\eqref{apdfb:eq:deltaE} is the governing constraint of the whole design: it
+is fixed by the application and cannot be reduced by any choice of topology.
+Only the \emph{utilisation} of the storage element and the distribution of the
+stress between voltage and current are topology-dependent
+\cite{sun2016review-apdfb,qin2016benchmark}.
+
+For the case considered here ($S\approx P=\SI{350}{\kilo\watt}$,
+$f_g=\SI{16.7}{\hertz}$) this gives $\Delta E_{pp}=\SI{3.34}{\kilo\joule}$. A
+purely passive dc link limiting the ripple to \SI{5}{\percent} of
+$V_{dc}=\SI{700}{\volt}$ would require approximately \SI{136}{\milli\farad},
+i.e. of the order of \SI{33}{\kilo\joule} of installed capacitor energy. The
+active solution reduces the installed energy to
+$\Delta E_{pp}$ itself.
+
+\section{Topology}
+
+The circuit is shown in Fig.~\ref{apdfb:fig:topology}. A full bridge is connected
+across the dc link; its ac terminals feed a series branch made of a small
+inductor $L_b$ and a bipolar (film) capacitor bank $C_b$. The bridge is the same
+device class as the main converter, since the buffer voltage never exceeds
+$V_{dc}$; no pre-charge circuit is required, since the buffer starts from zero
+voltage.
+
+\begin{figure}[htb]
+\centering
+\begin{circuitikz}[scale=0.92,transform shape]
+% dc rails
+\draw (-4.6,3.2) -- (4.8,3.2);
+\draw (-4.6,0.0) -- (4.8,0.0);
+% AFE block
+\draw[thick] (-6.4,0.4) rectangle (-4.6,2.8);
+\node[align=center,font=\footnotesize] at (-5.5,1.6) {1-$\varphi$ AFE\\ + LCL};
+\draw (-4.6,2.8) -- (-4.6,3.2);
+\draw (-4.6,0.4) -- (-4.6,0.0);
+% dc link capacitor
+\draw (-3.4,3.2) to[C=$C_{dc}$] (-3.4,0.0);
+% load arrow
+\draw[-{Latex[length=2mm]}] (-2.0,3.2) -- (-2.0,2.2) node[right,font=\footnotesize] {$i_o$ (load)};
+% leg A
+\node[nigbt,xscale=-1] (Q1) at (1.0,2.4) {};
+\node[nigbt,xscale=-1] (Q2) at (1.0,0.8) {};
+\draw (1.0,3.2) -- (Q1.C);
+\draw (Q1.E) -- (1.0,1.6);
+\draw (1.0,1.6) -- (Q2.C);
+\draw (Q2.E) -- (1.0,0.0);
+\draw (0.35,1.6) to[D*] (0.35,3.2);
+\draw (0.35,0.0) to[D*] (0.35,1.6);
+\draw (0.35,1.6) -- (1.0,1.6);
+% leg B
+\node[nigbt] (Q3) at (4.2,2.4) {};
+\node[nigbt] (Q4) at (4.2,0.8) {};
+\draw (4.2,3.2) -- (Q3.C);
+\draw (Q3.E) -- (4.2,1.6);
+\draw (4.2,1.6) -- (Q4.C);
+\draw (Q4.E) -- (4.2,0.0);
+\draw (4.8,1.6) to[D*] (4.8,3.2);
+\draw (4.8,0.0) to[D*] (4.8,1.6);
+\draw (4.8,1.6) -- (4.2,1.6);
+% buffer branch
+\draw (1.0,1.6) to[L=$L_b$,i>^=$i_b$] (2.5,1.6);
+\draw (2.5,1.6) to[C=$C_b$,v_=$v_b$] (4.2,1.6);
+% labels
+\node[font=\footnotesize] at (-2.9,3.5) {$v_{dc}$};
+\node[align=center,font=\footnotesize] at (2.6,-0.9) {active power decoupling bridge};
+\draw[dashed] (0.0,-0.4) rectangle (5.2,3.7);
+\end{circuitikz}
+\caption{Full-bridge APD circuit in parallel with the dc link of the
+single-phase AFE.}
+\label{apdfb:fig:topology}
+\end{figure}
+
+\section{Averaged model and energy formulation}
+
+Let $m\in[-1,1]$ be the averaged modulation index of the bridge. The averaged
+model is
+\begin{align}
+L_b\frac{\dif i_b}{\dif t} &= m\,v_{dc} - v_b - R_b i_b, \label{apdfb:eq:model_i}\\
+C_b\frac{\dif v_b}{\dif t} &= i_b, \label{apdfb:eq:model_v}\\
+C_{dc}\frac{\dif v_{dc}}{\dif t} &= i_{in} - i_o - m\,i_b, \label{apdfb:eq:model_vdc}
+\end{align}
+with $R_b$ collecting the branch resistance (capacitor ESR, inductor and
+semiconductor conduction losses).
+
+The reference trajectory for $v_b$ is the solution of a quadratic energy balance
+and is therefore a square root of a sinusoid; tracking it directly gives a
+strongly nonlinear plant \cite{yuan2019nonlinear}. The difficulty disappears
+when the buffer energy is taken as the state variable:
+\begin{equation}
+W_b = \tfrac12 C_b v_b^2 + \tfrac12 L_b i_b^2 .
+\end{equation}
+Differentiating and substituting \eqref{apdfb:eq:model_i}--\eqref{apdfb:eq:model_v},
+\begin{equation}
+\boxed{\;\frac{\dif W_b}{\dif t} = m\,v_{dc}\,i_b - R_b i_b^2 = p_b - R_b i_b^2\;}
+\label{apdfb:eq:Wb}
+\end{equation}
+where $p_b$ is the instantaneous power drawn by the APD from the dc link. The
+same transformation applied to the dc link, $W_{dc}=\tfrac12 C_{dc}v_{dc}^2$,
+gives
+\begin{equation}
+\frac{\dif W_{dc}}{\dif t} = p_g - p_o - p_b .
+\label{apdfb:eq:Wdc}
+\end{equation}
+Both \eqref{apdfb:eq:Wb} and \eqref{apdfb:eq:Wdc} are integrators driven by power. This is
+the basis of the ``power-balance'' family of APD control strategies
+\cite{liu2021review,wang2011ripple}.
+
+\section{Steady-state reference trajectories}
+
+Impose a bipolar buffer voltage at \emph{grid} frequency,
+\begin{equation}
+v_b^\star(t) = \hat V_b\cos\theta, \qquad \theta = \omega_g t + \delta ,
+\qquad i_b^\star(t) = -\omega_g C_b \hat V_b \sin\theta .
+\label{apdfb:eq:refs}
+\end{equation}
+Substituting into $p_b = v_b i_b + L_b i_b \dot i_b$,
+\begin{equation}
+p_b(t) = -\tfrac12 \omega_g C_b \hat V_b^2 \left(1-\omega_g^2 L_b C_b\right)\sin 2\theta .
+\end{equation}
+Matching this against the oscillating term of \eqref{apdfb:eq:pg} gives two conditions:
+\begin{equation}
+\boxed{\;\delta = \frac{\varphi}{2} + \frac{\pi}{4}\;},
+\qquad
+\boxed{\;C_b\hat V_b^2\left(1-k_L\right) = \frac{2S}{\omega_g}\;},
+\qquad k_L \triangleq \omega_g^2 L_b C_b .
+\label{apdfb:eq:design}
+\end{equation}
+
+Three consequences are worth stating explicitly.
+
+\begin{enumerate}
+\item \textbf{Phase.} The buffer voltage is a sinusoid at $\omega_g$, phase
+shifted by $\varphi/2+\pi/4$ with respect to the grid voltage. Its product with
+a current in quadrature produces exactly the required $2\omega_g$ power. No
+absolute value, no zero-crossing singularity of the current reference: this is
+the structural advantage of the full bridge over the buck-type half bridge
+\cite{tang2015symmetrical}.
+
+\item \textbf{Capacitor current.} $\hat I_b = \omega_g C_b \hat V_b =
+2S/[\hat V_b(1-k_L)]$. Since $\hat V_b \le V_{dc}$, the current stress is set by
+the dc-link voltage. Raising $V_{dc}$ is the single most effective design lever:
+$C_b\propto\hat V_b^{-2}$ and $\hat I_b\propto\hat V_b^{-1}$.
+
+\item \textbf{Inductor derating.} The inductor energy oscillates in
+anti-phase with the capacitor energy and therefore \emph{subtracts} from the
+useful buffering capability by the factor $(1-k_L)$. The branch resonance
+$\omega_r = 1/\sqrt{L_bC_b}$ must satisfy $\omega_r \gg \omega_g$; a practical
+target is $k_L\le 0.05$, i.e. $\omega_r \ge 4.5\,\omega_g$, while remaining well
+below the current-loop bandwidth.
+\end{enumerate}
+
+The installed capacitor energy is
+\begin{equation}
+E_{C_b} = \tfrac12 C_b\hat V_b^2 = \frac{S}{\omega_g\,(1-k_L)} ,
+\end{equation}
+which for $k_L\to 0$ equals $\Delta E_{pp}$: the utilisation factor is unity,
+i.e. the theoretical minimum installed energy is reached.
+
+The required modulation index follows from \eqref{apdfb:eq:model_i}:
+\begin{equation}
+\hat m \simeq \frac{\hat V_b\,(1-k_L)}{V_{dc}} \le m_{\max},
+\end{equation}
+so the inductor voltage partially cancels the capacitor voltage and slightly
+relaxes the modulation limit.
+
+\section{Control architecture}
+
+The controller has an inner current loop and two outer energy loops
+(Fig.~\ref{apdfb:fig:control}).
+
+\begin{figure}[htb]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+  >=Latex,
+  block/.style={draw,rectangle,minimum height=9mm,minimum width=16mm,align=center,font=\scriptsize},
+  sum/.style={draw,circle,inner sep=1.2pt,font=\tiny},
+  lbl/.style={font=\scriptsize}
+]
+% main chain
+\node[sum]   (s1) at (0,0)    {$\Sigma$};
+\node[block] (pi) at (2.1,0)  {PI\\(energy)};
+\node[sum]   (s2) at (4.2,0)  {$\Sigma$};
+\node[block] (rg) at (6.3,0)  {reference\\generator};
+\node[sum]   (s3) at (8.4,0)  {$\Sigma$};
+\node[block] (pr) at (10.5,0) {PR $\omega_g$\\$(+3\omega_g,5\omega_g)$};
+\node[block] (pl) at (12.9,0) {bridge\\$+\;L_b,C_b$};
+
+\draw[->] (s1) -- (pi);
+\draw[->] (pi) -- (s2);
+\draw[->] (s2) -- (rg);
+\draw[->] (rg) -- node[above,lbl]{$i_b^\star$} (s3);
+\draw[->] (s3) -- (pr);
+\draw[->] (pr) -- (pl);
+\draw[->] (pl.east) -- ++(1.0,0) node[right,lbl]{$i_b,v_b$};
+\draw[<-] (s1.west) -- ++(-1.2,0) node[left,lbl]{$\overline{W}_b^\star$};
+
+% upper part: feed-forward and 2 omega loop
+\node[sum]   (s5)  at (4.2,1.4) {$\Sigma$};
+\node[block] (ff)  at (2.0,2.7) {$\hat S,\varphi$ feed-forward\\from AFE};
+\node[block] (pr2) at (6.6,2.7) {PR $2\omega_g$};
+\node[sum]   (s4)  at (9.2,2.7) {$\Sigma$};
+
+\draw[->] (ff.south) -- (2.0,1.4) -- (s5.west);
+\draw[->] (pr2.west) -- (5.3,2.7) -- (5.3,1.4) -- (s5.east);
+\draw[->] (s5.south) -- (s2.north);
+\draw[->] (s4.west) -- (pr2.east);
+\draw[<-] (s4.east) -- ++(1.1,0) node[right,lbl]{$W_{dc}^\star$};
+\draw[->] (pl.north) -- (12.9,3.9) -- node[above,lbl]{$W_{dc}$} (9.2,3.9) -- (s4.north);
+
+% lower feedbacks
+\draw[->] (12.55,-0.45) -- (12.55,-1.6) -- node[below,lbl]{$i_b$} (8.4,-1.6) -- (s3.south);
+\draw[->] (13.25,-0.45) -- (13.25,-2.5) -- node[below,lbl]{$\overline{W}_b$} (0,-2.5) -- (s1.south);
+\end{tikzpicture}}
+\caption{Control structure. Feed-forward sets the bulk of the ripple-power
+command; the $2\omega_g$ resonant loop on the dc-link energy removes the
+residual; the slow energy loop replenishes the APD losses.}
+\label{apdfb:fig:control}
+\end{figure}
+
+\subsection{Inner current loop}
+
+With $v_b$ used as a feed-forward term, the plant seen by the current controller
+is $G_i(s) = 1/(sL_b+R_b)$ preceded by the computation and modulation delay,
+approximated by $e^{-1.5 s T_s}$ with $T_s$ the sampling period. Since
+$i_b^\star$ is sinusoidal at $\omega_g$, a PR compensator in the stationary
+frame gives zero steady-state error:
+\begin{equation}
+G_c(s) = K_p + \sum_{h\in\{1,3,5\}} \frac{2K_{r,h}\,\omega_c s}{s^2 + 2\omega_c s + (h\omega_g)^2}.
+\label{apdfb:eq:PR}
+\end{equation}
+The damped form is mandatory here: the traction network frequency is not
+perfectly constant, and an undamped resonant term would be detuned. A cut-off
+$\omega_c = 2\pi\,(0.5\ldots1)\;\si{\radian\per\second}$ is a reasonable
+compromise; if the tolerance band is wide, make $\omega_g$ adaptive from the PLL
+\cite{teodorescu2006pr}. The harmonic terms at $3\omega_g$ and $5\omega_g$
+compensate dead-time distortion.
+
+Proportional gain from the desired crossover $\omega_{ci}$:
+\begin{equation}
+K_p = \omega_{ci} L_b, \qquad \omega_{ci} \le \frac{2\pi f_{sw}}{10},
+\end{equation}
+and $K_{r,1}$ is chosen to place the loop gain at $\omega_g$ some
+\SIrange{30}{40}{\deci\bel} above unity; $K_{r,1}\approx(20\ldots50)K_p$ is a
+usable starting point, verified on the Bode plot of
+$G_c(s)G_i(s)e^{-1.5sT_s}$.
+
+Note that $\omega_r=1/\sqrt{L_bC_b}$ lies inside the current loop; the branch
+resonance is damped by the loop provided $\omega_{ci}\ge 3\omega_r$.
+
+\subsection{Buffer energy loop}
+
+The APD is lossy, so the mean value of $p_b$ must equal the APD losses,
+otherwise $\overline{W}_b$ drifts. A slow PI acting on
+$\overline{W}_b - \overline{W}_b^\star$ corrects $\hat V_b$. Linearising
+$\overline{W}_b = \tfrac14 C_b \hat V_b^2$,
+\begin{equation}
+\frac{\partial \overline{W}_b}{\partial \hat V_b} = \tfrac12 C_b\hat V_b .
+\end{equation}
+A bandwidth of $f_g/10$ is appropriate; the loop must not react within one grid
+period. $\overline{W}_b$ is obtained by low-pass filtering
+$\tfrac12 C_b v_b^2 + \tfrac12 L_b i_b^2$, or by a notch at $2\omega_g$.
+
+\subsection{DC-link energy loop}
+
+Feed-forward alone cannot cancel the ripple: errors in $\hat S$, in $C_b$
+(tolerance and voltage dependence of film capacitors), and in the dead-time
+model leave a residual $2\omega_g$ component. A PR compensator at $2\omega_g$
+acting on $W_{dc}$ (not on $v_{dc}$, so that the plant is the linear integrator
+of \eqref{apdfb:eq:Wdc}) produces a correction to the ripple-power command. This is
+the ``harmonic suppression'' idea in the classification of
+\cite{liu2021review}.
+
+At \SI{16.7}{\hertz} this loop is demanding. The residual dc-link ripple is
+\begin{equation}
+\Delta V_{dc,pp} \simeq \frac{P_{res}}{\omega_g V_{dc} C_{dc}} ,
+\end{equation}
+so with $C_{dc}=\SI{5}{\milli\farad}$ and $V_{dc}=\SI{700}{\volt}$ a
+\SI{1}{\percent} residual ripple power (\SI{3.5}{\kilo\watt}) already produces
+about \SI{9.5}{\volt} peak-to-peak. An attenuation of at least
+\SI{40}{\deci\bel} at $2\omega_g$ must therefore be verified on the sensitivity
+function, not merely assumed.
+
+\subsection{Reference generation}
+
+\begin{enumerate}
+\item Obtain $\hat S$ and $\varphi$ from the AFE current controller (they are
+already available as the amplitude and phase of the grid-current reference), and
+$\theta_g$ from the PLL.
+\item Add the correction from the $2\omega_g$ loop to obtain the effective
+ripple-power command $\hat S^\star$.
+\item Compute $\hat V_b = \sqrt{2\hat S^\star / [\omega_g C_b(1-k_L)]}$, limited
+to $\hat V_{b,\max}$, and $\delta = \varphi/2 + \pi/4$.
+\item Generate $v_b^\star$, $i_b^\star$ from \eqref{apdfb:eq:refs} using
+$\theta = \theta_g + \delta$.
+\end{enumerate}
+
+Because $\hat V_b \propto \sqrt{\hat S}$, the modulation index falls at partial
+load and the relative dead-time distortion grows. Below roughly \SI{30}{\percent}
+load the dc-link capacitor alone is usually sufficient, and the APD can be
+disabled; the transition must be ramped over several grid periods.
+
+\section{Stability considerations}
+
+\paragraph{Inner loop.} With $\omega_{ci}=2\pi\cdot\SI{300}{\hertz}$ and a
+double-update scheme at $f_s=2f_{sw}$, the delay contributes
+$1.5\,\omega_{ci}T_s$ of phase lag. The phase margin follows directly from the
+Bode plot of $G_c(s)G_i(s)e^{-1.5sT_s}$; the resonant terms reduce the margin
+locally and must be included in the plot, not added afterwards.
+
+\paragraph{Cascade separation.} The three loops are separated by more than a
+decade in bandwidth ($\approx\SI{300}{\hertz}$, $2\omega_g$, $f_g/10$), so a
+sequential design is legitimate. The dc-link \emph{voltage} loop of the main AFE
+must either be slower than $2\omega_g/10$ or include a notch at $2\omega_g$;
+otherwise it competes with the APD for the same ripple and the two controllers
+fight each other.
+
+\paragraph{Periodic nature of the plant.} The modulation index
+$m(t)\approx v_b(t)/v_{dc}$ varies sinusoidally at $\omega_g$ with a large
+amplitude, so the small-signal model is linear time-periodic. Classical LTI
+margins computed at one operating point are indicative only. Two practical
+checks: (i) evaluate the loop gain at the extremes of the trajectory
+($|m|\to \hat m$ and $m\to 0$) and take the worst case; (ii) verify the Floquet
+multipliers of the periodic closed loop, or equivalently run a harmonic
+state-space / time-domain sweep. Lyapunov-based designs avoid the issue
+altogether by construction \cite{liu2024lyapunov,yuan2019nonlinear}.
+
+\paragraph{DC-link interaction.} Seen from the dc node, the APD behaves as a
+controlled power sink with a strong $2\omega_g$ component. An impedance-based
+(Nyquist) check of the source--load pair at the dc link, including the AFE
+voltage loop and the downstream inverter, is recommended before commissioning.
+
+\paragraph{Saturation.} If $\hat V_b(1-k_L)$ approaches $m_{\max}V_{dc}$ the
+bridge loses controllability over part of the period. The reference generator
+must limit $\hat V_b$ and the outer loops must have anti-windup; the graceful
+degradation is a partial decoupling with the residual ripple absorbed by
+$C_{dc}$ \cite{neumayr2021partial}.
+
+\section{Design example}
+
+$S=\SI{350}{\kilo\volt\ampere}$, $f_g=\SI{16.7}{\hertz}$
+($\omega_g=\SI{104.9}{\radian\per\second}$), $V_{dc}=\SI{700}{\volt}$,
+$\hat V_b=\SI{600}{\volt}$, $L_b=\SI{200}{\micro\henry}$,
+$f_{sw}=\SI{3}{\kilo\hertz}$ with unipolar (three-level) PWM.
+
+Solving \eqref{apdfb:eq:design} for $C_b$ gives the values of
+Table~\ref{apdfb:tab:design}. The last column repeats the exercise for a
+\SI{1100}{\volt} dc link, which is still within the same
+\SI{1700}{\volt} device class.
+
+\begin{table}[htb]
+\centering
+\caption{Design example.}
+\label{apdfb:tab:design}
+\begin{tabular}{lccc}
+\toprule
+Quantity & Symbol & $V_{dc}=\SI{700}{\volt}$ & $V_{dc}=\SI{1100}{\volt}$ \\
+\midrule
+Buffer voltage amplitude & $\hat V_b$ & \SI{600}{\volt} & \SI{950}{\volt} \\
+Buffer capacitance & $C_b$ & \SI{19.4}{\milli\farad} & \SI{7.5}{\milli\farad} \\
+Inductor factor & $k_L$ & 0.043 & 0.017 \\
+Branch resonance & $f_r$ & \SI{81}{\hertz} & \SI{130}{\hertz} \\
+Peak buffer current & $\hat I_b$ & \SI{1218}{\ampere} & \SI{750}{\ampere} \\
+RMS buffer current & $I_{b,rms}$ & \SI{861}{\ampere} & \SI{530}{\ampere} \\
+Installed capacitor energy & $E_{C_b}$ & \SI{3.48}{\kilo\joule} & \SI{3.39}{\kilo\joule} \\
+Peak modulation index & $\hat m$ & 0.82 & 0.85 \\
+Current ripple, pk-pk & $\Delta I_{pp}$ & \SI{146}{\ampere} & \SI{229}{\ampere} \\
+Bridge apparent power & $\hat V_b\hat I_b/2$ & \SI{365}{\kilo\volt\ampere} & \SI{356}{\kilo\volt\ampere} \\
+\bottomrule
+\end{tabular}
+
+\vspace{2mm}
+{\footnotesize Both columns use $L_b=\SI{200}{\micro\henry}$ and
+$f_{sw}=\SI{3}{\kilo\hertz}$. For the \SI{1100}{\volt} case the current
+ripple is \SI{30}{\percent} of $\hat I_b$; raising $L_b$ to
+\SI{400}{\micro\henry} brings it to \SI{115}{\ampere} at the cost of
+$k_L=0.034$ and $f_r=\SI{91}{\hertz}$.}
+\end{table}
+
+Controller parameters for the \SI{700}{\volt} case:
+$\omega_{ci}=2\pi\cdot\SI{300}{\radian\per\second}$,
+$K_p=\omega_{ci}L_b=\SI{0.377}{\ohm}$, $K_{r,1}=30K_p$,
+$\omega_c=2\pi\cdot\SI{1}{\radian\per\second}$; buffer energy loop at
+\SI{1.7}{\hertz}; dc-link resonant loop at $2\omega_g=\SI{33.3}{\hertz}$ with
+$\ge\SI{40}{\deci\bel}$ of loop gain at that frequency.
+
+Two observations on the numbers. First, the bridge apparent power is essentially
+equal to $S$: an APD in parallel processes the full pulsating power, and its
+silicon is comparable to that of the main bridge. Second, the buffer rms current
+makes the capacitor ESR a first-order design constraint: at
+\SI{861}{\ampere} rms, an equivalent series resistance of \SI{1}{\milli\ohm}
+already dissipates about \SI{740}{\watt} in the bank alone.
+
+\section{Practical notes}
+
+\begin{itemize}
+\item \textbf{Start-up.} $v_b$ starts from zero; ramp $\hat V_b$ over ten or
+more grid periods (\SI{0.6}{\second} at \SI{16.7}{\hertz}). No pre-charge
+circuit and no minimum-voltage constraint, unlike a boost-type buffer.
+
+\item \textbf{Dead time.} $v_b$ crosses zero when $i_b$ is at its peak, so the
+current polarity is unambiguous where the modulation index is small: the
+dead-time error appears as an almost constant voltage offset and is
+straightforward to compensate. The residual shows up at $3\omega_g$ and
+$5\omega_g$ and is handled by the corresponding resonant terms in
+\eqref{apdfb:eq:PR}.
+
+\item \textbf{Capacitor technology.} The bank must be non-polarised: metallised
+polypropylene film. Specify on rms current and $\dif v/\dif t$, and account for
+the capacitance drift with temperature and ageing, which the $2\omega_g$ loop
+must absorb.
+
+\item \textbf{Interleaving.} At \SI{1218}{\ampere} peak, two interleaved
+full-bridge units halve the device current and double the effective ripple
+frequency. This is usually cheaper than a single very large module and adds
+partial redundancy.
+
+\item \textbf{Fault handling.} On loss of the APD the dc-link ripple returns to
+the passive value. The supervisory logic should derate the transferred power
+rather than trip, since $\Delta V_{dc}\propto P$.
+
+\item \textbf{Partial decoupling.} Allowing \SIrange{10}{15}{\percent} ripple on
+$C_{dc}$ and sizing the APD only for the remainder reduces its rating roughly in
+proportion \cite{neumayr2021partial}.
+\end{itemize}
+
+\section{Alternative control formulations}
+
+\begin{itemize}
+\item \textbf{Virtual impedance / resonator emulation.} The APD is controlled so
+that it emulates an LC resonator tuned at $2\omega_g$ seen from the dc link
+\cite{liu2021lcresonator}. No explicit estimate of $\hat S$ is needed, which
+makes it attractive when the turbine power varies quickly; the trade-off is a
+slower transient response.
+
+\item \textbf{Nonlinear and Lyapunov-based control.} Direct treatment of the
+nonlinear voltage reference with guaranteed convergence
+\cite{yuan2019nonlinear,liu2024lyapunov}; also the natural route to a
+passivity-based (IDA-PBC) formulation, for which \eqref{apdfb:eq:Wb} is already the
+required energy function.
+
+\item \textbf{Predictive control.} The energy formulation provides a
+one-dimensional cost function ($W_b$ tracking) that suits finite-control-set
+MPC, at the cost of a variable switching frequency, which is a drawback for the
+EMC qualification of a traction-connected converter.
+
+\item \textbf{Series voltage compensator.} A different architecture altogether:
+the compensator is inserted in series with the dc link and only synthesises the
+ripple voltage, which lowers its VA rating at the price of carrying the full dc
+current \cite{wang2014series}.
+\end{itemize}
+

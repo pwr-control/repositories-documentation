@@ -1,0 +1,641 @@
+% ============================================================
+%  Flipped UPQC for MV/LV Distribution Networks
+%  PCIM Europe Conference Paper
+%  Author: Davide Bagnara
+% ============================================================
+
+\documentclass[conference]{IEEEtran}
+
+% --- Encoding & Language ---
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+
+% --- Math ---
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{bm}          % bold math symbols
+
+% --- Graphics & Figures ---
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{subfig}
+
+% --- Tables ---
+\usepackage{booktabs}
+\usepackage{multirow}
+
+% --- Circuit / Block Diagrams ---
+\usepackage{tikz}
+\usepackage{circuitikz}
+\usetikzlibrary{arrows.meta, positioning, shapes.geometric, calc}
+
+% --- Hyperlinks (load last) ---
+\usepackage[hidelinks]{hyperref}
+
+% ============================================================
+%  TITLE & AUTHORS
+% ============================================================
+
+\title{%
+  A Flipped Unified Power Quality Conditioner\\
+  for Active Distribution Networks:\\
+  Topology, Modelling, and Control Strategy%
+}
+
+\author{%
+  \IEEEauthorblockN{Davide Bagnara}
+  \IEEEauthorblockA{%
+    Independent Researcher\\
+    Sterzing (BZ), Italy\\
+    \href{mailto:davide.bagnara@example.com}{davide.bagnara@example.com}%
+  }
+}
+
+\begin{document}
+
+\maketitle
+
+% ============================================================
+%  ABSTRACT
+% ============================================================
+
+\begin{abstract}
+The increasing penetration of distributed renewable energy resources
+(DERs) into medium-voltage (MV) and low-voltage (LV) distribution
+networks introduces new challenges for both power quality and grid
+stability. Conventional mitigation devices---dynamic voltage restorers
+(DVRs), static synchronous compensators (STATCOMs), and
+uninterruptible power supplies (UPS)---address these issues in
+isolation and adopt a purely reactive role.
+This paper proposes a \emph{Flipped Unified Power Quality Conditioner}
+(F-UPQC), an architecture in which the shunt converter faces the grid
+to provide ancillary services to the distribution system operator
+(DSO), while the series converter faces the load to guarantee voltage
+stability for sensitive industrial loads.
+A shared DC link with optional energy storage completes the topology,
+enabling participation in local flexibility markets without additional
+hardware.
+The mathematical model of the complete system is derived, and a
+decoupled control strategy is presented. Theoretical analysis
+demonstrates the ability of the proposed topology to simultaneously
+compensate voltage sags and swells at the load terminals while
+injecting reactive power and mitigating current harmonics on the grid
+side. The proposed architecture is aligned with the evolving regulatory
+framework of the European Clean Energy Package and the growing demand
+for grid-edge devices capable of active distribution network (ADN)
+support.
+\end{abstract}
+
+\begin{IEEEkeywords}
+power quality, unified power quality conditioner, UPQC, active
+distribution network, ancillary services, dynamic voltage restorer,
+STATCOM, energy storage, voltage sag compensation, reactive power
+control
+\end{IEEEkeywords}
+
+% ============================================================
+%  I. INTRODUCTION
+% ============================================================
+
+\section{Introduction}
+\label{sec:introduction}
+
+The decarbonisation of the European energy system is driving a rapid
+and large-scale deployment of distributed energy resources (DERs)
+at the medium-voltage (MV) and low-voltage (LV) distribution level.
+Photovoltaic plants, wind micro-turbines, battery storage systems, and
+electric vehicle chargers are transforming distribution grids from
+passive, unidirectional infrastructures into dynamic, bidirectional
+active distribution networks (ADNs)~\cite{ref:EDSO_transition}.
+The European Commission has estimated investment requirements of
+375--425\,billion EUR in distribution infrastructure by 2030, an
+increase of 50--70\,\% compared to the previous decade~\cite{ref:EC_grids}.
+
+This structural transformation carries two simultaneous and
+partially conflicting challenges. On one hand, the proliferation of
+power-electronics-interfaced generation and storage introduces
+harmonics, voltage unbalance, and rapid voltage fluctuations that
+degrade power quality for sensitive industrial loads~\cite{ref:IEEE_std_519}.
+On the other hand, the reduction of synchronous generation reduces
+system inertia and reactive power availability, placing new burdens
+on distribution system operators (DSOs) to procure ancillary services
+at the distribution level~\cite{ref:ancillary_EU}.
+Industry studies estimate that power quality disturbances cost European
+and North American industries in excess of 150\,billion USD annually in
+lost productivity and equipment damage~\cite{ref:PQ_cost}.
+
+Existing mitigation technologies address these challenges separately.
+Dynamic Voltage Restorers (DVRs)~\cite{ref:DVR_original} inject a
+compensating series voltage to protect sensitive loads from sags and
+swells, but provide no service to the grid.
+Static Synchronous Compensators (STATCOMs)~\cite{ref:STATCOM_ref} and
+Active Power Filters (APFs)~\cite{ref:APF_ref} operate on the shunt
+path and can provide reactive power support or harmonic mitigation,
+but offer no load-side protection.
+The Unified Power Quality Conditioner (UPQC), first proposed
+in~\cite{ref:UPQC_original}, combines both functions by coupling a
+shunt and a series converter through a common DC link.
+However, in the classical UPQC configuration, the shunt converter is
+placed on the \emph{load side} to compensate load current harmonics,
+while the series converter is placed on the \emph{grid side} to
+compensate supply voltage disturbances.
+This arrangement prioritises the perspective of the end user and
+provides limited benefit to the DSO.
+
+The present paper proposes a \emph{topological inversion} of the
+standard UPQC architecture---hereafter referred to as the
+\emph{Flipped UPQC} (F-UPQC). In the proposed configuration:
+\begin{itemize}
+  \item the \textbf{shunt converter} is connected on the \emph{grid
+        side}, enabling provision of reactive power support, harmonic
+        current injection, and fast voltage regulation as ancillary
+        services to the DSO;
+  \item the \textbf{series converter} is connected on the \emph{load
+        side}, ensuring full voltage stability for connected sensitive
+        loads regardless of grid disturbances;
+  \item an \textbf{energy storage} element on the shared DC bus
+        decouples active power exchange between the two converters
+        and enables participation in distribution-level flexibility
+        markets.
+\end{itemize}
+
+The main contributions of this paper are:
+\begin{enumerate}
+  \item A novel F-UPQC topology specifically designed for MV/LV
+        distribution networks operating in the context of ADNs;
+  \item A complete small-signal mathematical model of the F-UPQC in
+        the synchronous reference frame ($dq$ frame);
+  \item A decoupled control architecture separating the series
+        voltage-stabilisation loop from the shunt ancillary-service
+        loop;
+  \item A steady-state power flow analysis demonstrating the
+        feasibility of simultaneous load protection and DSO service
+        provision;
+  \item A discussion of the regulatory context (EU Clean Energy
+        Package, EN~50160, IEC~61000) and the positioning of the
+        F-UPQC in emerging DSO flexibility markets.
+\end{enumerate}
+
+The remainder of the paper is organised as follows.
+Section~\ref{sec:topology} describes the F-UPQC topology and
+compares it with the classical UPQC.
+Section~\ref{sec:model} derives the mathematical model.
+Section~\ref{sec:control} presents the control strategy.
+Section~\ref{sec:steadystate} analyses the steady-state power flow
+and component ratings.
+Section~\ref{sec:regulatory} discusses regulatory alignment.
+Section~\ref{sec:conclusion} draws conclusions and outlines future work.
+
+% ============================================================
+%  II. SYSTEM TOPOLOGY
+% ============================================================
+
+\section{F-UPQC Topology}
+\label{sec:topology}
+
+\subsection{Classical UPQC vs.\ Flipped UPQC}
+
+Fig.~\ref{fig:comparison} illustrates the structural difference between
+the classical UPQC and the proposed F-UPQC.
+In the classical topology, the shunt converter compensates non-linear
+load currents on the load bus, while the series converter mitigates
+supply-side disturbances.
+In the F-UPQC, the two converters exchange roles with respect to their
+point of connection: the shunt VSC interfaces with the grid at the
+point of common coupling (PCC), and the series VSC injects a
+compensating voltage on the load feeder through a series injection
+transformer.
+
+% --- PLACEHOLDER: insert comparison figure ---
+\begin{figure}[htbp]
+  \centering
+  % \includegraphics[width=\columnwidth]{fig/topology_comparison.pdf}
+  \fbox{\parbox{0.9\columnwidth}{\centering\vspace{1.5cm}%
+    [PLACEHOLDER: Classical UPQC vs.\ F-UPQC block diagram]\vspace{1.5cm}}}
+  \caption{Structural comparison between (a) classical UPQC and
+           (b) proposed Flipped UPQC (F-UPQC).}
+  \label{fig:comparison}
+\end{figure}
+
+\subsection{Component Description}
+
+The F-UPQC consists of the following main components:
+
+\subsubsection{Grid-side coupling transformer}
+A medium-voltage transformer with Dyn11 vector group provides
+galvanic isolation and a 30\textdegree{} phase shift that reduces
+low-order current harmonics reflected on the MV bus.
+
+\subsubsection{Shunt VSC (grid-side)}
+A two-level or three-level voltage-source converter connected in
+shunt at the PCC via a coupling reactor $L_\text{sh}$.
+Operating as a grid-following controlled current source, it injects
+reactive current $i_q$ on demand from the DSO and a harmonic
+cancellation current $i_h$ computed from the grid current measurement.
+
+\subsubsection{Series VSC and injection transformer}
+A voltage-source converter whose AC terminals are connected to
+the primary of a series injection transformer~$T_\text{s}$.
+The secondary winding is inserted in series on the load feeder.
+The converter synthesises a compensating voltage
+$\bm{v}_\text{inj}$ such that the load terminal voltage
+$\bm{v}_\text{load}$ tracks a clean sinusoidal reference
+$\bm{v}_\text{ref}$ independently of grid disturbances.
+
+\subsubsection{Common DC bus}
+A capacitor bank $C_\text{dc}$ maintains the DC link voltage
+$V_\text{dc}$ at a regulated level. The shunt VSC is responsible for
+DC bus voltage regulation in normal operation.
+
+\subsubsection{Energy storage interface}
+An optional bidirectional DC/DC converter connects an energy storage
+system (battery, supercapacitor, or hybrid) to the DC bus.
+During sustained voltage sags, the storage supplies the active power
+demanded by the series VSC, extending compensation capability
+beyond the steady-state limit dictated by grid power flow alone.
+
+% ============================================================
+%  III. MATHEMATICAL MODEL
+% ============================================================
+
+\section{Mathematical Model}
+\label{sec:model}
+
+\subsection{Reference Frame and Notation}
+
+All quantities are expressed in the synchronous $dq$ reference frame
+rotating at the fundamental angular frequency $\omega_0 = 2\pi f_0$,
+with $f_0 = 50$\,Hz.
+The Park transformation adopted is power-invariant:
+\begin{equation}
+  \bm{T}(\theta) =
+  \sqrt{\frac{2}{3}}
+  \begin{bmatrix}
+    \cos\theta & \cos\!\left(\theta - \tfrac{2\pi}{3}\right)
+              & \cos\!\left(\theta + \tfrac{2\pi}{3}\right) \\[4pt]
+    -\sin\theta & -\sin\!\left(\theta - \tfrac{2\pi}{3}\right)
+               & -\sin\!\left(\theta + \tfrac{2\pi}{3}\right)
+  \end{bmatrix}
+  \label{eq:park}
+\end{equation}
+where $\theta = \omega_0 t + \theta_0$ is estimated by a
+synchronous-reference-frame phase-locked loop (SRF-PLL).
+
+\subsection{Shunt VSC Model}
+
+Let $\bm{v}_\text{pcc} = [v_{d,\text{pcc}},\, v_{q,\text{pcc}}]^\top$
+be the PCC voltage and $\bm{i}_\text{sh} = [i_{d,\text{sh}},\, i_{q,\text{sh}}]^\top$
+the shunt converter output current, both in the $dq$ frame.
+The coupling reactor dynamics are:
+\begin{equation}
+  L_\text{sh}\frac{d}{dt}
+  \begin{bmatrix} i_{d,\text{sh}} \\ i_{q,\text{sh}} \end{bmatrix}
+  =
+  \begin{bmatrix} v_{d,\text{sh}} \\ v_{q,\text{sh}} \end{bmatrix}
+  -
+  \begin{bmatrix} v_{d,\text{pcc}} \\ v_{q,\text{pcc}} \end{bmatrix}
+  -
+  R_\text{sh}
+  \begin{bmatrix} i_{d,\text{sh}} \\ i_{q,\text{sh}} \end{bmatrix}
+  +
+  \omega_0 L_\text{sh}
+  \begin{bmatrix} \phantom{-}i_{q,\text{sh}} \\ -i_{d,\text{sh}} \end{bmatrix}
+  \label{eq:shunt_dq}
+\end{equation}
+where $\bm{v}_\text{sh}$ is the converter output voltage and
+$R_\text{sh}$ represents switching and resistive losses.
+
+\subsection{Series VSC Model}
+
+Let $n_s$ be the turns ratio of the series injection transformer
+and $\bm{v}_\text{inj}$ the injected voltage referred to the secondary.
+The load terminal voltage is:
+\begin{equation}
+  \bm{v}_\text{load} = \bm{v}_\text{pcc} + \bm{v}_\text{inj}
+                      - Z_\text{line}\,\bm{i}_\text{load}
+  \label{eq:series_voltage}
+\end{equation}
+The series converter dynamics in the $dq$ frame follow:
+\begin{equation}
+  L_\text{se}\frac{d}{dt}
+  \begin{bmatrix} i_{d,\text{se}} \\ i_{q,\text{se}} \end{bmatrix}
+  =
+  \begin{bmatrix} v_{d,\text{se}} \\ v_{q,\text{se}} \end{bmatrix}
+  - n_s
+  \begin{bmatrix} v_{d,\text{inj}} \\ v_{q,\text{inj}} \end{bmatrix}
+  - R_\text{se}
+  \begin{bmatrix} i_{d,\text{se}} \\ i_{q,\text{se}} \end{bmatrix}
+  + \omega_0 L_\text{se}
+  \begin{bmatrix} \phantom{-}i_{q,\text{se}} \\ -i_{d,\text{se}} \end{bmatrix}
+  \label{eq:series_dq}
+\end{equation}
+
+\subsection{DC Link Model}
+
+The DC bus energy balance is:
+\begin{equation}
+  C_\text{dc}\frac{dV_\text{dc}}{dt}
+  = i_\text{sh,dc} - i_\text{se,dc} + i_\text{sto}
+  \label{eq:dclink}
+\end{equation}
+where $i_\text{sh,dc}$ and $i_\text{se,dc}$ are the DC currents
+drawn by the shunt and series VSCs respectively, and $i_\text{sto}$
+is the storage current (positive when discharging).
+In the power-invariant $dq$ frame:
+\begin{align}
+  i_\text{sh,dc} &= \frac{v_{d,\text{sh}}\,i_{d,\text{sh}}
+                        + v_{q,\text{sh}}\,i_{q,\text{sh}}}{V_\text{dc}}
+  \label{eq:psh_dc} \\
+  i_\text{se,dc} &= \frac{v_{d,\text{se}}\,i_{d,\text{se}}
+                        + v_{q,\text{se}}\,i_{q,\text{se}}}{V_\text{dc}}
+  \label{eq:pse_dc}
+\end{align}
+
+% ============================================================
+%  IV. CONTROL STRATEGY
+% ============================================================
+
+\section{Control Strategy}
+\label{sec:control}
+
+\subsection{Overview}
+
+The F-UPQC control is decomposed into four decoupled loops, as shown
+in Fig.~\ref{fig:control_overview}:
+\begin{enumerate}
+  \item \textbf{Shunt current controller} --- inner PI loop regulating
+        $i_{d,\text{sh}}$ and $i_{q,\text{sh}}$ with cross-coupling
+        feed-forward decoupling;
+  \item \textbf{DC bus voltage controller} --- outer PI loop providing
+        the $d$-axis current reference $i_{d,\text{sh}}^*$ to the shunt
+        inner loop, ensuring DC link energy balance;
+  \item \textbf{Ancillary service controller} --- generates the
+        $q$-axis reference $i_{q,\text{sh}}^*$ according to the
+        reactive power demand $Q^*$ dispatched by the DSO;
+  \item \textbf{Series voltage controller} --- computes the required
+        injection voltage $\bm{v}_\text{inj}^*$ to track
+        $\bm{v}_\text{ref}$ at the load terminals, using a
+        proportional-resonant (PR) regulator in the stationary frame
+        or a PI regulator with feed-forward in the $dq$ frame.
+\end{enumerate}
+
+% --- PLACEHOLDER: control block diagram ---
+\begin{figure}[htbp]
+  \centering
+  \fbox{\parbox{0.9\columnwidth}{\centering\vspace{2cm}%
+    [PLACEHOLDER: F-UPQC control block diagram]\vspace{2cm}}}
+  \caption{F-UPQC decoupled control architecture.}
+  \label{fig:control_overview}
+\end{figure}
+
+\subsection{Shunt Inner Current Loop}
+
+The current controller cancels the cross-coupling terms
+$\pm\omega_0 L_\text{sh}$ by feed-forward, yielding two independent
+first-order plants. A proportional-integral (PI) controller
+\begin{equation}
+  C_\text{sh}(s) = K_{p,\text{sh}} + \frac{K_{i,\text{sh}}}{s}
+  \label{eq:pi_shunt}
+\end{equation}
+is designed to achieve a closed-loop bandwidth
+$\omega_{c,\text{sh}} \approx 2\pi \cdot 1\,\mathrm{kHz}$, well below
+the switching frequency.
+
+\subsection{DC Bus Voltage Outer Loop}
+
+The outer voltage loop bandwidth is set one decade below the inner
+current loop:
+\begin{equation}
+  C_\text{dc}(s) = K_{p,\text{dc}} + \frac{K_{i,\text{dc}}}{s},
+  \qquad \omega_{c,\text{dc}} \approx 2\pi \cdot 100\,\mathrm{Hz}
+  \label{eq:pi_dc}
+\end{equation}
+This separation of timescales ensures that DC bus dynamics do not
+interfere with the inner current regulation.
+
+\subsection{Series Voltage Compensation Loop}
+
+The series controller operates as a voltage feed-forward compensator.
+The reference injection voltage is computed as:
+\begin{equation}
+  \bm{v}_\text{inj}^* = \bm{v}_\text{ref} - \bm{v}_\text{pcc}
+                        + Z_\text{line}\,\hat{\bm{i}}_\text{load}
+  \label{eq:series_ref}
+\end{equation}
+where $\hat{\bm{i}}_\text{load}$ is the estimated load current.
+A PI regulator with bandwidth $\omega_{c,\text{se}}$ closes the
+tracking loop.
+
+% ============================================================
+%  V. STEADY-STATE ANALYSIS
+% ============================================================
+
+\section{Steady-State Analysis and Component Rating}
+\label{sec:steadystate}
+
+\subsection{Power Flow}
+
+Under balanced, steady-state conditions with a purely reactive
+ancillary service demand $Q^* \neq 0$ and no active series
+compensation ($\bm{v}_\text{inj} = 0$), the active power
+balance of the DC bus requires:
+\begin{equation}
+  P_\text{sh} + P_\text{se} + P_\text{sto} = P_\text{loss}
+  \label{eq:power_balance}
+\end{equation}
+Since reactive power exchange does not transfer net active energy,
+$P_\text{sh} \approx P_\text{loss}$, and the storage is idle
+($P_\text{sto} \approx 0$) during normal operation.
+
+During a voltage sag of depth $\Delta V$ and duration $\tau$,
+the series VSC must inject active power:
+\begin{equation}
+  P_\text{se,sag} = \frac{\Delta V}{V_\text{nom}}\,P_\text{load}
+  \label{eq:sag_power}
+\end{equation}
+If the shunt VSC cannot fully supply this active power from the grid
+(e.g., during a deep or long sag), the energy deficit
+\begin{equation}
+  E_\text{sto} = P_\text{se,sag}\,\tau
+  \label{eq:storage_energy}
+\end{equation}
+must be supplied by the storage element, which thus determines
+the minimum storage capacity for a given sag profile.
+
+\subsection{Converter Rating}
+
+Table~\ref{tab:ratings} summarises the nominal ratings of the main
+power components for a representative 100\,kVA installation.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Nominal Component Ratings (Representative 100\,kVA System)}
+  \label{tab:ratings}
+  \begin{tabular}{@{}lll@{}}
+    \toprule
+    \textbf{Component} & \textbf{Parameter} & \textbf{Value} \\
+    \midrule
+    Shunt VSC           & Apparent power     & $S_\text{sh}$ [kVA] \\
+                        & DC link voltage    & $V_\text{dc}$ [V] \\
+                        & Coupling inductance & $L_\text{sh}$ [mH] \\
+    \midrule
+    Series VSC          & Apparent power     & $S_\text{se}$ [kVA] \\
+                        & Injection transformer ratio & $n_s$ \\
+                        & Series inductance  & $L_\text{se}$ [mH] \\
+    \midrule
+    DC bus              & Capacitance        & $C_\text{dc}$ [mF] \\
+    \midrule
+    Storage             & Energy capacity    & $E_\text{sto}$ [kWh] \\
+                        & Peak power         & $P_\text{sto}$ [kW] \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+% ============================================================
+%  VI. REGULATORY CONTEXT
+% ============================================================
+
+\section{Regulatory Alignment}
+\label{sec:regulatory}
+
+The F-UPQC topology is well-positioned within the evolving European
+regulatory framework for active distribution networks.
+
+The \textbf{EU Clean Energy Package}~\cite{ref:CEP} mandates that DSOs
+transition from passive network managers to active facilitators of
+distributed flexibility. DSO Entity, representing over 900 distribution
+operators across 27 EU member states, is developing flexibility
+assessment methodologies and market frameworks that require
+grid-connected devices to be capable of providing reactive power
+support and harmonic mitigation on demand~\cite{ref:EDSO_transition}.
+
+The \textbf{EN~50160} standard defines voltage quality characteristics
+at the point of supply, establishing the tolerance bands for voltage
+magnitude, harmonic distortion, and unbalance that the series
+compensation loop of the F-UPQC is designed to enforce at the load
+terminals.
+
+The \textbf{IEC~61000-3-x} series governs harmonic current emission
+limits for equipment connected to public networks; the shunt
+converter of the F-UPQC can be programmed to ensure compliance of
+the load seen from the PCC with these limits, effectively acting
+as an active front end (AFE) for the entire facility.
+
+Finally, the \textbf{EU Network Code on Demand Response} (currently
+under development alongside Implementing Regulation on data
+requirements for demand response~\cite{ref:CEP}) establishes the
+conditions under which grid-connected inverters can participate in
+distribution-level balancing and flexibility markets. The F-UPQC,
+with its bidirectional DC bus and storage interface, is a natural
+candidate for participation in such markets, offering a revenue
+stream that can partially offset capital expenditure.
+
+% ============================================================
+%  VII. CONCLUSION
+% ============================================================
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+This paper has presented the Flipped UPQC (F-UPQC), a novel topology
+for medium-voltage and low-voltage active distribution networks
+that simultaneously addresses two emerging requirements: the
+protection of sensitive industrial loads from voltage disturbances,
+and the provision of ancillary services to the distribution system
+operator.
+
+The key innovation of the F-UPQC with respect to the classical UPQC
+lies in the topological inversion of the two converters: the shunt VSC
+faces the grid, enabling reactive power injection and harmonic
+mitigation at the PCC, while the series VSC faces the load, ensuring
+clean voltage delivery regardless of grid disturbances.
+An optional energy storage element on the shared DC bus extends
+compensation capability to sustained sag events and enables
+participation in DSO flexibility markets.
+
+A complete mathematical model in the synchronous $dq$ reference frame
+has been derived, and a decoupled four-loop control architecture has
+been proposed. Steady-state analysis confirms the feasibility of
+simultaneous dual-mode operation and provides sizing guidelines for
+the main power components.
+
+Future work will focus on:
+\begin{itemize}
+  \item Hardware-in-the-loop (HIL) validation using a dSPACE
+        real-time platform;
+  \item Optimisation of storage sizing for participation in
+        distribution-level flexibility markets under EN~50160
+        compliance constraints;
+  \item Extension of the topology to three-phase four-wire systems
+        to address voltage unbalance in LV grids.
+\end{itemize}
+
+% ============================================================
+%  REFERENCES
+% ============================================================
+
+\bibliographystyle{IEEEtran}
+
+\begin{thebibliography}{99}
+
+\bibitem{ref:UPQC_original}
+H.~Fujita and H.~Akagi,
+``The unified power quality conditioner: The integration of series
+active filters and shunt active filters,''
+\emph{IEEE Trans.\ Power Electron.}, vol.~13, no.~2,
+pp.~315--322, Mar.\ 1998.
+
+\bibitem{ref:DVR_original}
+N.~H.~Woodley, L.~Morgan, and A.~Sundaram,
+``Experience with an inverter-based dynamic voltage restorer,''
+\emph{IEEE Trans.\ Power Del.}, vol.~14, no.~3,
+pp.~1181--1186, Jul.\ 1999.
+
+\bibitem{ref:STATCOM_ref}
+C.~Schauder and H.~Mehta,
+``Vector analysis and control of advanced static VAR compensators,''
+\emph{IEE Proc.-C}, vol.~140, no.~4, pp.~299--306, Jul.\ 1993.
+
+\bibitem{ref:APF_ref}
+B.~Singh, K.~Al-Haddad, and A.~Chandra,
+``A review of active filters for power quality improvement,''
+\emph{IEEE Trans.\ Ind.\ Electron.}, vol.~46, no.~5,
+pp.~960--971, Oct.\ 1999.
+
+\bibitem{ref:EDSO_transition}
+DSO Entity,
+``DSOs in the Energy Transition,''
+[Online]. Available: \url{https://eudsoentity.eu},
+Accessed: 2025.
+
+\bibitem{ref:EC_grids}
+European Commission,
+``Grids, the Missing Link -- An EU Action Plan for Grids,''
+COM(2023) 757 final, Brussels, Nov.\ 2023.
+
+\bibitem{ref:ancillary_EU}
+M.~Marinelli \emph{et al.},
+``Ancillary services markets in Europe: Evolution and regulatory
+trade-offs,''
+\emph{Renew.\ Sustain.\ Energy Rev.}, vol.~151, p.~111566, 2021.
+
+\bibitem{ref:CEP}
+European Parliament and Council,
+``Clean Energy for All Europeans Package,''
+Directives (EU) 2018/2001, 2019/944, Brussels, 2018--2019.
+
+\bibitem{ref:IEEE_std_519}
+IEEE Std 519-2022,
+\emph{IEEE Standard for Harmonic Control in Electric Power Systems},
+IEEE, New York, 2022.
+
+\bibitem{ref:PQ_cost}
+Fortune Business Insights,
+``Power Quality Equipment Market,''
+Market Research Report, 2025.
+[Online]. Available: \url{https://www.fortunebusinessinsights.com/power-quality-equipment-market-111978}
+
+\end{thebibliography}
+
+\end{document}

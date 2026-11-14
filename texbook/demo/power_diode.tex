@@ -1,0 +1,31 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,graphicx}
+\usepackage[margin=25mm]{geometry}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning}
+\newcommand{\dif}{\mathrm{d}}
+\newcommand{\Vf}{V_{F}}
+\definecolor{myblue}{RGB}{0,80,160}
+\title{Il diodo di potenza PIN}
+\author{D. Bagnara}
+\date{\today}
+\begin{document}
+\maketitle
+\tableofcontents
+\begin{abstract}
+Nota sul diodo PIN.
+\end{abstract}
+\section{Struttura}
+\label{sec:struct}
+La regione $i$ e' descritta in \ref{sec:struct}. Vedi \cite{baliga}.
+\begin{equation}\label{eq:vd}
+V_{drift}=\frac{W_D^2}{(\mu_n+\mu_p)\tau}
+\end{equation}
+\section{Reverse recovery}
+Come da \eqref{eq:vd} e \cite{lauritzen1991}.
+\begin{thebibliography}{9}
+\bibitem{baliga} B. J. Baliga, \emph{Fundamentals of Power Semiconductor Devices}, Springer, 2008.
+\bibitem{lauritzen1991} P. O. Lauritzen and C. L. Ma, "A simple diode model with reverse recovery," IEEE Trans. Power Electron., 1991.
+\end{thebibliography}
+\end{document}

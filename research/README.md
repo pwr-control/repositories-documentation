@@ -1,0 +1,270 @@
+# research — technical notes by domain
+
+Shorter notes than the reports in `repos_doc`, each in its own folder with the `.tex` source, the
+PDF and, where present, the companion script or Simscape component (`.m`, `.py`, `.ssc`,
+`.mlx`). English unless marked (IT). Several of the `.ssc` files here are the source of the
+components shipped in the [library](https://github.com/pwr-control/library) repository.
+
+## `power_semiconductor_devices`
+
+Physics:
+- `physics/solid_state` — *Derivation and physical meaning of the Fermi level in semiconductors*.
+- `diode/power_diode` — *Il power diode a giunzione PIN* (IT): carriers, Fermi levels, forward
+  conduction, reverse recovery, lifetime control, MPS diodes.
+- `diode/charge_control_model` — *Dall'equazione di continuità ambipolare al modello a controllo
+  di carica* (IT): why the two-state Lauritzen-Ma form is needed for di/dt-dependent recovery.
+- `diode/lauritzen_ma_datasheet_conversion` — *From datasheet data to the Lauritzen-Ma diode
+  model*: theory of the two-charge model on a current ramp of any length (peak reverse current in
+  closed form with the Lambert function, long-ramp and abrupt limits), recovery-time conventions and
+  softness, conversion from $I_{rr}$, $Q_{rr}$, $t_{rr}$ to $\tau$ and $T_M$ with a convergent
+  iteration and a criterion for the long-ramp closed form, sensitivity to the data, forward and
+  blocking parameters, what the model cannot reproduce (slope and forward-current laws), two worked
+  examples checked in a simulated commutation cell; `lm_conversion_calc.py` reproduces every number
+  and figure (relations in the module `lm_conversion.py`).
+- `igbt/igbt_fermi_levels`, `thyristor/thyristor_fermi_levels` — band diagrams with Fermi and
+  quasi-Fermi levels in the rest, blocking and conduction states (IT).
+- `thyristor/thyristor` — *Il tiristore (SCR): principio di funzionamento e fisica del
+  dispositivo* (IT): two-transistor model linked to the datasheet parameters.
+- `gto_igct` — *GTO and IGCT thyristors: device principles, switching behaviour and gate driver
+  design*, with bibliography.
+
+Simscape device models:
+- `igbt/igbt_dyn` — *Modelli Simscape per la dinamica di commutazione: diode_rr e igbt_dyn* (IT).
+- `power_mosfet/pwr_mosfet_dyn` — *Modello Simscape mos_dyn* (IT), with `mos_dyn.ssc`.
+- `igbt/igbt_ssc_model` — *A simplified Simscape IGBT model with single-point switching energies
+  and thermal ports*, with `igbt_simple.ssc` and `igbt_simple_2th.ssc`.
+- `power_mosfet/pwr_mosfet_simple` — *mos_simple_2th: a simplified power MOSFET loss model*,
+  with `mos_simple_2th.ssc`.
+- `thyristor/thyristor_ssc_model` — *A Simscape language thyristor model with reverse recovery*
+  (Lauritzen-Ma dynamics, latching logic, tq constraint), with `thyristor_rr.ssc`.
+- `tvs_clamp` — *Active clamping of high-voltage IGBTs* (earlier copy of the note under
+  `power_electronics/active_clamping`), with `tvs_clamp.ssc`.
+- `mosfet/mosfet_dyn` — PDF of the `mos_dyn` note only.
+
+Gate drivers and snubbers:
+- `thyristor/thyristor_driver` — *Design guidelines for thyristor gate drivers* (EN and IT
+  versions) with four driver topologies and a 6.5 kV / 2.6 kA press-pack example;
+  `firing_channel.tex` is a circuitikz schematic of one firing channel.
+- `snubbers` — three notes: snubber design guidelines for a half-bridge leg with FZ2400R33HE4
+  modules; snubbers in paralleled 5SNA 1000G650300 modules; RC snubber for high-power three-phase
+  diode bridges (IT, 690 V / 4 kA example).
+
+Thermal models:
+- `thermal/foster_to_cauer` — *From the Foster to the Cauer thermal network of a power device*:
+  the transformation `foster_to_cauer()` from the datasheet Foster table of $Z_{th(j-c)}$ to the
+  Cauer ladder by continued-fraction expansion, each step with its line of code, why the elements
+  are positive and unique, the closed form of the first section, the invariants that check a
+  conversion and the inverse by eigenvalues; numerical accuracy of the polynomial expansion against
+  a 200-digit reference and a stable bidiagonalization for many terms; the split of the double-side
+  impedance into one ladder per side with the single-side resistances; why a Foster network must not
+  be connected to a heat sink or a busbar; a check against a press-pack with known layers (structure
+  functions, what a fitted ladder does not contain); worked examples on a 2 kV diode and a 1.8 kV
+  thyristor in press-pack, the diode clamped between two copper bars; `foster_cauer_calc.py`
+  reproduces every number and figure (relations and a thermal network solver in the module
+  `foster_cauer.py`).
+
+## `power_electronics`
+
+Converters and control:
+- `single_phase_afe_traction_line` — *Convertitore di rete monofase 250 kW per l'immissione di
+  energia eolica in rete di trazione 16.7 Hz* (IT) and *Energy-based control of a full-bridge
+  active power decoupling circuit for a 350 kW single-phase AFE*.
+- `single_phase_inverter` — phase relation between the line quantities at ω and the DC-link
+  ripple at 2ω.
+- `dead_time` — *Dead time in voltage source converters*: symmetric and asymmetric insertion,
+  harmonic effects with emphasis on even harmonics, compensation.
+- `mpc_three_phase_ttype_inverter_fpga` — *FCS-MPC for a three-level T-type inverter: FPGA
+  implementation on Xilinx Zynq-7000*.
+- `buck_boost_converter` — steady-state analysis: inductor and output current versus duty cycle.
+- `upqc` — *A flipped unified power quality conditioner for active distribution networks*
+  (PCIM-style paper).
+- `converter_nomenclature` — *Nomenclature of line-commutated converter connections* (DIN 41761,
+  IEC 60146, ANSI/IEEE, AFE/AIC).
+- `LRCL_grid_filter_design` — two live scripts sizing an L-RC-L grid filter for the 400 V /
+  250 kVA and 690 V / 1600 kVA cases; sub-notes `summary_EN50160` (IT) and `trafo_equivalente`
+  (sequence equivalent circuits of a three-phase transformer, IT).
+- `lrc_filter_design_guidelines` — *L(RC) filter design guidelines*: grid-side L / LCL / L(RC)L
+  filters for active front ends (exact PWM inductor ripple for SPWM, SVM and DPWM, the ripple-inductance
+  trade-off of the reactor with its loss optimum versus the switching frequency, capacitor reactive
+  power, attenuation against IEEE 519, resonance placement versus the critical frequency $f_s/6$,
+  passive damping and its losses, star or delta connection of the shunt branches, grid-impedance
+  interaction) and LC / L(RC) sine and dv/dt output
+  filters for induction and PMSM drives (reflected wave with long cables, resonance window, loaded
+  resonance set by the machine inductance, damping, consequences for the current control and for
+  sensorless control), with two step-by-step worked examples for a 450 kW, 480 V, 2 kHz drive (AFE
+  grid filter; IM and PMSM sine filters), a review of a 690 V / 250 kW / 4 kHz L(RC) design without
+  $L_2$ (grid as second inductance) with its aligned version, and a comparison table;
+  `lrc_filter_example.py` reproduces the numbers.
+- `grid_forming_control` — *Grid-forming control in the synchronous dq frame: structure,
+  continuous-time design and discrete implementation*: the controller of the library block
+  `grid_forming_dqctrl` (`afe_dq_ctrl_pwm`, 16.7 Hz traction application) and of the study model
+  `grid_forming_dq.slx` of modelization-and-control (400 V / 250 kW / 50 Hz): free-running phase
+  generator, FHT sequence separation, positive- and negative-sequence voltage PIs, PI plus resonant
+  current loop, limiters and anti-windup; continuous-time analysis with complex space vectors
+  (current loop, pole-displacement rule of the resonant term and the rule $k_r = 2k_{i,i}$,
+  closed-form FHT gains and sequence-separation leakage, output impedance of the voltage loops) and
+  the discrete implementation operation by operation, stating where the discretization must be exact
+  (resonant term: semi-implicit form with $a = 2\sin(\omega_r t_s/2)$ or zero-order hold, forward
+  Euler unstable at 100 Hz / 125 µs; FHT: $\delta = 0$ and quadrature output at the same instant as
+  the in-phase one); `grid_forming_control_analysis.py` reproduces every number and figure.
+- `dc_bias_single_phase_transformers` — *Componente continua nei trasformatori monofase alimentati da un
+  inverter V/f in anello aperto* (IT): three gapless single-phase 1.7 MVA transformers fed by an open-loop
+  V/f two-level IGBT inverter (1070 V, 1.25 kHz): why a DC current of the order of the no-load current
+  saturates the core (half-cycle saturation, averaged magnetizing characteristic, incremental
+  inductance), tolerable levels, DC loop resistance (2–4 mΩ), inverter DC error sources, dead-time
+  damping, energization; DC compensation acting only on the $\alpha\beta$ components of the voltage
+  space vector (with isolated neutral the three DC currents sum to zero and are driven by $\alpha\beta$
+  only): Clarke of the one-period mean of the phase currents, PI per axis added to the open-loop V/f
+  reference, why a pure integrator is not enough ($L_m/R \approx 100$ s), $k_p$ as virtual resistance
+  limited by the saturated core, discrete implementation, sensor offset (common mode rejected,
+  auto-zero, flux-gate) and the offset-insensitive 2nd-harmonic alternative; `dc_bias_analysis.py`
+  reproduces every number and figure (nonlinear time simulation of the four scenarios).
+- `im_foc_ekf_sensorless` — *Controllo a orientamento di campo del motore asincrono e stima senza
+  sensore di velocità con un filtro di Kalman esteso* (IT): the 261 kW / 460 V / 60 Hz induction
+  machine of the modelization-and-control models `im_analysis_and_design` and `inv_im`. Per-unit
+  model including the inverter output inductor; current (200 Hz, zero on the pole), flux
+  (feed-forward plus PI with clamping) and speed loops, compared with the gains of the models;
+  six-state EKF (stator currents, rotor flux, speed, load torque): why forward Euler at 8 kHz makes
+  the flux mode unstable above 0.28 pu speed (−18° angle bias at rated speed) and the second-order
+  prediction that removes it, observability (lost at zero stator frequency), voltage input and
+  dead-time compensation; simulations (estimators in open loop against the encoder, sensorless
+  operation at rated torque down to 5 % speed, parameter and compensation errors, slow reversal under
+  an active load, sensitivity table) and a review of the library EKF (`ekf_im_setup`,
+  `inv_im_param.slx`: mechanical row 632 times too high, bilinear terms counted twice, voltage
+  scale, output inductor missing); `im_foc_ekf_analysis.py` reproduces every number and figure.
+- `fcs_mpc_ttype_psm` — *Finite-set predictive current control of a T-type wind-generator inverter:
+  analysis and fixes of the model `mpc_ttype_psm`*: one of the six 267 kW systems of the 1.6 MW /
+  17.8 rpm PM wind generator of modelization-and-control on a three-level T-type bridge with split DC
+  link and battery, FCS-MPC over the 27 states at 8 kHz and a six-state EKF. Voltage of a state in the
+  per unit of the machine (the prediction was 2.9 times too weak), delay compensation and the error
+  equation $e(k+1) = (1-g)\,e(k-1)$ of the current loop, neutral-point term, switching term that
+  breaks the ties between redundant states, voltage, inductance (active flux), state prediction and
+  speed output of the EKF, turn-on delay against the one-step capacitor short at the O→P and O→N
+  changes; switched check of the whole chain (torque within 0.4 % of the torque curve, neutral point
+  within ±9 V, sensorless range of the machine inductances) and remaining points;
+  `fcs_mpc_ttype_psm_analysis.py` reproduces every number and figure.
+- `isop_rail_auxiliary_supply` — *Input-series output-parallel phase-shift full bridges for a 3 kV rail
+  auxiliary supply (model `ps_isop_rail`)*: the four 250 kW phase-shift full bridges of modelization-and-control
+  in series on the catenary and in parallel at 750 V, with the transformers of two modules paralleled on the AC
+  side on one diode rectifier. Averaged module (the duty-cycle loss as the lossless resistance 4n²Lsf), turns
+  ratio and leakage against the catenary voltage, why a common phase shift balances the input voltages of
+  modules on separate rectifiers (1.2 ms) and why the balance almost disappears inside an AC-paralleled pair
+  (reactive coupling through the leakages: 64 ms, a 5 % leakage difference splits the module voltages by
+  ±15 %), remedies (one rectifier per module, a pair loop on the relative phase of the bridges), start,
+  DC magnetizing current and voltage loop. Rev. 01 adds the balancing controls, with a block diagram of the
+  whole control: a PI per pair on the relative phase of its two bridges plus a slow trim of the phase shift
+  between the pairs (20 % more leakage in one module: all four voltages within 0.1 % in 10 ms), why the
+  classic per-module loop diverges with the modulator of the model (one leg moved), and why the measured
+  voltages must be averaged over a switching period (DC bias); `isop_rail_auxiliary_supply_analysis.py`
+  (with the switched simulator `isop_sim.py`) reproduces every number and figure.
+
+Line-commutated rectifiers and protection:
+- `six_pulses_thyristor_based_rectifier/acdc_thyristor_sizing_src` — *Sizing of a 400 V / 1 MW
+  thyristor AC/DC supply for a 1100 A resistive load at 16.4–200 V*, with `calc.py` generating
+  the tables.
+- `six_pulses_thyristor_based_rectifier/rectifier_16V4_1100A_src` — *Sizing of a 16.4 V / 1100 A
+  six-pulse thyristor rectifier* (transformer, line reactor with 5th/7th/11th traps, DC LC
+  filter), with `calc2.py`.
+- `six_pulse_controlled_rectifier_design` — *Six-pulse thyristor bridge (B6C) with arm fuses, RC
+  snubbers and DC LC filter: sizing formula sheet and design path* (fourteen steps, 440 V /
+  1000 A worked example; Rev. 01 adds the RC snubber design criteria), with `b6c_example_calc.py`
+  and the switched-circuit check `b6c_snubber_sim.py`.
+- `../diode-stack` (top-level folder of `research`) — *Series-connected diode stacks for medium-voltage
+  six-pulse rectifiers: design guidelines*: the arms of a line-commutated diode bridge on an MV transformer,
+  each a stack of press-pack rectifier diodes with a balancing resistor and an RC snubber per diode. Design
+  path in nine steps: operating point (overlap, commutation voltage, current slope of 0.1 to 0.2 A/µs on a
+  ramp of about half a millisecond), first cut of the number of devices from a transient factor and a sharing
+  factor, static sharing (leakage at the working point; with $R_b C_{sn}$ longer than the blocking interval
+  the sharing of the running bridge is capacitive), recovered charge at the slope of the circuit (the
+  datasheet point can be scaled neither linearly nor along the $Q_S$ curve: charge-control model with a
+  quadratic recombination term, floor and ceiling of the charge, a 10 % band of $Q_S$ at datasheet conditions
+  is 25 % in the bridge), charge model of the level that blocks first with the capacitor tolerance, two-mode
+  closed form of the commutation transient with the recovery tail (a current-stiff DC side raises the highest
+  arm voltage by about 20 % over the crest, on the arms across the DC terminals and not on the arm that turns
+  off), snubber resistor (its lower and upper limit, its losses), ratings and layout, thermal stability of the
+  blocking diode, insulation inside the stack and to earth, faults (DC short circuit, one device failed short,
+  lowest $u_k$). Worked example with generic data (10 kV / 100 A, six 4.5 kV diodes per arm, assumed component
+  data), checked against a switched simulation of the whole bridge (weak level at 78 % of $V_{RRM}$ with a
+  resistive load and at 89 % with a smoothing reactor, where seven devices or a larger snubber are needed),
+  comparison with the application-note rules for snubbers and series connection, thirteen design rules;
+  `diode_stack_calc.py` (with the switched simulator `diode_stack_sim.py` and the recovery model
+  `diode_stack_recovery.py`) reproduces every number and figure.
+- `soft_starters_and_snubbers` — *Thyristor-based soft starters for high-power motors*.
+- `thyristor_based_crowbar/unidirectional_crowbar` — *Crowbar thyristor for the 3 kV / 3600 A
+  static-switch test bench*: device selection and passive self-triggering gate circuit, with
+  `gate_network_sim.py`.
+- `thyristor_based_crowbar/bidirectional_crowbar` — *Bidirectional self-triggered thyristor
+  crowbar*, with `crowbar_bidir.ssc`.
+- `dump_resistor_energy_extraction` — dump resistor as alternative to repetitive MOV clamping
+  for million-cycle test-bench duty.
+- `active_clamping` — *Active clamping of high-voltage IGBTs: theory, design for a 6.5 kV /
+  1000 A module and a Simscape TVS model* (with the adiabatic energy-budget section).
+- `double_pulse_test` — *Extraction of Eon, Eoff and Err from double pulse test waveforms*
+  (FF1200R17IP5), with the MATLAB procedure.
+- `igbt_ageing` — *Aging estimation of an IGBT-based drive* (Arrhenius model with current and
+  coolant temperature thresholds), EN and IT.
+
+Magnetics and thermal:
+- `dab_cllc_inductor_sizing` — series inductance design in DAB versus CLLC.
+- `planar_transformer` — *Trasformatore planare: nota tecnica di dimensionamento* (IT), with
+  `planar_xfmr_design.m`.
+- `cooling_plate` — thermal impedance of a liquid-cooled aluminium plate (IT and EN).
+- `cooling_plate_mersen` — the same on a Mersen pin-fin cold plate, with `thermal_cold_plate.m`.
+- `shielded_cable_model` — *Lumped RLC formulation for the Simscape implementation of a shielded
+  three-phase cable* (120 m, 90 mm²).
+
+## `electrical_machines`
+
+- `pmsm` — *Torque ripple and cogging torque in PMSM* and its propagation through a back-to-back
+  drive into interharmonic grid emission.
+- `dy11_fault_analysis` — Dy11 secondary voltages under a single-phase sag on the primary.
+- `parallel_transformers` — passive current sharing in parallel-connected medium-frequency
+  transformers under parametric mismatch.
+- `tap_staggering_master_follower` — master-follower on-load tap changer control for parallel
+  transformers.
+- `transformers/scott` — *The Scott-T transformer*, with `scott_t.ssc`.
+- `transformers/tri_monophase_transformer` — *Three-phase to single-phase transformer with two
+  star-connected primaries*: magnetic model of the three-limb core (positive- and zero-sequence
+  magnetizing inductances), secondary turns distribution on the limbs, no-load ratio and phase,
+  line currents reflected by the single-phase load, short-circuit impedance, role of the neutral
+  and of the zero-sequence flux, two primaries in parallel or on two sources; with
+  `tri_monophase_transformer.ssc` and the Python check script that reproduces the numbers.
+- `transformers/transformer_sizing_theory` — single-phase HF high-power transformer sizing
+  (800 V / 800 V, 10 kHz, 250 kW example).
+- `transformers/induttanza_dispersione` — leakage inductance from nameplate data (IT).
+- `polar_diagram` — MATLAB script drawing the polar diagram of a balanced three-phase set.
+
+## `power_systems`
+
+- `even_harmonics` — *Even harmonics in three-phase AFE rectifiers: origins, mechanisms and
+  mitigation*.
+- `three_phase_power_system_fault_analaysis` — grid voltage during a single phase-to-earth fault,
+  phasor analysis in the RST plane for the different neutral earthing cases.
+- `dy11_fault_analysis` — the Dy11 note extended with the grid-voltage constraint for AFE
+  operation.
+
+## Other domains
+
+- `electronics/opamp_current_feedback` — *Modello Simscape di amplificatore a retroazione di
+  corrente (CFA)* (IT), LT1210 parameterization, with `opamp_cfa.ssc`.
+- `varistors/varistor_B80K680` — *The EPCOS SIOV-B80K680 block varistor: operating
+  characteristics and application sizing*, with `varistor_mov.ssc` and `test_varistor_mov.m`.
+- `svm` — *Space vector modulation for a two-level three-phase inverter*: classical SVM versus
+  triangular third-harmonic injection.
+- `signal_processing/phasor_dft_explained` — three-phase phasor extraction via DFT with MATLAB
+  implementation.
+- `cable_acustic_model` — electromagnetic-acoustic model of PWM-excited differential forces on a
+  120 m single-core cable run.
+- `physics/thermal_diffusion` — 1D thermal diffusion (EN and IT) with `thermal_diffusion_bar.m`.
+- `physics/comsol` — Anand viscoplastic model of the SAC305 solder layer for COMSOL (IT).
+- `physics/fermi_levels` — PDF only.
+- `mathematics/graph_theory` — *Teoria dei grafi algebrica*, summary of Bullo's *Lectures on
+  Network Systems* (IT).
+- `system_engineering/gantt` — pgfgantt template for a proposal-attachment Gantt chart, with its
+  own README and Makefile.
+- `shielded_cable_model` — PDF of the cable-model note (source under `power_electronics`).
+
+## Notes
+
+`cooling_plate/thermal_impedance.tex` and `cooling_plate_mersen/thermal_impedance.tex` are
+identical; `tvs_clamp` and `power_electronics/active_clamping` are two revisions of the same note.
