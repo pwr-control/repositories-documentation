@@ -50,7 +50,8 @@ Gate drivers and snubbers:
   diode bridges (IT, 690 V / 4 kA example).
 
 Thermal models:
-- `thermal/foster_to_cauer` — *From the Foster to the Cauer thermal network of a power device*:
+- `thermal/foster_to_cauer` — *From the Foster to the Cauer thermal network of a power device* (EN and IT
+  versions, `foster_to_cauer.tex` and `foster_to_cauer_it.tex`):
   the transformation `foster_to_cauer()` from the datasheet Foster table of $Z_{th(j-c)}$ to the
   Cauer ladder by continued-fraction expansion, each step with its line of code, why the elements
   are positive and unique, the closed form of the first section, the invariants that check a
@@ -60,8 +61,8 @@ Thermal models:
   be connected to a heat sink or a busbar; a check against a press-pack with known layers (structure
   functions, what a fitted ladder does not contain); worked examples on a 2 kV diode and a 1.8 kV
   thyristor in press-pack, the diode clamped between two copper bars; `foster_cauer_calc.py`
-  reproduces every number and figure (relations and a thermal network solver in the module
-  `foster_cauer.py`).
+  reproduces every number and figure of both versions (relations and a thermal network solver in the
+  module `foster_cauer.py`).
 
 ## `power_electronics`
 
