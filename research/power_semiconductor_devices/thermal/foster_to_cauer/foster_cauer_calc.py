@@ -14,8 +14,9 @@ The script applies the module foster_cauer.py and writes every number quoted in 
   4. accuracy of the polynomial expansion and of the bidiagonalization against a 200-digit reference, for
      2 to 60 terms over 1 to 8 decades.
 
-Outputs, next to the script: foster_cauer_results.txt (log), foster_cauer_values.tex (macros \\fc... of the note),
-figures/fig_*.pdf. numpy, scipy and matplotlib (numpy 1.x and 2.x). About ten seconds.
+Outputs, next to the script: foster_cauer_results.txt (log), foster_cauer_values.tex (macros \\fc... of the note,
+read by both language versions), figures/fig_*.pdf and figures/fig_*_it.pdf (the same figures with Italian labels,
+for foster_to_cauer_it.tex). numpy, scipy and matplotlib (numpy 1.x and 2.x). About ten seconds.
 Run:  python foster_cauer_calc.py"""
 import math
 import os
@@ -555,9 +556,23 @@ def accuracy_study():
 
 
 # ---------------------------------------------------------------- figures
+# Each figure is drawn twice: English labels for foster_to_cauer.tex (figures/fig_*.pdf) and Italian labels for
+# foster_to_cauer_it.tex (figures/fig_*_it.pdf). L(en, it) returns the label in the current language.
+LANG = "en"
+
+
+def L(en, it):
+    return it if LANG == "it" else en
+
+
+def loc_num(s):
+    """A number written in a label: decimal point in English, decimal comma in Italian."""
+    return s.replace(".", ",") if LANG == "it" else s
+
+
 def save(fig, name):
     os.makedirs(FIGDIR, exist_ok=True)
-    fig.savefig(os.path.join(FIGDIR, name + ".pdf"))
+    fig.savefig(os.path.join(FIGDIR, name + ("_it" if LANG == "it" else "") + ".pdf"))
     plt.close(fig)
 
 
@@ -569,16 +584,17 @@ def fig_datasheet(dd, dt):
         a1.loglog(t[sel], d["zf"][sel] * 1e3, color=col, lw=1.4, label=f"{lab}, Foster (datasheet)")
         tm = np.logspace(-4, 2, 25)
         a1.loglog(tm, fc.zth_cauer(d["Rc"], d["Cc"], tm) * 1e3, "o", ms=3.2, mfc="white", mec=col, mew=0.9,
-                  label=f"{lab}, Cauer ladder")
+                  label=L(f"{lab}, Cauer ladder", f"{lab}, rete a scala di Cauer"))
     tt = np.logspace(-4, -2.4, 10)
     a1.loglog(tt, tt / dd["Cc"][0] * 1e3, ls=(0, (3, 2)), color=INK2, lw=0.9)
     a1.text(1.3e-4, 2.0e-2, r"$t/C_1$", color=INK2, fontsize=7.5)
-    a1.set_xlabel("time (s)")
+    a1.set_xlabel(L("time (s)", "tempo (s)"))
     a1.set_ylabel(r"$Z_\mathrm{th(j-c)}$ (K/kW)")
     a1.set_xlim(1e-4, 1e2)
     a1.set_ylim(1e-2, 2e1)
     a1.legend(loc="lower right")
-    a1.set_title("(a) step response, double-side cooled", loc="left")
+    a1.set_title(L("(a) step response, double-side cooled", "(a) risposta al gradino, raffreddamento su due lati"),
+                 loc="left")
     for d, col, lab in ((dd, C_A, DIODE["name"]), (dt, C_B, THYR["name"])):
         x, y = fc.structure_function(d["Rc"] * 1e3, d["Cc"])
         a2.semilogy(x, y, color=col, lw=1.4, label=lab)
@@ -586,48 +602,54 @@ def fig_datasheet(dd, dt):
         Cs = np.cumsum(d["Cc"])
         above = col == C_A
         for k in range(4):
-            txt = f"{Cs[k]:.0f}" if Cs[k] >= 10 else f"{Cs[k]:.1f}"
+            txt = loc_num(f"{Cs[k]:.0f}" if Cs[k] >= 10 else f"{Cs[k]:.1f}")
             if above:
                 a2.text(0.5 * (Rs[k] + Rs[k + 1]), Cs[k] * 1.15, txt, color=col, fontsize=6.8, ha="center", va="bottom")
             elif Rs[k + 1] - Rs[k] < 0.6 and k > 0:       # narrow step: label above it
                 a2.text(0.5 * (Rs[k] + Rs[k + 1]), Cs[k] * 1.15, txt, color=col, fontsize=6.8, ha="center", va="bottom")
             else:
                 a2.text(0.5 * (Rs[k] + Rs[k + 1]), Cs[k] / 1.15, txt, color=col, fontsize=6.8, ha="center", va="top")
-    a2.set_xlabel(r"cumulative resistance from the junction, $\sum R_k$ (K/kW)")
-    a2.set_ylabel(r"cumulative capacitance $\sum C_k$ (J/K)")
+    a2.set_xlabel(L(r"cumulative resistance from the junction, $\sum R_k$ (K/kW)",
+                    r"resistenza cumulata dalla giunzione, $\sum R_k$ (K/kW)"))
+    a2.set_ylabel(L(r"cumulative capacitance $\sum C_k$ (J/K)", r"capacità cumulata $\sum C_k$ (J/K)"))
     a2.set_xlim(0, 8.5)
     a2.set_ylim(1, 500)
     a2.legend(loc="lower right")
-    a2.set_title("(b) Cauer ladders as structure functions", loc="left")
+    a2.set_title(L("(b) Cauer ladders as structure functions", "(b) reti a scala di Cauer come funzioni di struttura"),
+                 loc="left")
     save(fig, "fig_datasheet")
 
 
 def fig_coupling(cp):
     fig, (a1, a2) = plt.subplots(1, 2, figsize=(7.1, 2.75), gridspec_kw=dict(wspace=0.3))
     t = cp["t"] * 1e3
-    a1.plot(t, cp["TjF"], color=C_B, label="junction, Foster on the bars")
-    a1.plot(t, cp["TjC"], color=C_A, label="junction, Cauer per side on the bars")
-    a1.plot(t, cp["TjI"], color=INK2, ls=(0, (4, 2)), lw=1.0, label="junction, ideal heat sink")
+    a1.plot(t, cp["TjF"], color=C_B, label=L("junction, Foster on the bars", "giunzione, Foster sulle barre"))
+    a1.plot(t, cp["TjC"], color=C_A, label=L("junction, Cauer per side on the bars", "giunzione, Cauer per lato sulle barre"))
+    a1.plot(t, cp["TjI"], color=INK2, ls=(0, (4, 2)), lw=1.0,
+            label=L("junction, ideal heat sink", "giunzione, dissipatore ideale"))
     a1.plot(t, cp["TcF"], color=C_B, lw=0.9, ls=(0, (1, 1.5)), label="case, Foster")
-    a1.plot(t, cp["TcC"].max(1), color=C_A, lw=0.9, ls=(0, (1, 1.5)), label="case (warmer side), Cauer")
+    a1.plot(t, cp["TcC"].max(1), color=C_A, lw=0.9, ls=(0, (1, 1.5)),
+            label=L("case (warmer side), Cauer", "case (lato più caldo), Cauer"))
     a1.set_xlim(0, 2000)
     a1.set_ylim(0, None)
-    a1.set_xlabel("time (ms)")
-    a1.set_ylabel("temperature rise (K)")
+    a1.set_xlabel(L("time (ms)", "tempo (ms)"))
+    a1.set_ylabel(L("temperature rise (K)", "sovratemperatura (K)"))
     a1.legend(loc="upper right", fontsize=6.6)
-    a1.set_title(f"(a) {P_PULSE / 1e3:.0f} kW for {T_PULSE * 1e3:.0f} ms, {DIODE['name']}", loc="left")
+    a1.set_title(f"(a) {P_PULSE / 1e3:.0f} kW {L('for', 'per')} {T_PULSE * 1e3:.0f} ms, {DIODE['name']}", loc="left")
     q = cp["qC"] / P_PULSE * 100
     m = cp["t"] <= T_PULSE + 1e-9
-    a2.plot(t[m], np.full(m.sum(), 100.0), color=C_B, label="Foster network (both sides together)")
-    a2.plot(t[m], q[m].sum(1), color=C_A, label="Cauer ladders, both sides")
-    a2.plot(t[m], q[m, 0], color=C_A, lw=0.9, ls=(0, (3, 1.5)), label="Cauer, anode side")
-    a2.plot(t[m], q[m, 1], color=C_A, lw=0.9, ls=(0, (1, 1.5)), label="Cauer, cathode side")
+    a2.plot(t[m], np.full(m.sum(), 100.0), color=C_B,
+            label=L("Foster network (both sides together)", "rete di Foster (i due lati insieme)"))
+    a2.plot(t[m], q[m].sum(1), color=C_A, label=L("Cauer ladders, both sides", "reti a scala di Cauer, due lati"))
+    a2.plot(t[m], q[m, 0], color=C_A, lw=0.9, ls=(0, (3, 1.5)), label=L("Cauer, anode side", "Cauer, lato anodo"))
+    a2.plot(t[m], q[m, 1], color=C_A, lw=0.9, ls=(0, (1, 1.5)), label=L("Cauer, cathode side", "Cauer, lato catodo"))
     a2.set_xlim(0, T_PULSE * 1e3)
     a2.set_ylim(0, 110)
-    a2.set_xlabel("time (ms)")
-    a2.set_ylabel("heat into the bars (% of the power)")
+    a2.set_xlabel(L("time (ms)", "tempo (ms)"))
+    a2.set_ylabel(L("heat into the bars (% of the power)", "calore nelle barre (% della potenza)"))
     a2.legend(loc="center right", fontsize=6.6)
-    a2.set_title("(b) heat leaving the device during the pulse", loc="left")
+    a2.set_title(L("(b) heat leaving the device during the pulse", "(b) calore che esce dal dispositivo nell'impulso"),
+                 loc="left")
     save(fig, "fig_coupling")
 
 
@@ -637,52 +659,62 @@ def fig_synthetic(sy, ss):
     t = sy["t"]
     zx = fc.zth_foster(sy["Rx"], sy["tx"], t)
     a1.axvspan(T_FIT[0], T_FIT[1], color=GRID, alpha=0.5, lw=0)
-    a1.text(1.15e-3, 2.0e1, "window of the fit", color=INK2, fontsize=6.5)
-    a1.loglog(t, zx * 1e3, color=INK, lw=1.5, label="model, both sides cooled")
+    a1.text(1.15e-3, 2.0e1, L("window of the fit", "finestra del fit"), color=INK2, fontsize=6.5)
+    a1.loglog(t, zx * 1e3, color=INK, lw=1.5, label=L("model, both sides cooled", "modello, due lati raffreddati"))
     f4 = sy["fits"][4]
     a1.loglog(t, fc.zth_foster(f4["R"], f4["tau"], t) * 1e3, color=C_A, ls=(0, (4, 2)), lw=1.1,
-              label="4-term Foster fit (= its Cauer ladder)")
-    for side, col in (("anode", C_C), ("cathode", C_D)):
+              label=L("4-term Foster fit (= its Cauer ladder)", "fit a 4 termini (= sua rete di Cauer)"))
+    for side, side_it, col in (("anode", "anodo", C_C), ("cathode", "catodo", C_D)):
         zt, zs = sy["ssc"][side]
-        a1.loglog(t, zt * 1e3, color=col, lw=1.3, label=f"model, {side} side cooled only")
-        a1.loglog(t[::8], zs[::8] * 1e3, "o", ms=2.8, mfc="white", mec=col, mew=0.8, label=f"split ladders, {side} side only")
+        a1.loglog(t, zt * 1e3, color=col, lw=1.3,
+                  label=L(f"model, {side} side cooled only", f"modello, raffreddato solo lato {side_it}"))
+        a1.loglog(t[::8], zs[::8] * 1e3, "o", ms=2.8, mfc="white", mec=col, mew=0.8,
+                  label=L(f"split ladders, {side} side only", f"reti a scala suddivise, solo lato {side_it}"))
     a1.set_xlim(1e-5, 1e2)
     a1.set_ylim(3e-3, 4e1)
-    a1.set_xlabel("time (s)")
+    a1.set_xlabel(L("time (s)", "tempo (s)"))
     a1.set_ylabel(r"$Z_\mathrm{th(j-c)}$ (K/kW)")
     a1.legend(loc="lower right", fontsize=5.9)
-    a1.set_title("(a) step responses, sides with different layers", loc="left")
+    a1.set_title(L("(a) step responses, sides with different layers", "(a) risposte al gradino, lati con strati diversi"),
+                 loc="left")
     x, y = fc.structure_function(sy["Rcx"] * 1e3, sy["Ccx"])
-    a2.semilogy(x, y, color=INK, lw=1.4, label=f"exact ladder ({len(sy['Rcx'])} sections)")
+    a2.semilogy(x, y, color=INK, lw=1.4, label=L(f"exact ladder ({len(sy['Rcx'])} sections)",
+                                                 f"rete a scala esatta ({len(sy['Rcx'])} sezioni)"))
     for nf, col in zip((3, 4, 6), (RAMP[0], C_A, RAMP[3])):
         fd = sy["fits"][nf]
         x, y = fc.structure_function(fd["Rc"] * 1e3, fd["Cc"])
-        a2.semilogy(x, y, color=col, lw=1.1, label=f"ladder of the {nf}-term fit")
+        a2.semilogy(x, y, color=col, lw=1.1, label=L(f"ladder of the {nf}-term fit", f"rete a scala del fit a {nf} termini"))
     c = sy["caps"]
-    for val, lab in ((c["Si"], "Si"), (c["Si"] + c["Mo"], "Si + Mo"), (c["Si"] + c["Mo"] + c["Cu"], "all layers")):
+    for val, lab, xt in ((c["Si"], "Si", 6.3), (c["Si"] + c["Mo"], "Si + Mo", 6.3),
+                         (c["Si"] + c["Mo"] + c["Cu"], L("all layers", "tutti gli strati"), 0.12)):
         a2.axhline(val, color=MUTED, lw=0.7, ls=(0, (2, 2)))
-        a2.text(0.12 if lab == "all layers" else 6.3, val * 1.12, lab, color=INK2, fontsize=6.5)
+        a2.text(xt, val * 1.12, lab, color=INK2, fontsize=6.5)
     a2.set_xlim(0, 8.2)
     a2.set_ylim(0.04, 800)
-    a2.set_xlabel(r"cumulative resistance from the junction, $\sum R_k$ (K/kW)")
-    a2.set_ylabel(r"cumulative capacitance $\sum C_k$ (J/K)")
+    a2.set_xlabel(L(r"cumulative resistance from the junction, $\sum R_k$ (K/kW)",
+                    r"resistenza cumulata dalla giunzione, $\sum R_k$ (K/kW)"))
+    a2.set_ylabel(L(r"cumulative capacitance $\sum C_k$ (J/K)", r"capacità cumulata $\sum C_k$ (J/K)"))
     a2.legend(loc="lower right", fontsize=6.0)
-    a2.set_title("(b) structure functions, sides with different layers", loc="left")
-    for a, d, title in ((a3, sy, "(c) on the bars, sides with different layers"),
-                        (a4, ss, "(d) on the bars, sides with equal layers")):
+    a2.set_title(L("(b) structure functions, sides with different layers", "(b) funzioni di struttura, lati con strati diversi"),
+                 loc="left")
+    for a, d, title in ((a3, sy, L("(c) on the bars, sides with different layers", "(c) sulle barre, lati con strati diversi")),
+                        (a4, ss, L("(d) on the bars, sides with equal layers", "(d) sulle barre, lati con strati uguali"))):
         tp = d["tp"]
-        a.loglog(tp, d["zF"] * 1e3, color=C_B, lw=1.2, label="Foster (4-term fit) on the bars")
-        a.loglog(tp, d["z_model"] * 1e3, color=INK, lw=2.2, alpha=0.35, label="model on the bars")
-        a.loglog(tp, d["zC"][4] * 1e3, color=C_A, lw=1.2, ls=(0, (4, 2)), label="Cauer per side (4-term fit)")
-        a.loglog(tp, d["zCx"] * 1e3, color=C_C, lw=1.2, ls=(0, (1, 1.2)), label="exact ladder, per side")
-        a.loglog(tp, d["zI"] * 1e3, color=INK2, lw=0.9, ls=(0, (5, 2, 1, 2)), label="ideal heat sink")
+        a.loglog(tp, d["zF"] * 1e3, color=C_B, lw=1.2, label=L("Foster (4-term fit) on the bars", "Foster (fit a 4 termini) sulle barre"))
+        a.loglog(tp, d["z_model"] * 1e3, color=INK, lw=2.2, alpha=0.35, label=L("model on the bars", "modello sulle barre"))
+        a.loglog(tp, d["zC"][4] * 1e3, color=C_A, lw=1.2, ls=(0, (4, 2)),
+                 label=L("Cauer per side (4-term fit)", "Cauer per lato (fit a 4 termini)"))
+        a.loglog(tp, d["zCx"] * 1e3, color=C_C, lw=1.2, ls=(0, (1, 1.2)),
+                 label=L("exact ladder, per side", "rete a scala esatta, per lato"))
+        a.loglog(tp, d["zI"] * 1e3, color=INK2, lw=0.9, ls=(0, (5, 2, 1, 2)), label=L("ideal heat sink", "dissipatore ideale"))
         if d is sy:
-            a.annotate("exact ladder: no better\nthan an ideal heat sink", xy=(20, d["zCx"][-21] * 1e3), xytext=(2.0, 1.2),
+            a.annotate(L("exact ladder: no better\nthan an ideal heat sink", "rete a scala esatta:\nnon meglio di un\ndissipatore ideale"),
+                       xy=(20, d["zCx"][-21] * 1e3), xytext=(2.0, 1.2),
                        fontsize=6.3, color=INK2, arrowprops=dict(arrowstyle="-", color=INK2, lw=0.6))
         a.set_xlim(1e-3, 1e2)
         a.set_ylim(0.2, 200)
-        a.set_xlabel("length of the rectangular power pulse (s)")
-        a.set_ylabel("junction rise at the end (K/kW)")
+        a.set_xlabel(L("length of the rectangular power pulse (s)", "durata dell'impulso rettangolare di potenza (s)"))
+        a.set_ylabel(L("junction rise at the end (K/kW)", r"$\Delta T_\mathrm{j}$ a fine impulso (K/kW)"))
         a.legend(loc="upper left", fontsize=6.0)
         a.set_title(title, loc="left")
     save(fig, "fig_synthetic")
@@ -694,25 +726,29 @@ def fig_accuracy(ac):
         ep, eb = ac[dec]
         e = np.array([min(x, 1e3) if np.isfinite(x) else 1e3 for x, _ in ep])
         bad = np.array([b for _, b in ep])
-        a1.semilogy(STUDY_N, np.maximum(e, 1e-17), color=col, lw=1.2, label=f"{dec} decade{'s' if dec > 1 else ''}")
+        lab = L(f"{dec} decade{'s' if dec > 1 else ''}", f"{dec} decad{'i' if dec > 1 else 'e'}")
+        a1.semilogy(STUDY_N, np.maximum(e, 1e-17), color=col, lw=1.2, label=lab)
         if bad.any():
             a1.semilogy(np.array(STUDY_N)[bad], np.maximum(e[bad], 1e-17), "x", color=col, ms=3.5, mew=0.9)
-        a2.semilogy(STUDY_N, np.maximum(eb, 1e-17), color=col, lw=1.2, label=f"{dec} decade{'s' if dec > 1 else ''}")
-    for a, title in ((a1, "(a) polynomial expansion (foster_to_cauer)"), (a2, "(b) bidiagonalization")):
-        a.set_xlabel("number of Foster terms")
+        a2.semilogy(STUDY_N, np.maximum(eb, 1e-17), color=col, lw=1.2, label=lab)
+    for a, title in ((a1, L("(a) polynomial expansion (foster_to_cauer)", "(a) sviluppo polinomiale (foster_to_cauer)")),
+                     (a2, L("(b) bidiagonalization", "(b) bidiagonalizzazione"))):
+        a.set_xlabel(L("number of Foster terms", "numero di termini di Foster"))
         a.set_xlim(0, 60)
         a.set_ylim(1e-17, 1e4)
         a.axhline(1e-2, color=MUTED, lw=0.7, ls=(0, (2, 2)))
         a.set_title(title, loc="left")
-    a1.set_ylabel("largest relative error of the elements")
+    a1.set_ylabel(L("largest relative error of the elements", "massimo errore relativo degli elementi"))
     a1.text(1, 1.6e-2, "1 %", color=INK2, fontsize=6.5)
-    a1.text(59, 3e-17, "x: negative or infinite elements", color=INK2, fontsize=6.5, ha="right", va="bottom")
-    a2.legend(loc="upper left", title="time constants spread over", title_fontsize=6.8)
+    a1.text(59, 3e-17, L("x: negative or infinite elements", "x: elementi negativi o infiniti"), color=INK2, fontsize=6.5,
+            ha="right", va="bottom")
+    a2.legend(loc="upper left", title=L("time constants spread over", "costanti di tempo distribuite su"), title_fontsize=6.8)
     save(fig, "fig_accuracy")
 
 
 # ---------------------------------------------------------------- main
 def main():
+    global LANG
     t0 = time.time()
     line("Foster and Cauer thermal networks: worked examples")
     line()
@@ -731,10 +767,11 @@ def main():
          f"{STUDY_N[0]} to {STUDY_N[-1]}")
     ac = accuracy_study()
     mac("mpDigits", MP_DIGITS)
-    fig_datasheet(dd, dt)
-    fig_coupling(cp)
-    fig_synthetic(sy, ss)
-    fig_accuracy(ac)
+    for LANG in ("en", "it"):              # figures/fig_*.pdf, then figures/fig_*_it.pdf
+        fig_datasheet(dd, dt)
+        fig_coupling(cp)
+        fig_synthetic(sy, ss)
+        fig_accuracy(ac)
     line()
     line(f"done in {time.time() - t0:.1f} s")
     with open(os.path.join(HERE, "foster_cauer_results.txt"), "w") as fo:
