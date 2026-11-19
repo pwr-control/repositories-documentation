@@ -15,7 +15,8 @@ The two diodes are not products: their data are round values of the size found i
 To convert a real diode, replace the parameters below with the data of its datasheet.
 
 Outputs, next to the script: lm_conversion_results.txt (log), lm_conversion_values.tex (macros \\lm... of the
-note), figures/fig_*.pdf. Only numpy, scipy and matplotlib are needed (numpy 1.x and 2.x). A few seconds.
+note, read by both language versions), figures/fig_*.pdf and figures/fig_*_it.pdf (the same figures with
+Italian labels, for lauritzen_ma_datasheet_conversion_it.tex). Only numpy, scipy and matplotlib are needed (numpy 1.x and 2.x). A few seconds.
 Run:  python lm_conversion_calc.py"""
 import math, os, re, time
 from decimal import Decimal, ROUND_HALF_UP
@@ -517,9 +518,44 @@ def section_b():
 
 
 # ---------------------------------------------------------------- figures
+# Each figure is drawn twice: English labels for lauritzen_ma_datasheet_conversion.tex (figures/fig_*.pdf) and
+# Italian labels for lauritzen_ma_datasheet_conversion_it.tex (figures/fig_*_it.pdf). L(en, it) returns the label
+# in the current language.
+LANG = "en"
+
+
+def L(en, it):
+    return it if LANG == "it" else en
+
+
+def loc_num(s):
+    """A number written in a label: decimal point in English, decimal comma in Italian."""
+    return s.replace(".", ",") if LANG == "it" else s
+
+
+def loc_math(s):
+    """The same inside mathtext, where the comma is grouped so that it takes no punctuation space."""
+    return s.replace(".", "{,}") if LANG == "it" else s
+
+
+def comma_ticks(fig):
+    """Italian figures: decimal comma in the labels of the major ticks (limits kept)."""
+    fig.canvas.draw()
+    for ax in fig.axes:
+        lims = ax.get_xlim(), ax.get_ylim()
+        for axis in (ax.xaxis, ax.yaxis):
+            labs = [t.get_text() for t in axis.get_majorticklabels()]
+            if any("." in v for v in labs):
+                axis.set_ticks(axis.get_majorticklocs())
+                axis.set_ticklabels([v.replace(".", ",") for v in labs])
+        ax.set_xlim(lims[0]); ax.set_ylim(lims[1])
+
+
 def save(fig, name):
     os.makedirs(FIGDIR, exist_ok=True)
-    fig.savefig(os.path.join(FIGDIR, name + ".pdf"))
+    if LANG == "it":
+        comma_ticks(fig)
+    fig.savefig(os.path.join(FIGDIR, name + ("_it" if LANG == "it" else "") + ".pdf"))
     plt.close(fig)
 
 
@@ -578,21 +614,22 @@ def fig_waveform():
     b.plot([x10], [-0.1], "s", ms=3, color=C_WEAK)
     b.text(ta + kA*trr - 0.03, -0.92, "A", fontsize=7, ha="right", va="top")
     b.text(ta + kB*trr + 0.035, -0.27, "B", fontsize=7, ha="left", va="top")
-    note(b, "10 % of $I_\\mathrm{rr}$", (x10, -0.1), (10, -16), color=INK)
+    note(b, L("10 % of", "10 % di") + " $I_\\mathrm{rr}$", (x10, -0.1), (10, -16), color=INK)
     note(b, "$I_\\mathrm{rr}\\,t_\\mathrm{a}/2$", (0.62*ta, -0.3), (-24, -26), ha="right")
     note(b, "$I_\\mathrm{rr}\\,\\tau_\\mathrm{rr}$", (ta + 0.55*trr, -0.28), (26, -30))
     b.annotate("", (0, 0.2), (ta, 0.2), arrowprops=dict(arrowstyle="<->", color=INK2, lw=0.6, shrinkA=0, shrinkB=0))
     b.text(ta/2, 0.24, "$t_\\mathrm{a}$", ha="center", va="bottom", fontsize=7.5)
     b.annotate("", (ta, 0.2), (xz, 0.2), arrowprops=dict(arrowstyle="<->", color=INK2, lw=0.6, shrinkA=0, shrinkB=0))
-    b.text((ta + xz)/2, 0.24, "$t_\\mathrm{b} = %.2f\\,\\tau_\\mathrm{rr}$" % lm.trr_factor("line"), ha="center", va="bottom",
+    b.text((ta + xz)/2, 0.24, loc_math("$t_\\mathrm{b} = %.2f\\,\\tau_\\mathrm{rr}$" % lm.trr_factor("line")), ha="center", va="bottom",
            fontsize=7.5)
     b.plot([ta, ta], [-1, 0.2], color=MUTED, lw=0.5, ls=":")
     b.plot([xz, xz], [0, 0.2], color=MUTED, lw=0.5, ls=":")
-    b.text(-0.42, 0.33, "slope $-a$", fontsize=7, color=INK2, ha="left", va="bottom", rotation=-48)
+    b.text(-0.42, 0.33, L("slope", "pendenza") + " $-a$", fontsize=7, color=INK2, ha="left", va="bottom", rotation=-48)
     b.text(ta + 0.02, -1.04, "$-I_\\mathrm{rr}$", fontsize=7.5, ha="left", va="top")
     b.set_xlim(x[0], x[-1]); b.set_ylim(-1.18, 0.75)
-    b.set_xlabel("time from the current zero, $t/\\tau$"); b.set_ylabel("diode current, $i/I_\\mathrm{rr}$")
-    b.set_title("(a) current and datasheet quantities", loc="left")
+    b.set_xlabel(L("time from the current zero", "tempo dallo zero della corrente") + ", $t/\\tau$")
+    b.set_ylabel(L("diode current", "corrente del diodo") + ", $i/I_\\mathrm{rr}$")
+    b.set_title(L("(a) current and datasheet quantities", "(a) corrente e grandezze del datasheet"), loc="left")
     # --- charges, in units of a*tau^2
     b = ax[1]
     t = np.linspace(-0.6, T1 + 5.2*trr, 3000)
@@ -609,11 +646,12 @@ def fig_waveform():
     note(b, "$q_\\mathrm{M}$", (x[k], qM[k]), (10, 8))
     k = int(np.argmin(np.abs(x + 0.9)))
     note(b, "$\\tau\\,i$", (x[k], tau*i[k]), (-16, -14), ha="right")
-    b.text(0.03, 0.97, "current\nzero", fontsize=7, color=INK2, ha="left", va="top", transform=b.get_xaxis_transform())
-    b.text(ta + 0.03, 0.80, "junction\nblocks", fontsize=7, color=INK2, ha="left", va="top", transform=b.get_xaxis_transform())
+    b.text(0.03, 0.97, L("current\nzero", "zero della\ncorrente"), fontsize=7, color=INK2, ha="left", va="top", transform=b.get_xaxis_transform())
+    b.text(ta + 0.03, 0.80, L("junction\nblocks", "giunzione\ninterdetta"), fontsize=7, color=INK2, ha="left", va="top", transform=b.get_xaxis_transform())
     b.set_xlim(x[0], x[-1])
-    b.set_xlabel("time from the current zero, $t/\\tau$"); b.set_ylabel("charge, $q/(a\\tau^2)$")
-    b.set_title("(b) charges of the model", loc="left")
+    b.set_xlabel(L("time from the current zero", "tempo dallo zero della corrente") + ", $t/\\tau$")
+    b.set_ylabel(L("charge", "carica") + ", $q/(a\\tau^2)$")
+    b.set_title(L("(b) charges of the model", "(b) cariche del modello"), loc="left")
     save(fig, "fig_waveform")
     put("FigRho", rho, 2); put("FigLam", lam, 1)
 
@@ -641,15 +679,15 @@ def fig_map(exA, exB):
     ax[2].set_xscale("log")
     ax[0].set_ylim(5e-3, 8); ax[1].set_ylim(3e-3, 3); ax[2].set_ylim(0, 1.08)
     for b in ax:
-        b.set_xlim(1e-2, 1e2); b.set_xlabel("normalised slope, $a\\tau/I_\\mathrm{F}$")
+        b.set_xlim(1e-2, 1e2); b.set_xlabel(L("normalised slope", "pendenza normalizzata") + ", $a\\tau/I_\\mathrm{F}$")
         b.set_xticks([1e-2, 1e0, 1e2])
-    end_labels(ax[0], u[-1], ends[0], [f"{r:g}" for r in rhos])
-    end_labels(ax[1], u[-1], ends[1], [f"{r:g}" for r in rhos])
-    ax[0].text(0.55, 0.012, "long ramp:\nslope 1", fontsize=7, color=INK2, ha="left", va="center")
-    ax[0].text(0.012, 2.7, "abrupt: $I_\\mathrm{F}\\tau/T_\\mathrm{M}$", fontsize=7, color=INK2, ha="left", va="center")
-    ax[1].text(0.012, 1.25, "abrupt: $I_\\mathrm{F}(\\tau-\\tau_\\mathrm{rr})$", fontsize=7, color=INK2, ha="left",
+    end_labels(ax[0], u[-1], ends[0], [loc_num(f"{r:g}") for r in rhos])
+    end_labels(ax[1], u[-1], ends[1], [loc_num(f"{r:g}") for r in rhos])
+    ax[0].text(0.55, 0.012, L("long ramp:\nslope 1", "rampa lunga:\npendenza 1"), fontsize=7, color=INK2, ha="left", va="center")
+    ax[0].text(0.012, 2.7, L("abrupt", "brusca") + ": $I_\\mathrm{F}\\tau/T_\\mathrm{M}$", fontsize=7, color=INK2, ha="left", va="center")
+    ax[1].text(0.012, 1.25, L("abrupt", "brusca") + ": $I_\\mathrm{F}(\\tau-\\tau_\\mathrm{rr})$", fontsize=7, color=INK2, ha="left",
                va="center")
-    ax[1].text(0.55, 0.0065, "long ramp:\nslope 1", fontsize=7, color=INK2, ha="left", va="center")
+    ax[1].text(0.55, 0.0065, L("long ramp:\nslope 1", "rampa lunga:\npendenza 1"), fontsize=7, color=INK2, ha="left", va="center")
     for ex, lab in ((exA, "A"), (exB, "B")):
         c = ex["c"]
         uu = c["a"]*c["tau"]/c["IF"]
@@ -662,9 +700,10 @@ def fig_map(exA, exB):
             b.annotate(lab, (uu, yy), xytext=off, textcoords="offset points", fontsize=7.5, ha=ha, va=va, color=INK)
     ax[0].set_ylabel("$I_\\mathrm{rr}/I_\\mathrm{F}$"); ax[1].set_ylabel("$Q_\\mathrm{rr}/(\\tau I_\\mathrm{F})$")
     ax[2].set_ylabel("$\\partial\\ln Q_\\mathrm{rr}/\\partial\\ln a$")
-    ax[0].set_title("(a) peak reverse current", loc="left"); ax[1].set_title("(b) recovered charge", loc="left")
-    ax[2].set_title("(c) exponent of the charge", loc="left")
-    ax[2].text(0.97, 0.97, "$\\rho$ = 0.2,\n0.35, 0.5\n(light to dark)", transform=ax[2].transAxes, fontsize=7,
+    ax[0].set_title(L("(a) peak reverse current", "(a) corrente di picco inversa"), loc="left")
+    ax[1].set_title(L("(b) recovered charge", "(b) carica recuperata"), loc="left")
+    ax[2].set_title(L("(c) exponent of the charge", "(c) esponente della carica"), loc="left")
+    ax[2].text(0.97, 0.97, L("$\\rho$ = 0.2,\n0.35, 0.5\n(light to dark)", "$\\rho$ = 0,2;\n0,35; 0,5\n(da chiaro\na scuro)"), transform=ax[2].transAxes, fontsize=7,
                ha="right", va="top", color=INK2)
     save(fig, "fig_map")
 
@@ -683,11 +722,11 @@ def fig_inversion(exA, exB):
         ends[0].append((res[-1, 0] - 1)*100); ends[1].append((res[-1, 1] - 1)*100)
     for b in ax:
         b.set_xscale("log"); b.set_xlim(q[0], q[-1]); b.set_ylim(-80, 4)
-        b.set_xlabel("data: $I_\\mathrm{rr}/I_\\mathrm{F}$")
+        b.set_xlabel(L("data", "dati") + ": $I_\\mathrm{rr}/I_\\mathrm{F}$")
         b.axhline(0, color=AXIS, lw=0.6)
-        b.set_xticks([0.03, 0.1, 0.3, 1.0]); b.set_xticklabels(["0.03", "0.1", "0.3", "1"])
-    end_labels(ax[0], q[-1], ends[0], [f"{v:g}" for v in ss])
-    end_labels(ax[1], q[-1], ends[1], [f"{v:g}" for v in ss])
+        b.set_xticks([0.03, 0.1, 0.3, 1.0]); b.set_xticklabels([loc_num(v) for v in ("0.03", "0.1", "0.3", "1")])
+    end_labels(ax[0], q[-1], ends[0], [loc_num(f"{v:g}") for v in ss])
+    end_labels(ax[1], q[-1], ends[1], [loc_num(f"{v:g}") for v in ss])
     for ex, lab in ((exA, "A"), (exB, "B")):
         c = ex["c"]
         v = c["Irr"]/c["IF"]
@@ -695,9 +734,10 @@ def fig_inversion(exA, exB):
         for b, yy in ((ax[0], (iI - 1)*100), (ax[1], (qQ - 1)*100)):
             b.plot([v], [yy], "o", ms=3.5, color=C_WEAK, zorder=5)
             b.annotate(lab, (v, yy), xytext=(-5, -4), textcoords="offset points", fontsize=7.5, ha="right", va="top")
-    ax[0].set_ylabel("error of the returned value (%)")
-    ax[0].set_title("(a) peak reverse current", loc="left"); ax[1].set_title("(b) recovered charge", loc="left")
-    ax[0].text(0.04, 0.08, "softness $s$ = 0.5, 1, 2, 4\n(light to dark)", transform=ax[0].transAxes, fontsize=7,
+    ax[0].set_ylabel(L("error of the returned value (%)", "errore del valore restituito (%)"))
+    ax[0].set_title(L("(a) peak reverse current", "(a) corrente di picco inversa"), loc="left")
+    ax[1].set_title(L("(b) recovered charge", "(b) carica recuperata"), loc="left")
+    ax[0].text(0.04, 0.08, L("softness $s$ = 0.5, 1, 2, 4\n(light to dark)", "softness $s$ = 0,5; 1; 2; 4\n(da chiaro a scuro)"), transform=ax[0].transAxes, fontsize=7,
                ha="left", va="bottom", color=INK2)
     save(fig, "fig_inversion")
 
@@ -720,20 +760,20 @@ def fig_forward(exA, exB):
          (22, -22))
     note(b, "$V_\\mathrm{T0} + r_\\mathrm{T}\\,i$", (230, d["VT0"] + d["RT"]*230), (6, 40), va="bottom")
     b.set_xlim(0, 2000); b.set_ylim(0.5, 2.1)
-    b.set_xlabel("forward current (A)"); b.set_ylabel("forward voltage (V)")
-    b.set_title("(a) diode A: straight line of the datasheet", loc="left")
+    b.set_xlabel(L("forward current (A)", "corrente diretta (A)")); b.set_ylabel(L("forward voltage (V)", "tensione diretta (V)"))
+    b.set_title(L("(a) diode A: straight line of the datasheet", "(a) diodo A: retta del datasheet"), loc="left")
     d, c = exB["d"], exB["c"]
     i = np.linspace(0.2, 200.0, 800)
     b = ax[1]
     b.plot(i, exB["VT0"] + exB["rT"]*i, color=INK, lw=0.9, ls=(0, (4, 2)))
     b.plot(i, lm.forward_voltage(i, exB["IS"], exB["n"], c["VT"], exB["RS"]), color=C_NOM)
     b.plot([p[0] for p in d["VF"]], [p[1] for p in d["VF"]], "o", ms=3.5, color=INK)
-    note(b, "model, $n$ = %.2f" % exB["n"], (150, float(lm.forward_voltage(150.0, exB["IS"], exB["n"], c["VT"], exB["RS"]))),
+    note(b, L("model", "modello") + ", $n$ = " + loc_num("%.2f" % exB["n"]), (150, float(lm.forward_voltage(150.0, exB["IS"], exB["n"], c["VT"], exB["RS"]))),
          (-10, 14), ha="right")
-    note(b, "line through the\ntwo upper points", (12, exB["VT0"] + exB["rT"]*12), (20, -24))
+    note(b, L("line through the\ntwo upper points", "retta per i due\npunti superiori"), (12, exB["VT0"] + exB["rT"]*12), (20, -24))
     b.set_xlim(0, 200); b.set_ylim(0.5, 2.9)
-    b.set_xlabel("forward current (A)"); b.set_ylabel("forward voltage (V)")
-    b.set_title("(b) diode B: three points of the curve", loc="left")
+    b.set_xlabel(L("forward current (A)", "corrente diretta (A)")); b.set_ylabel(L("forward voltage (V)", "tensione diretta (V)"))
+    b.set_title(L("(b) diode B: three points of the curve", "(b) diodo B: tre punti della curva"), loc="left")
     save(fig, "fig_forward")
 
 
@@ -754,23 +794,23 @@ def fig_cell(exA, exB):
         tc = np.linspace(lo, hi, 1500)
         ic, _, _ = lm.ramp_waveform(tc - (t0 - c["IF"]/m["a"]), m["a"], c["IF"], c["tau"], c["TM"])
         b.plot((tc - t0)*us, ic, color=INK, lw=0.8, ls=(0, (4, 2)))
-        b.set_ylabel("diode current (A)")
-        b.set_title(f"({'ab'[col]}) diode {lab}", loc="left")
+        b.set_ylabel(L("diode current (A)", "corrente del diodo (A)"))
+        b.set_title(f"({'ab'[col]}) " + L("diode", "diodo") + f" {lab}", loc="left")
         b.set_ylim(-1.18*m["Irr"], 0.75*m["Irr"])
         if col == 0:
             kx = int(np.argmin(np.abs(x - (r["ta"] + 2.2*r["tau_rr"])*us)))
-            note(b, "terminals", (x[kx], s["i"][sel][kx]), (18, -14))
-            note(b, "closed form\n(dashed)", ((r["ta"] + 1.1*r["tau_rr"])*us, -m["Irr"]*math.exp(-1.1)), (26, -20))
+            note(b, L("terminals", "terminali"), (x[kx], s["i"][sel][kx]), (18, -14))
+            note(b, L("closed form\n(dashed)", "forma chiusa\n(tratteggiata)"), ((r["ta"] + 1.1*r["tau_rr"])*us, -m["Irr"]*math.exp(-1.1)), (26, -20))
         else:
             kx = int(np.argmin(np.abs(x - (r["ta"] + 0.25*r["tau_rr"])*us)))
-            note(b, "terminals", (x[kx], s["i"][sel][kx]), (16, -12))
+            note(b, L("terminals", "terminali"), (x[kx], s["i"][sel][kx]), (16, -12))
             kx = int(np.argmin(np.abs(x - (r["ta"] + 0.9*r["tau_rr"])*us)))
-            note(b, "diffusion part", (x[kx], s["i_dif"][sel][kx]), (24, -16))
+            note(b, L("diffusion part", "parte di diffusione"), (x[kx], s["i_dif"][sel][kx]), (24, -16))
         b = ax[1, col]
         b.axhline(-ex["d"]["VR"], color=MUTED, lw=0.7, ls=(0, (4, 3)))
         b.plot(x, s["v"][sel], color=C_NOM)
-        b.set_ylabel("diode voltage (V)")
-        b.set_xlabel(f"time from the current zero ({unit})")
+        b.set_ylabel(L("diode voltage (V)", "tensione del diodo (V)"))
+        b.set_xlabel(L("time from the current zero", "tempo dallo zero della corrente") + f" ({unit})")
         b.set_xlim(x[0], x[-1])
         b.annotate("$-V_\\mathrm{R}$", (x[-1], -ex["d"]["VR"]), xytext=(-2, 3), textcoords="offset points", fontsize=7,
                    ha="right", va="bottom", color=INK2)
@@ -795,22 +835,24 @@ def fig_curves(exA, exB):
         if "Q_EXP" in d:
             ad = np.array(d["Q_RANGE"])
             ax[0, col].plot(ad/1e6, d["QRR"]*(ad/c["a"])**d["Q_EXP"]*1e6, color=INK, lw=0.9, ls=(0, (4, 2)))
-            ax[0, col].annotate("curve of the\ndatasheet", (22.0, d["QRR"]*(22e6/c["a"])**d["Q_EXP"]*1e6), xytext=(4, -22),
+            ax[0, col].annotate(L("curve of the\ndatasheet", "curva del\ndatasheet"), (22.0, d["QRR"]*(22e6/c["a"])**d["Q_EXP"]*1e6), xytext=(4, -22),
                                 textcoords="offset points", fontsize=7, ha="left", va="top",
                                 arrowprops=dict(arrowstyle="-", color=MUTED, lw=0.5, shrinkA=1, shrinkB=2))
         for row in (0, 1):
             ax[row, col].set_xscale("log"); ax[row, col].set_yscale("log")
             ax[row, col].set_xlim(a[0]/1e6, a[-1]/1e6*3.2)                   # room for the labels of the curves
             plain_log(ax[row, col])
-            end_labels(ax[row, col], a[-1]/1e6, ends[row], [f"{c['IF']*f:g} A" for f in (0.5, 1.0, 2.0)])
-        ax[0, col].set_title(f"({'ab'[col]}) diode {lab}", loc="left")
-        ax[1, col].set_xlabel("rate of fall of the current (A/µs)")
-        ax[0, col].set_ylabel("recovered charge (µC)"); ax[1, col].set_ylabel("peak reverse current (A)")
+            end_labels(ax[row, col], a[-1]/1e6, ends[row], [loc_num(f"{c['IF']*f:g}") + " A" for f in (0.5, 1.0, 2.0)])
+        ax[0, col].set_title(f"({'ab'[col]}) " + L("diode", "diodo") + f" {lab}", loc="left")
+        ax[1, col].set_xlabel(L("rate of fall of the current (A/µs)", "velocità di discesa della corrente (A/µs)"))
+        ax[0, col].set_ylabel(L("recovered charge (µC)", "carica recuperata (µC)"))
+        ax[1, col].set_ylabel(L("peak reverse current (A)", "corrente di picco inversa (A)"))
     save(fig, "fig_curves")
 
 
 # ---------------------------------------------------------------- main
 def main():
+    global LANG
     t0 = time.time()
     line("Lauritzen-Ma model and datasheet data: worked examples")
     line()
@@ -819,7 +861,8 @@ def main():
     exB = section_b()
     with open(os.path.join(HERE, "lm_conversion_results.txt"), "w", encoding="utf-8") as fo:
         fo.write("\n".join(LOG) + "\n")
-    fig_waveform()
+    for LANG in ("en", "it"):              # figures/fig_*.pdf, then figures/fig_*_it.pdf
+        fig_waveform()
     with open(os.path.join(HERE, "lm_conversion_values.tex"), "w", encoding="utf-8") as fo:
         fo.write("% generated by lm_conversion_calc.py: do not edit by hand\n")
         for k, v in MAC.items():
@@ -830,11 +873,12 @@ def main():
             missing = sorted(set(re.findall(r"\\lm([A-Za-z]+)", fi.read())) - set(MAC))
         if missing:
             print("WARNING: macros used in the note and not written by this script: " + ", ".join(missing))
-    fig_map(exA, exB)
-    fig_inversion(exA, exB)
-    fig_forward(exA, exB)
-    fig_cell(exA, exB)
-    fig_curves(exA, exB)
+    for LANG in ("en", "it"):
+        fig_map(exA, exB)
+        fig_inversion(exA, exB)
+        fig_forward(exA, exB)
+        fig_cell(exA, exB)
+        fig_curves(exA, exB)
     print(f"done in {time.time() - t0:.0f} s: {len(MAC)} macros, figures in {FIGDIR}")
 
 

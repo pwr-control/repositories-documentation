@@ -14,7 +14,8 @@ Physics:
 - `diode/charge_control_model` — *Dall'equazione di continuità ambipolare al modello a controllo
   di carica* (IT): why the two-state Lauritzen-Ma form is needed for di/dt-dependent recovery.
 - `diode/lauritzen_ma_datasheet_conversion` — *From datasheet data to the Lauritzen-Ma diode
-  model*: theory of the two-charge model on a current ramp of any length (peak reverse current in
+  model* (EN and IT versions, `lauritzen_ma_datasheet_conversion.tex` and
+  `lauritzen_ma_datasheet_conversion_it.tex`): theory of the two-charge model on a current ramp of any length (peak reverse current in
   closed form with the Lambert function, long-ramp and abrupt limits), recovery-time conventions and
   softness, conversion from $I_{rr}$, $Q_{rr}$, $t_{rr}$ to $\tau$ and $T_M$ with a convergent
   iteration and a criterion for the long-ramp closed form, sensitivity to the data, forward and
