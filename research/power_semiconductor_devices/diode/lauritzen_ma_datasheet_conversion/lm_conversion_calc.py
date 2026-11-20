@@ -624,7 +624,7 @@ def fig_waveform():
            fontsize=7.5)
     b.plot([ta, ta], [-1, 0.2], color=MUTED, lw=0.5, ls=":")
     b.plot([xz, xz], [0, 0.2], color=MUTED, lw=0.5, ls=":")
-    b.text(-0.42, 0.33, L("slope", "pendenza") + " $-a$", fontsize=7, color=INK2, ha="left", va="bottom", rotation=-48)
+    b.text(-0.42, 0.33, L("slope", "di/dt") + " $-a$", fontsize=7, color=INK2, ha="left", va="bottom", rotation=-48)
     b.text(ta + 0.02, -1.04, "$-I_\\mathrm{rr}$", fontsize=7.5, ha="left", va="top")
     b.set_xlim(x[0], x[-1]); b.set_ylim(-1.18, 0.75)
     b.set_xlabel(L("time from the current zero", "tempo dallo zero della corrente") + ", $t/\\tau$")
@@ -679,7 +679,7 @@ def fig_map(exA, exB):
     ax[2].set_xscale("log")
     ax[0].set_ylim(5e-3, 8); ax[1].set_ylim(3e-3, 3); ax[2].set_ylim(0, 1.08)
     for b in ax:
-        b.set_xlim(1e-2, 1e2); b.set_xlabel(L("normalised slope", "pendenza normalizzata") + ", $a\\tau/I_\\mathrm{F}$")
+        b.set_xlim(1e-2, 1e2); b.set_xlabel(L("normalised slope", "di/dt normalizzato") + ", $a\\tau/I_\\mathrm{F}$")
         b.set_xticks([1e-2, 1e0, 1e2])
     end_labels(ax[0], u[-1], ends[0], [loc_num(f"{r:g}") for r in rhos])
     end_labels(ax[1], u[-1], ends[1], [loc_num(f"{r:g}") for r in rhos])
