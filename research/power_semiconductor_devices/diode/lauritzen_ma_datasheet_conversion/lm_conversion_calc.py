@@ -700,8 +700,8 @@ def fig_map(exA, exB):
             b.annotate(lab, (uu, yy), xytext=off, textcoords="offset points", fontsize=7.5, ha=ha, va=va, color=INK)
     ax[0].set_ylabel("$I_\\mathrm{rr}/I_\\mathrm{F}$"); ax[1].set_ylabel("$Q_\\mathrm{rr}/(\\tau I_\\mathrm{F})$")
     ax[2].set_ylabel("$\\partial\\ln Q_\\mathrm{rr}/\\partial\\ln a$")
-    ax[0].set_title(L("(a) peak reverse current", "(a) corrente di picco inversa"), loc="left")
-    ax[1].set_title(L("(b) recovered charge", "(b) carica recuperata"), loc="left")
+    ax[0].set_title(L("(a) peak reverse current", "(a) peak reverse current"), loc="left")
+    ax[1].set_title(L("(b) recovered charge", "(b) recovered charge"), loc="left")
     ax[2].set_title(L("(c) exponent of the charge", "(c) esponente della carica"), loc="left")
     ax[2].text(0.97, 0.97, L("$\\rho$ = 0.2,\n0.35, 0.5\n(light to dark)", "$\\rho$ = 0,2;\n0,35; 0,5\n(da chiaro\na scuro)"), transform=ax[2].transAxes, fontsize=7,
                ha="right", va="top", color=INK2)
@@ -735,8 +735,8 @@ def fig_inversion(exA, exB):
             b.plot([v], [yy], "o", ms=3.5, color=C_WEAK, zorder=5)
             b.annotate(lab, (v, yy), xytext=(-5, -4), textcoords="offset points", fontsize=7.5, ha="right", va="top")
     ax[0].set_ylabel(L("error of the returned value (%)", "errore del valore restituito (%)"))
-    ax[0].set_title(L("(a) peak reverse current", "(a) corrente di picco inversa"), loc="left")
-    ax[1].set_title(L("(b) recovered charge", "(b) carica recuperata"), loc="left")
+    ax[0].set_title(L("(a) peak reverse current", "(a) peak reverse current"), loc="left")
+    ax[1].set_title(L("(b) recovered charge", "(b) recovered charge"), loc="left")
     ax[0].text(0.04, 0.08, L("softness $s$ = 0.5, 1, 2, 4\n(light to dark)", "softness $s$ = 0,5; 1; 2; 4\n(da chiaro a scuro)"), transform=ax[0].transAxes, fontsize=7,
                ha="left", va="bottom", color=INK2)
     save(fig, "fig_inversion")
@@ -760,7 +760,7 @@ def fig_forward(exA, exB):
          (22, -22))
     note(b, "$V_\\mathrm{T0} + r_\\mathrm{T}\\,i$", (230, d["VT0"] + d["RT"]*230), (6, 40), va="bottom")
     b.set_xlim(0, 2000); b.set_ylim(0.5, 2.1)
-    b.set_xlabel(L("forward current (A)", "corrente diretta (A)")); b.set_ylabel(L("forward voltage (V)", "tensione diretta (V)"))
+    b.set_xlabel(L("forward current (A)", "forward current (A)")); b.set_ylabel(L("forward voltage (V)", "forward voltage (V)"))
     b.set_title(L("(a) diode A: straight line of the datasheet", "(a) diodo A: retta del datasheet"), loc="left")
     d, c = exB["d"], exB["c"]
     i = np.linspace(0.2, 200.0, 800)
@@ -772,7 +772,7 @@ def fig_forward(exA, exB):
          (-10, 14), ha="right")
     note(b, L("line through the\ntwo upper points", "retta per i due\npunti superiori"), (12, exB["VT0"] + exB["rT"]*12), (20, -24))
     b.set_xlim(0, 200); b.set_ylim(0.5, 2.9)
-    b.set_xlabel(L("forward current (A)", "corrente diretta (A)")); b.set_ylabel(L("forward voltage (V)", "tensione diretta (V)"))
+    b.set_xlabel(L("forward current (A)", "forward current (A)")); b.set_ylabel(L("forward voltage (V)", "forward voltage (V)"))
     b.set_title(L("(b) diode B: three points of the curve", "(b) diodo B: tre punti della curva"), loc="left")
     save(fig, "fig_forward")
 
@@ -845,8 +845,8 @@ def fig_curves(exA, exB):
             end_labels(ax[row, col], a[-1]/1e6, ends[row], [loc_num(f"{c['IF']*f:g}") + " A" for f in (0.5, 1.0, 2.0)])
         ax[0, col].set_title(f"({'ab'[col]}) " + L("diode", "diodo") + f" {lab}", loc="left")
         ax[1, col].set_xlabel(L("rate of fall of the current (A/µs)", "velocità di discesa della corrente (A/µs)"))
-        ax[0, col].set_ylabel(L("recovered charge (µC)", "carica recuperata (µC)"))
-        ax[1, col].set_ylabel(L("peak reverse current (A)", "corrente di picco inversa (A)"))
+        ax[0, col].set_ylabel(L("recovered charge (µC)", "recovered charge (µC)"))
+        ax[1, col].set_ylabel(L("peak reverse current (A)", "peak reverse current (A)"))
     save(fig, "fig_curves")
 
 
