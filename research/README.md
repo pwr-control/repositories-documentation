@@ -22,15 +22,16 @@ Physics:
   blocking parameters, what the model cannot reproduce (slope and forward-current laws), two worked
   examples checked in a simulated commutation cell; `lm_conversion_calc.py` reproduces every number
   and figure (relations in the module `lm_conversion.py`).
-- `diode/power_diode_fundamentals` — *Fondamenti di dispositivi a semiconduttore: il diodo di
-  potenza* (IT): one document that collects the three diode notes above and harmonises them with a
-  single notation. Device physics of the PIN structure (junction, blocking design of the base,
-  ambipolar diffusion, catenary profile, exact drop on the modulated base, forward voltage, emitter
-  recombination), reverse recovery and charge-control model, Lauritzen-Ma model with the conversion
-  of datasheet data, technologies and the diode in the converter; an appendix maps the symbols to
-  the three source notes and lists what was corrected or made precise.
-  `power_diode_fundamentals_calc.py` reproduces the numbers and figures it adds; the numbers and
-  figures of the two-charge model are read from the `lauritzen_ma_datasheet_conversion` folder.
+- `diode/power_diode_fundamentals` — *Fundamentals of semiconductor devices: the power diode* (EN
+  and IT versions, `power_diode_fundamentals.tex` and `power_diode_fundamentals_it.tex`): one
+  document that collects the three diode notes above and harmonises them with a single notation.
+  Device physics of the PIN structure (junction, blocking design of the base, ambipolar diffusion,
+  catenary profile, exact drop on the modulated base, forward voltage, emitter recombination),
+  reverse recovery and charge-control model, Lauritzen-Ma model with the conversion of datasheet
+  data, technologies and the diode in the converter; an appendix maps the symbols to the three
+  source notes and lists what was corrected or made precise. `power_diode_fundamentals_calc.py`
+  reproduces the numbers and figures it adds, in both languages; the numbers and figures of the
+  two-charge model are read from the `lauritzen_ma_datasheet_conversion` folder.
 - `igbt/igbt_fermi_levels`, `thyristor/thyristor_fermi_levels` — band diagrams with Fermi and
   quasi-Fermi levels in the rest, blocking and conduction states (IT).
 - `thyristor/thyristor` — *Il tiristore (SCR): principio di funzionamento e fisica del

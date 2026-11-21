@@ -1,4 +1,5 @@
-"""Numbers and figures of power_diode_fundamentals.tex (Italian): device physics of the power PIN diode.
+"""Numbers and figures of power_diode_fundamentals.tex and of its Italian version power_diode_fundamentals_it.tex:
+device physics of the power PIN diode.
 
 The script computes every number that this note adds to those of the Lauritzen-Ma note, and draws its figures:
   1. silicon constants at 300 K used in the note (thermal voltage, diffusion constants, ambipolar constant);
@@ -25,7 +26,8 @@ used here. The module lm_conversion.py and the script lm_conversion_calc.py are 
 script warns if the values file found there is not what lm_conversion_calc.py computes now.
 
 Outputs, next to the script: power_diode_fundamentals_results.txt (log), power_diode_fundamentals_values.tex
-(macros \\pd... of the note), figures/fig_*.pdf (Italian labels). Only numpy, scipy and matplotlib are needed.
+(macros \\pd... of the note, read by both language versions), figures/fig_*.pdf (English labels) and
+figures/fig_*_it.pdf (the same figures with Italian labels). Only numpy, scipy and matplotlib are needed.
 Run:  python power_diode_fundamentals_calc.py"""
 import contextlib, io, math, os, sys, time
 sys.dont_write_bytecode = True             # no __pycache__ in the folder of the Lauritzen-Ma note
@@ -255,9 +257,9 @@ def section_blocking():
     line(f"   V_BR = {VBR_TARGET:g} V: NPT needs N_D = {N:.2e} cm-3, w = {w*1e4:.0f} um, R = {R:.2f} Ohm cm2; "
          f"PT with N_D = {ND_PT:.0e} (E_c = {Ecpt/1e5:.2f}e5 V/cm) needs w = {wpt*1e4:.0f} um "
          f"({(1 - wpt/w)*100:.0f} % thinner); limit of a rectangular field: {VBR_TARGET/Ecpt*1e4:.0f} um")
-    put("TgtV", VBR_TARGET/1e3, 0); put("TgtNd", sci(N, 1)); put("TgtW", round(w*1e4, -1), 0)
+    put("TgtV", VBR_TARGET/1e3, 0); put("TgtNd", sci(N, 1)); put("TgtW", w*1e4, 0)
     put("TgtR", R, 1); put("TgtDrop", round(R*100, -1), 0)
-    put("PtNd", sci(ND_PT, 0)); put("PtW", round(wpt*1e4, -1), 0); put("PtSavePct", round((1 - wpt/w)*100, 0), 0)
+    put("PtNd", sci(ND_PT, 0)); put("PtW", wpt*1e4, 0); put("PtSavePct", round((1 - wpt/w)*100, 0), 0)
     put("PtEc", Ecpt/1e5, 2)
     # base of the conduction example read as a punch-through design
     Ecx = e_crit(EX["ND"])
@@ -740,10 +742,13 @@ def section_examples(exA, exB):
 
 
 # ---------------------------------------------------------------- figures
+# Each figure is drawn twice, as in lm_conversion_calc.py: English labels (figures/fig_*.pdf) and Italian labels
+# (figures/fig_*_it.pdf). lmc.L(en, it) returns the label in the current language, lmc.LANG.
 def save(fig, name):
     os.makedirs(FIGDIR, exist_ok=True)
-    lmc.comma_ticks(fig)
-    fig.savefig(os.path.join(FIGDIR, name + ".pdf"))
+    if lmc.LANG == "it":
+        lmc.comma_ticks(fig)
+    fig.savefig(os.path.join(FIGDIR, name + ("_it" if lmc.LANG == "it" else "") + ".pdf"))
     plt.close(fig)
 
 
@@ -765,8 +770,8 @@ def fig_profile(res):
     b.set_xlim(-0.5, 0.5); b.set_ylim(0, 3.5)
     b.text(-0.48, 0.12, "p$^{+}$", fontsize=7.5, ha="left", va="bottom", color=lmc.INK2)
     b.text(0.48, 0.12, "n$^{+}$", fontsize=7.5, ha="right", va="bottom", color=lmc.INK2)
-    b.set_xlabel("posizione nella base, $x/w_\\mathrm{B}$"); b.set_ylabel("$p(x)/\\bar{p}$")
-    b.set_title("(a) profilo a catenaria per tre lifetime", loc="left")
+    b.set_xlabel(lmc.L("position in the base, $x/w_\\mathrm{B}$", "posizione nella base, $x/w_\\mathrm{B}$")); b.set_ylabel("$p(x)/\\bar{p}$")
+    b.set_title(lmc.L("(a) catenary profile for three lifetimes", "(a) profilo a catenaria per tre lifetime"), loc="left")
     # --- logarithmic scale, lifetime of the middle example
     b = ax[1]
     c = res["Mid"]["ideal"]
@@ -783,15 +788,16 @@ def fig_profile(res):
     b.yaxis.set_minor_formatter(lmc.mticker.NullFormatter())
     k = int(np.argmin(np.abs(x - 0.25)))
     b.annotate("", (x[k], ND), (x[k], y[k]), arrowprops=dict(arrowstyle="<->", color=lmc.INK2, lw=0.6, shrinkA=0, shrinkB=0))
-    b.text(x[k] + 0.03, math.sqrt(ND*y[k]), "quasi tre\ndecadi", fontsize=7, ha="left", va="center", color=lmc.INK2)
+    b.text(x[k] - 0.03, math.sqrt(ND*y[k]), lmc.L("almost three\ndecades", "quasi tre\ndecadi"), fontsize=7, ha="right", va="center", color=lmc.INK2)
     k = int(np.argmin(np.abs(x + 0.2)))
     lmc.note(b, "plasma, $n \\simeq p$", (x[k], y[k]), (4, 16), va="bottom")
-    lmc.note(b, "$N_\\mathrm{D}$: senza iniezione", (-0.25, ND), (6, -12), va="top")
+    lmc.note(b, "$N_\\mathrm{D}$: " + lmc.L("without injection", "senza iniezione"), (-0.25, ND), (6, -12), va="top")
     b.text(-0.5 - xe/2, 2.5e18, "p$^{+}$", fontsize=7.5, ha="center", va="center", color=lmc.INK2)
     b.text(0.5 + xe/2, 2.5e18, "n$^{+}$", fontsize=7.5, ha="center", va="center", color=lmc.INK2)
-    b.set_xlabel("posizione, $x/w_\\mathrm{B}$"); b.set_ylabel("concentrazione (cm$^{-3}$)")
+    b.set_xlabel(lmc.L("position, $x/w_\\mathrm{B}$", "posizione, $x/w_\\mathrm{B}$"))
+    b.set_ylabel(lmc.L("concentration (cm$^{-3}$)", "concentrazione (cm$^{-3}$)"))
     b.set_xticks([-0.5, 0, 0.5])
-    b.set_title("(b) concentrazioni, $\\tau$ = " + lmc.loc_num(f"{res['Mid']['tau']*1e6:g}") + " µs", loc="left")
+    b.set_title(lmc.L("(b) concentrations", "(b) concentrazioni") + ", $\\tau$ = " + lmc.loc_num(f"{res['Mid']['tau']*1e6:g}") + " µs", loc="left")
     save(fig, "fig_profile")
 
 
@@ -804,7 +810,7 @@ def fig_vm(res):
     parts = np.array([vm_parts(v) for v in beta])
     exact = parts.sum(axis=1)
     b.plot(beta, 2*beta**2, color=lmc.MUTED, lw=0.8, ls=(0, (4, 3)))
-    sel = beta > 0.9
+    sel = beta > 1.3
     b.plot(beta[sel], math.sqrt(1 - BM*BM)*math.pi/2*np.exp(beta[sel]), color=lmc.MUTED, lw=0.8, ls=(0, (1, 2)))
     b.plot(beta, parts[:, 0], color=lmc.C_WEAK, lw=1.0)
     b.plot(beta, exact, color=lmc.C_NOM)
@@ -816,12 +822,13 @@ def fig_vm(res):
     b.set_xscale("log"); b.set_yscale("log"); b.set_xlim(0.1, 4.0); b.set_ylim(0.008, 60)
     lmc.plain_log(b)
     lmc.note(b, "$2\\,(d/L_\\mathrm{a})^2$", (2.6, 2*2.6**2), (10, -14), va="top")
-    lmc.note(b, "$\\propto e^{d/L_\\mathrm{a}}$", (1.15, math.sqrt(1 - BM*BM)*math.pi/2*math.exp(1.15)), (-18, 10),
+    lmc.note(b, "$\\propto e^{d/L_\\mathrm{a}}$", (1.45, math.sqrt(1 - BM*BM)*math.pi/2*math.exp(1.45)), (-18, 10),
              ha="right", va="bottom")
     k = int(np.argmin(np.abs(beta - 0.2)))
-    lmc.note(b, "sola parte\nohmica", (beta[k], parts[k, 0]), (12, -16), va="top")
-    b.set_xlabel("semilarghezza della base, $d/L_\\mathrm{a}$"); b.set_ylabel("$V_\\mathrm{M}/V_\\mathrm{T}$")
-    b.set_title("(a) caduta sulla base modulata", loc="left")
+    lmc.note(b, lmc.L("ohmic part\nonly", "sola parte\nohmica"), (beta[k], parts[k, 0]), (12, -16), va="top")
+    b.set_xlabel(lmc.L("half width of the base, $d/L_\\mathrm{a}$", "semilarghezza della base, $d/L_\\mathrm{a}$"))
+    b.set_ylabel("$V_\\mathrm{M}/V_\\mathrm{T}$")
+    b.set_title(lmc.L("(a) drop on the modulated base", "(a) caduta sulla base modulata"), loc="left")
     # --- forward voltage against the lifetime
     b = ax[1]
     taus = np.logspace(math.log10(0.15e-6), math.log10(20e-6), 160)
@@ -841,11 +848,12 @@ def fig_vm(res):
     k = int(np.argmin(np.abs(taus - 2.2e-6)))
     lmc.note(b, "$V_\\mathrm{F}$", (taus[k]*1e6, vj[k] + vm[k]), (-2, 22), ha="center", va="bottom")
     k = int(np.argmin(np.abs(taus - 9e-6)))
-    lmc.note(b, "con ricombinazione\nnegli emitter", (taus[k]*1e6, vfe[k]), (-6, -34), ha="right", va="top")
+    lmc.note(b, lmc.L("with recombination\nin the emitters", "con ricombinazione\nnegli emitter"), (taus[k]*1e6, vfe[k]), (-6, -34),
+             ha="right", va="top")
     k = int(np.argmin(np.abs(taus - 0.3e-6)))
     lmc.note(b, "$V_\\mathrm{M}$", (taus[k]*1e6, vm[k]), (14, 8), va="bottom")
-    b.set_xlabel("lifetime $\\tau$ (µs)"); b.set_ylabel("tensione (V)")
-    b.set_title("(b) forward voltage a " + f"{J:g}" + " A/cm$^2$", loc="left")
+    b.set_xlabel("lifetime $\\tau$ (µs)"); b.set_ylabel(lmc.L("voltage (V)", "tensione (V)"))
+    b.set_title("(b) forward voltage " + lmc.L("at", "a") + " " + f"{J:g}" + " A/cm$^2$", loc="left")
     save(fig, "fig_vm")
 
 
@@ -864,30 +872,29 @@ def fig_forward(exA, exB):
              (16, -12))
     k = int(np.argmin(np.abs(i - 60)))
     lmc.note(b, "$N$ = 2", (i[k], float(lm.forward_voltage(i[k], exA["fits"][2.0][0], 2.0, c["VT"], exA["fits"][2.0][1]))),
-             (22, -22))
+             (24, -15))
     lmc.note(b, "$V_\\mathrm{T0} + r_\\mathrm{T}\\,i$", (230, d["VT0"] + d["RT"]*230), (6, 40), va="bottom")
     b.set_xlim(0, 2000); b.set_ylim(0.5, 2.1)
     b.set_xlabel("forward current (A)"); b.set_ylabel("forward voltage (V)")
-    b.set_title("(a) diodo A: retta del datasheet", loc="left")
+    b.set_title(lmc.L("(a) diode A: straight line of the datasheet", "(a) diodo A: retta del datasheet"), loc="left")
     d, c = exB["d"], exB["c"]
     i = np.linspace(0.2, 200.0, 800)
     b = ax[1]
     b.plot(i, exB["VT0"] + exB["rT"]*i, color=lmc.INK, lw=0.9, ls=(0, (4, 2)))
     b.plot(i, lm.forward_voltage(i, exB["IS"], exB["n"], c["VT"], exB["RS"]), color=lmc.C_NOM)
     b.plot([p[0] for p in d["VF"]], [p[1] for p in d["VF"]], "o", ms=3.5, color=lmc.INK)
-    lmc.note(b, "modello, $N$ = " + lmc.loc_num("%.2f" % exB["n"]),
+    lmc.note(b, lmc.L("model", "modello") + ", $N$ = " + lmc.loc_num("%.2f" % exB["n"]),
              (150, float(lm.forward_voltage(150.0, exB["IS"], exB["n"], c["VT"], exB["RS"]))), (-10, 14), ha="right")
-    lmc.note(b, "retta per i due\npunti superiori", (12, exB["VT0"] + exB["rT"]*12), (20, -24))
+    lmc.note(b, lmc.L("line through the\ntwo upper points", "retta per i due\npunti superiori"), (12, exB["VT0"] + exB["rT"]*12), (20, -24))
     b.set_xlim(0, 200); b.set_ylim(0.5, 2.9)
     b.set_xlabel("forward current (A)"); b.set_ylabel("forward voltage (V)")
-    b.set_title("(b) diodo B: tre punti della curva", loc="left")
+    b.set_title(lmc.L("(b) diode B: three points of the curve", "(b) diodo B: tre punti della curva"), loc="left")
     save(fig, "fig_forward")
 
 
 # ---------------------------------------------------------------- main
 def main():
     t0 = time.time()
-    lmc.LANG = "it"                        # decimal comma in the labels of the figures
     line("Power PIN diode, device physics: numbers of power_diode_fundamentals.tex")
     line()
     section_constants()
@@ -905,9 +912,12 @@ def main():
         fo.write("% generated by power_diode_fundamentals_calc.py: do not edit by hand\n")
         for k, v in MAC.items():
             fo.write(f"\\newcommand{{\\pd{k}}}{{{v}}}\n")
-    fig_profile(res)
-    fig_vm(res)
-    fig_forward(exA, exB)
+    for lang in ("en", "it"):              # figures/fig_*.pdf, then figures/fig_*_it.pdf
+        lmc.LANG = lang
+        fig_profile(res)
+        fig_vm(res)
+        fig_forward(exA, exB)
+    lmc.LANG = "en"
     # the numbers of Parts III and IV are read from the values file of the Lauritzen-Ma note: check it is current
     stale = []
     with open(os.path.join(LMDIR, "lm_conversion_values.tex"), encoding="utf-8") as fi:
